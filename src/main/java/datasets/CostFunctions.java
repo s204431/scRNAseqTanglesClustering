@@ -7,7 +7,7 @@ public class CostFunctions {
     //NOTE: The content in this file is from the bachelor project.
 
     //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.
-    private double[] pairwiseDistanceCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+    public double[] pairwiseDistanceCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
@@ -30,7 +30,7 @@ public class CostFunctions {
     }
 
     //Distance to mean cost function, which uses the sum of the distance to the opposite side mean for every point (has linear time complexity).
-    private double[] distanceToMeanCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+    public double[] distanceToMeanCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {

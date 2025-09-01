@@ -3,7 +3,7 @@ package clustering;
 import clustering.TangleSearchTree.Node;
 import util.BitSet;
 import util.Tuple;
-import datasets.scRNAseqDataset;
+import datasets.ScRNAseqDataset;
 
 public class TangleClusterer {
 
@@ -17,7 +17,7 @@ public class TangleClusterer {
     protected TangleClusterer() {}
 
     //Generates a soft- and hard clustering for the provided dataset with a specific value of a and psi, and a specific initial cut generator and cost function.
-    protected void generateClusters(scRNAseqDataset dataset, int a, int psi, String initialCutGenerator, String costFunctionName) {
+    protected void generateClusters(ScRNAseqDataset dataset, int a, int psi, String initialCutGenerator, String costFunctionName) {
         dataset.setA(a);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
         double[] costs = dataset.getCutCosts(costFunctionName);
