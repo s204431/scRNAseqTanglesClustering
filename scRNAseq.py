@@ -1,6 +1,7 @@
 import scanpy as sc
 import anndata as ad
 import pandas as pd
+import matplotlib.pyplot as plt
 
 sc.settings.set_figure_params(dpi=50, facecolor="white")
 

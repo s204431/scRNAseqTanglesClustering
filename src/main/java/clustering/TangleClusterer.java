@@ -5,6 +5,8 @@ import util.BitSet;
 import util.Tuple;
 import datasets.ScRNAseqDataset;
 
+import java.util.Arrays;
+
 public class TangleClusterer {
 
     //NOTE: This file is from the bachelor project.
@@ -14,10 +16,10 @@ public class TangleClusterer {
     private TangleSearchTree tangleSearchTree;
 
     //Ensure that it can only be created within this package.
-    protected TangleClusterer() {}
+    public TangleClusterer() {}
 
     //Generates a soft- and hard clustering for the provided dataset with a specific value of a and psi, and a specific initial cut generator and cost function.
-    protected void generateClusters(ScRNAseqDataset dataset, int a, int psi, String initialCutGenerator, String costFunctionName) {
+    public void generateClusters(ScRNAseqDataset dataset, int a, int psi, String initialCutGenerator, String costFunctionName) {
         dataset.setA(a);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
         double[] costs = dataset.getCutCosts(costFunctionName);
@@ -38,12 +40,12 @@ public class TangleClusterer {
     }
 
     //Returns the last generated soft clustering.
-    protected double[][] getSoftClustering() {
+    public double[][] getSoftClustering() {
         return tangleSearchTree.softClustering;
     }
 
     //Returns the last generated hard clustering.
-    protected int[] getHardClustering() {
+    public int[] getHardClustering() {
         return tangleSearchTree.hardClustering;
     }
 

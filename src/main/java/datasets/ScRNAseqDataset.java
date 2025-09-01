@@ -2,6 +2,8 @@ package datasets;
 
 import util.BitSet;
 
+import java.util.Arrays;
+
 public class ScRNAseqDataset {
     private double[][] data;
     private int a;

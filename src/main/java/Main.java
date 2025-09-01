@@ -1,3 +1,4 @@
+import clustering.TangleClusterer;
 import datasets.ScRNAseqDataset;
 import util.BitSet;
 import util.Tuple;
@@ -7,11 +8,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import smile.validation.metric.NormalizedMutualInformation;
+
+
 public class Main {
     public static void main(String[] args) {
 
         // Read data
-        String filePath = "C:\\Dev\\Projects\\DTU\\Master Thesis Preparation\\symsim_true_counts_5000genes_1000cells_complex.csv";
+        //String filePath = "C:\\Dev\\Projects\\DTU\\Master Thesis Preparation\\symsim_true_counts_5000genes_1000cells_complex.csv";
+        String filePath = "data/symsim_observed_counts_5000genes_1000cells_complex.csv";
         int[][] data = readCSV(filePath);
 
         // Convert to double
@@ -27,7 +32,8 @@ public class Main {
         }
 
         // Ground truth
-        filePath = "C:\\Dev\\Projects\\DTU\\Master Thesis Preparation\\symsim_labels_5000genes_1000cells_complex.csv";
+        //filePath = "C:\\Dev\\Projects\\DTU\\Master Thesis Preparation\\symsim_labels_5000genes_1000cells_complex.csv";
+        filePath = "data/symsim_labels_5000genes_1000cells_complex.csv";
         int[][] temp = readCSV(filePath);
         int[] gt = new int[temp.length];
         for (int i = 0; i < temp.length; i++) {
@@ -35,10 +41,14 @@ public class Main {
         }
 
         ScRNAseqDataset dataset = new ScRNAseqDataset(doubleData);
-        dataset.setA(200);
-        BitSet[] cuts = dataset.getInitialCuts("Default");
-        double[] cutCosts = dataset.getCutCosts("Default");
+        TangleClusterer tangleClusterer = new TangleClusterer();
+        tangleClusterer.generateClusters(dataset, 90, 0, "Default", "Default");
+        int[] hardClustering = tangleClusterer.getHardClustering();
+        double NMIScore = NormalizedMutualInformation.joint(hardClustering, gt);
+
+
         System.out.println("Finished");
+        System.out.println(NMIScore);
     }
 
     public static int[][] readCSV(String filePath) {
