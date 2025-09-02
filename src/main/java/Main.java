@@ -11,6 +11,8 @@ import util.Tuple;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import smile.validation.metric.NormalizedMutualInformation;
 import smile.math.matrix.Matrix.SVD;
@@ -43,10 +45,11 @@ public class Main {
                 }
             }
         }
-
         System.out.println("Sparsity: " + ((double)nZeros)/(doubleData.length*doubleData[0].length));
+        System.out.println("Before HVG: " + doubleData.length + " " + doubleData[0].length);
 
-        System.out.println(doubleData.length + " " + doubleData[0].length);
+        doubleData = highlyVariableGenes(doubleData, 2000);
+        System.out.println("After HVG: " + doubleData.length + " " + doubleData[0].length);
 
         // Ground truth
         String filePathLabels = "data/symsim_labels_5000genes_1000cells_complex.csv";
@@ -230,6 +233,48 @@ public class Main {
                 doubleData[i][j] = (doubleData[i][j] - mean[j])/std[j];
             }
         }
+    }
+
+    public static double[][] highlyVariableGenes(double[][] data, int nTopGenes) {
+        int nGenes = data[0].length;
+        int nCells = data.length;
+
+        double[] dispersions = new double[nGenes];
+
+        for (int g = 0; g < nGenes; g++) {
+            double sum = 0.0;
+            for (int c = 0; c < nCells; c++) {
+                sum += data[c][g];
+            }
+            double mean = sum / nCells;
+
+            double sqDiff = 0.0;
+            for (int c = 0; c < nCells; c++) {
+                sqDiff += Math.pow(data[c][g] - mean, 2);
+            }
+            double variance = sqDiff / (nCells - 1);
+
+            dispersions[g] = mean > 0 ? variance / mean : 0.0;
+        }
+
+        // Get indices sorted by dispersion (descending)
+        Integer[] indices = new Integer[nGenes];
+        for (int i = 0; i < nGenes; i++) indices[i] = i;
+        Arrays.sort(indices, Comparator.comparingDouble(a -> dispersions[a]));
+
+        // Take top nTopGenes
+        int[] indc =  Arrays.stream(indices)
+                .limit(nTopGenes)
+                .mapToInt(Integer::intValue)
+                .toArray();
+
+        double[][] newData = new double[nCells][nTopGenes];
+        for (int i = 0; i < nTopGenes; i++) {
+            for (int j = 0; j < nCells; j++) {
+                newData[j][i] = data[j][indc[i]];
+            }
+        }
+        return newData;
     }
 
 }
