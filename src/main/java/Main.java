@@ -31,14 +31,21 @@ public class Main {
         // Convert to double
         int dimensions = 5000;//data[0].length;
         double[][] doubleData = new double[data.length][];
+        int nZeros = 0;
         for (int i = 0; i < data.length; i++) {
             doubleData[i] = new double[dimensions];
             //doubleData[i][0] = (double) data[i][0];
             //doubleData[i][1] = (double) data[i][1];
             for (int j = 0; j < dimensions; j++) {
-                doubleData[i][j] = (double) data[i][j];
+                doubleData[i][j] = Math.log(1 + (double) data[i][j]);
+                if (data[i][j] == 0) {
+                    nZeros++;
+                }
             }
         }
+
+        System.out.println("Sparsity: " + ((double)nZeros)/(doubleData.length*doubleData[0].length));
+
         System.out.println(doubleData.length + " " + doubleData[0].length);
 
         // Ground truth
@@ -50,29 +57,30 @@ public class Main {
         }
 
         long time = System.currentTimeMillis();
-        double[][] projectedData = tsne(doubleData, 50);
+        double[][] projectedData = tsne(doubleData, 2);
+        //double[][] projectedData = doubleData;
         System.out.println(System.currentTimeMillis() - time);
 
         ScRNAseqDataset dataset = new ScRNAseqDataset(projectedData);
         TangleClusterer tangleClusterer = new TangleClusterer();
-        tangleClusterer.generateClusters(dataset, 70, 0, "Default", "Default");
+        tangleClusterer.generateClusters(dataset, 70, 0, "Range", "Distance To Mean");
         int[] hardClustering = tangleClusterer.getHardClustering();
         double NMIScore = NormalizedMutualInformation.joint(hardClustering, gt);
 
-        Tuple<int[], Integer> pythonResult = runPython(filePath);
+        //Tuple<int[], Integer> pythonResult = runPython(filePath);
 
-        double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, gt);
+        //double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, gt);
 
         System.out.println("Finished");
         System.out.println(NMIScore);
-        System.out.println("NMI python: " + NMIPython);
+        //System.out.println("NMI python: " + NMIPython);
 
         double[][] reducedData = tsne(doubleData, 2);
         SwingUtilities.invokeLater(() -> {
             MainWindow window = new MainWindow();
             window.setData(reducedData);
             window.setProjectedData(projectedData);
-            window.setClusters(pythonResult.x);
+            window.setClusters(hardClustering);
             window.drawPoints();
             window.drawClusters();
             window.setVisible(true);
@@ -191,6 +199,37 @@ public class Main {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void zScoreNorm(double[][] doubleData) {
+        //Normalization
+        double[] mean = new double[doubleData[0].length];
+        double[] std = new double[doubleData[0].length];
+        for (int i = 0; i < doubleData.length; i++) {
+            for (int j = 0; j < doubleData[i].length; j++) {
+                mean[j] += doubleData[i][j];
+            }
+        }
+
+        for (int j = 0; j < mean.length; j++) {
+            mean[j] /= doubleData.length;
+        }
+
+        for (int i = 0; i < doubleData.length; i++) {
+            for (int j = 0; j < doubleData[i].length; j++) {
+                std[j] += (doubleData[i][j] - mean[j])*(doubleData[i][j] - mean[j]);
+            }
+        }
+
+        for (int j = 0; j < std.length; j++) {
+            std[j] = Math.sqrt(std[j]/(doubleData.length-1));
+        }
+
+        for (int i = 0; i < doubleData.length; i++) {
+            for (int j = 0; j < doubleData[i].length; j++) {
+                doubleData[i][j] = (doubleData[i][j] - mean[j])/std[j];
+            }
+        }
     }
 
 }

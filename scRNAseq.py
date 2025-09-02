@@ -27,8 +27,12 @@ sc.tl.pca(adata)
 
 sc.pp.neighbors(adata)
 
+#sc.tl.umap(adata)
+
 # Using the igraph implementation and a fixed number of iterations can be significantly faster, especially for larger datasets
 sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
+
+#sc.pl.umap(adata, color=["leiden"])
 
 clusters = adata.obs["leiden"]
 
