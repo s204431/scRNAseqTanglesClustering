@@ -2,10 +2,15 @@ import scanpy as sc
 import anndata as ad
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
+import json
+
+input_str = sys.stdin.readline().strip()
 
 sc.settings.set_figure_params(dpi=50, facecolor="white")
 
-df = pd.read_csv("data/symsim_observed_counts_5000genes_1000cells_complex.csv", index_col=0)
+#df = pd.read_csv("data/symsim_observed_counts_5000genes_1000cells_complex.csv", index_col=0)
+df = pd.read_csv(input_str, index_col=0)
 adata = ad.AnnData(df)
 
 sc.pp.filter_cells(adata, min_genes=100)
@@ -29,17 +34,18 @@ sc.tl.umap(adata)
 # Using the igraph implementation and a fixed number of iterations can be significantly faster, especially for larger datasets
 sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
 
-sc.pl.umap(adata, color=["leiden"])
+#sc.pl.umap(adata, color=["leiden"])
 
 
 
-labels = pd.read_csv("data/symsim_labels_5000genes_1000cells_complex.csv", index_col=0)
+#labels = pd.read_csv("data/symsim_labels_5000genes_1000cells_complex.csv", index_col=0)
 
-adata.obs["ground_truth"] = labels.iloc[:, 0].values.astype(str)  
-adata.obs["ground_truth"]
+#adata.obs["ground_truth"] = labels.iloc[:, 0].values.astype(str)  
+#adata.obs["ground_truth"]
 
-sc.pl.umap(adata, color=["ground_truth"])
-
+#sc.pl.umap(adata, color=["ground_truth"])
 
 
 clusters = adata.obs["leiden"]
+
+print(json.dumps(clusters.tolist()))
