@@ -17,6 +17,9 @@ import smile.math.matrix.Matrix.SVD;
 import smile.manifold.UMAP;
 
 import com.google.gson.Gson;
+import visualization.MainWindow;
+
+import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -63,6 +66,17 @@ public class Main {
         System.out.println("Finished");
         System.out.println(NMIScore);
         System.out.println("NMI python: " + NMIPython);
+
+        double[][] reducedData = tsne(doubleData, 2);
+        SwingUtilities.invokeLater(() -> {
+            MainWindow window = new MainWindow();
+            window.setData(reducedData);
+            window.setProjectedData(projectedData);
+            window.setClusters(pythonResult.x);
+            window.drawPoints();
+            window.drawClusters();
+            window.setVisible(true);
+        });
     }
 
     public static double[][] pca(double[][] data, int nComponents) {
@@ -178,4 +192,5 @@ public class Main {
         }
         return null;
     }
+
 }

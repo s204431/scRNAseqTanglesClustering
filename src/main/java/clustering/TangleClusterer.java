@@ -19,7 +19,7 @@ public class TangleClusterer {
     public TangleClusterer() {}
 
     //Generates a soft- and hard clustering for the provided dataset with a specific value of a and psi, and a specific initial cut generator and cost function.
-    public void generateClusters(ScRNAseqDataset dataset, int a, int psi, String initialCutGenerator, String costFunctionName) {
+    public void generateClusters(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
         dataset.setA(a);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
         double[] costs = dataset.getCutCosts(costFunctionName);
@@ -50,7 +50,7 @@ public class TangleClusterer {
     }
 
     //Generates the tangle search tree by ordering the cuts and adding nodes one at a time to the tree.
-    private TangleSearchTree generateTangleSearchTree(BitSet[] initialCuts, double[] costs, int a, int psi) {
+    private TangleSearchTree generateTangleSearchTree(BitSet[] initialCuts, double[] costs, int a, double psi) {
         int[] indices = new int[costs.length];
         for (int i = 0; i < indices.length; i++) {
             indices[i] = i;
