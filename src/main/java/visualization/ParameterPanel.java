@@ -1,15 +1,8 @@
 package visualization;
 
-import clustering.TangleClusterer;
-import datasets.ScRNAseqDataset;
-import smile.validation.metric.NormalizedMutualInformation;
-
 import javax.swing.*;
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.awt.event.ItemEvent;
 
 public class ParameterPanel extends JPanel {
     private View view;
@@ -17,11 +10,15 @@ public class ParameterPanel extends JPanel {
     private TextField aField = new TextField(10);
     private TextField psiField = new TextField(10);
     private JButton clusterButton = new JButton("Cluster");
+    private JButton groundTruthButton = new JButton("Show Ground Truth");
 
     public ParameterPanel(View view) {
         this.view = view;
 
-        //setPreferredSize(new Dimension(150, 800));
+        String fontName = "Arial";
+        int titleSize = 14;
+        int textSize = 12;
+
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5); // Spacing
@@ -29,20 +26,28 @@ public class ParameterPanel extends JPanel {
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        add(new Label("Dimension"), gbc);
+        JLabel dimensionLabel = new JLabel("Dimension");
+        dimensionLabel.setFont(new Font(fontName, Font.BOLD, titleSize));
+        add(dimensionLabel, gbc);
 
         gbc.gridy = 1;
-        add(new Label("Clustering"), gbc);
+        JLabel clusteringLabel = new JLabel("Clustering");
+        clusteringLabel.setFont(new Font(fontName, Font.BOLD, titleSize));
+        add(clusteringLabel, gbc);
 
         gbc.gridy = 2;
         gbc.gridx = 0;
-        add(new Label("a"), gbc);
+        JLabel aLabel = new JLabel("a");
+        aLabel.setFont(new Font(fontName, Font.PLAIN, textSize));
+        add(aLabel, gbc);
         gbc.gridx = 1;
         add(aField, gbc);
 
         gbc.gridy = 3;
         gbc.gridx = 0;
-        add(new Label("psi"), gbc);
+        JLabel psiLabel = new JLabel("psi");
+        aLabel.setFont(new Font(fontName, Font.PLAIN, textSize));
+        add(psiLabel, gbc);
         gbc.gridx = 1;
         add(psiField, gbc);
 
@@ -60,5 +65,21 @@ public class ParameterPanel extends JPanel {
                     "Distance To Mean"
             );
         });
+
+        gbc.gridy = 4;
+        gbc.gridx = 1;
+        JCheckBox groundTruthCheckBox = new JCheckBox("Show Ground Truth");
+        groundTruthCheckBox.setSelected(false);
+        add(groundTruthCheckBox, gbc);
+        groundTruthCheckBox.addItemListener(e -> {
+            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+            if (isChecked) {
+                view.showGroundTruth();
+            } else {
+                view.showClustering();
+            }
+        });
+
+
     }
 }

@@ -23,6 +23,18 @@ public class View {
 
     public void performClustering(int a, double psi, String cutGeneratorName, String costFunctionName) {
         model.cluster(model.getDataset(), a, psi, cutGeneratorName, costFunctionName);
+        showClustering(model.getHardClustering());
+    }
+
+    public void showClustering(int[] clustering) {
+        window.drawClusters(points, clustering);
+    }
+
+    public void showClustering() {
         window.drawClusters(points, model.getHardClustering());
+    }
+
+    public void showGroundTruth() {
+        showClustering(model.getGroundTruth());
     }
 }
