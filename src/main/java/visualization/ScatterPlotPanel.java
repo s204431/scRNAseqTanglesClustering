@@ -11,27 +11,26 @@ import javax.swing.*;
 import java.awt.*;
 
 public class ScatterPlotPanel extends JPanel {
+    private View view;
+
     private static Color[] COLORS = {Color.RED, Color.BLUE, Color.GREEN, Color.ORANGE, Color.MAGENTA};
 
-    private double[][] points = new double[][] {{0,0}};
-    private int[] clusters;
+    public ScatterPlotPanel(View view) {
+        this.view = view;
 
-    public ScatterPlotPanel() {
         setLayout(new BorderLayout());
         setBackground(Color.LIGHT_GRAY);
-
-        drawScatterPlot();
     }
 
-    public void drawScatterPlot() {
+    public void drawScatterPlot(double[][] points) {
         removeAll();
-        Canvas scatterPlot = new Canvas(ScatterPlot.of(points).figure());
+        Canvas scatterPlot = new Canvas(ScatterPlot.of(points, 'o').figure());
         add(scatterPlot, BorderLayout.CENTER);
         revalidate();
         repaint();
     }
 
-    public void drawClusters() {
+    public void drawClusters(double[][] points, int[] clusters) {
         if (clusters.length != points.length) {
             System.out.println("Cluster length does not match points length in ScatterPlotPanel. Maybe use setPoints()");
             return;
@@ -51,18 +50,9 @@ public class ScatterPlotPanel extends JPanel {
         );
 
         removeAll();
-        Canvas scatterPlot = new Canvas(ScatterPlot.of(data, "X", "Y", "cluster", 'O').figure());
+        Canvas scatterPlot = new Canvas(ScatterPlot.of(data, "X", "Y", "cluster", 'o').figure());
         add(scatterPlot, BorderLayout.CENTER);
         revalidate();
         repaint();
     }
-
-    public void setPoints(double[][] points) {
-        this.points = points;
-    }
-
-    public void setClusters(int[] clusters) {
-        this.clusters = clusters;
-    }
-
 }

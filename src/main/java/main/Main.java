@@ -1,9 +1,10 @@
-import clustering.TangleClusterer;
+package main;
+
+import clustering.Model;
 import com.jujutsu.tsne.TSneConfiguration;
 import com.jujutsu.tsne.barneshut.BHTSne;
 import com.jujutsu.tsne.barneshut.BarnesHutTSne;
 import com.jujutsu.utils.TSneUtils;
-import datasets.ScRNAseqDataset;
 
 import smile.feature.extraction.PCA;
 import smile.math.matrix.Matrix;
@@ -14,18 +15,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import smile.validation.metric.NormalizedMutualInformation;
 import smile.math.matrix.Matrix.SVD;
 import smile.manifold.UMAP;
 
 import com.google.gson.Gson;
-import visualization.MainWindow;
-
-import javax.swing.*;
+import visualization.View;
 
 public class Main {
     public static void main(String[] args) {
+        Model model = new Model();
+        View view = new View(model);
 
+        /*
         // Read data
         String filePath = "data/symsim_observed_counts_5000genes_1000cells_complex.csv";
         int[][] data = readCSV(filePath);
@@ -80,7 +81,7 @@ public class Main {
 
         double[][] reducedData = tsne(doubleData, 2);
         SwingUtilities.invokeLater(() -> {
-            MainWindow window = new MainWindow();
+            MainWindow window = new MainWindow(new View(new Model()));
             window.setData(reducedData);
             window.setProjectedData(projectedData);
             window.setClusters(hardClustering);
@@ -88,6 +89,8 @@ public class Main {
             window.drawClusters();
             window.setVisible(true);
         });
+
+         */
     }
 
     public static double[][] pca(double[][] data, int nComponents) {
