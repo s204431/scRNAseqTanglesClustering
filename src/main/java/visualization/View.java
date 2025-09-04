@@ -49,11 +49,11 @@ public class View {
         showClustering(clustering);
     }
 
-    public BitSet[] getCuts(String initialCutGenerator) {
-        return model.getCuts(initialCutGenerator);
+    public BitSet[] getCuts() {
+        return model.getCuts();
     }
 
-    public double[] getCutCosts(String costFunctionName) {
-        return model.getCutCosts(costFunctionName);
+    public double[] getCutCosts() {
+        return model.getCutCosts();
     }
 }

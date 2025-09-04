@@ -210,12 +210,12 @@ public class Model {
         return data;
     }
 
-    public BitSet[] getCuts(String initialCutGenerator) {
-        return dataset.getInitialCuts(initialCutGenerator);
+    public BitSet[] getCuts() {
+        return dataset.getLastCuts();
     }
 
-    public double[] getCutCosts(String costFunctionName) {
-        return dataset.getCutCosts(costFunctionName);
+    public double[] getCutCosts() {
+        return dataset.getLastCosts();
     }
 
     public int[] getGroundTruth() {

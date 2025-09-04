@@ -63,4 +63,12 @@ public class ScRNAseqDataset {
         this.a = a;
     }
 
+    public BitSet[] getLastCuts() {
+        return initialCuts;
+    }
+
+    public double[] getLastCosts() {
+        return cutCosts;
+    }
+
 }

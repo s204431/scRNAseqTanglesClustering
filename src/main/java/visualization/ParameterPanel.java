@@ -1,7 +1,5 @@
 package visualization;
 
-import clustering.TangleClusterer;
-import smile.plot.swing.Grid;
 import util.BitSet;
 
 import javax.swing.*;
@@ -25,6 +23,8 @@ public class ParameterPanel extends JPanel {
     public ParameterPanel(View view) {
         this.view = view;
 
+        getAndSortCutsAndCosts();
+
         setLayout(new GridBagLayout());
         gbc.insets = new Insets(5, 5, 5, 5); // Spacing
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -33,41 +33,41 @@ public class ParameterPanel extends JPanel {
 
         addToPanel(x, 0, createTitleLabel("Dimension"));
         x++;
-        x++;
 
         addToPanel(x, 0, createTitleLabel("Clustering"));
         x++;
 
-        addToPanel(x, 0, createTextLabel("a"));
-
         JTextField aField = new JTextField(10);
+        addToPanel(x, 0, createTextLabel("a"));
         addToPanel(x, 1, aField);
         x++;
 
-        addToPanel(x, 0, createTextLabel("psi"));
-
         JTextField psiField = new JTextField(10);
+        addToPanel(x, 0, createTextLabel("psi"));
         addToPanel(x, 1, psiField);
         x++;
 
-        JButton clusterButton = new JButton("Cluster");
-        addToPanel(x, 0, clusterButton);
+        String[] cutGeneratorNames = new String[] {"Simple", "Range", "Local Means"};
+        JComboBox<String> cutGeneratorDropdown = new JComboBox<>(cutGeneratorNames);
+        addToPanel(x, 0, createTextLabel("Cut Generator: "));
+        addToPanel(x, 1, cutGeneratorDropdown);
+        x++;
 
+        String[] costFunctionNames = new String[] {"Distance To Mean", "Pairwise Distance"};
+        JComboBox<String> costFunctionDropdown = new JComboBox<>(costFunctionNames);
+        addToPanel(x, 0, createTextLabel("Cost Function: "));
+        addToPanel(x, 1, costFunctionDropdown);
+        x++;
+
+        JButton clusterButton = new JButton("Cluster");
         JCheckBox groundTruthCheckBox = new JCheckBox("Show Ground Truth");
         groundTruthCheckBox.setSelected(false);
+        addToPanel(x, 0, clusterButton);
         addToPanel(x, 1, groundTruthCheckBox);
         x++;
         x++;
 
         addToPanel(x, 0, createTitleLabel("Cuts"));
-        x++;
-
-        addToPanel(x, 0, createTextLabel("Cut Generator: "));
-
-        String[] cutGeneratorNames = new String[] {"Simple", "Range", "Local Means"};
-        JComboBox<String> cutDropdown = new JComboBox<>(cutGeneratorNames);
-        generateAndSortCutsAndCosts(cutGeneratorNames[0]);
-        addToPanel(x, 1, cutDropdown);
         x++;
 
         JCheckBox showCutCheckBox = new JCheckBox("Show cuts");
@@ -105,8 +105,8 @@ public class ParameterPanel extends JPanel {
             view.performClustering(
                     Integer.parseInt(aField.getText()),
                     Double.parseDouble(psiField.getText()),
-                    "Range",
-                    "Distance To Mean"
+                    (String) cutGeneratorDropdown.getSelectedItem(),
+                    (String) costFunctionDropdown.getSelectedItem()
             );
         });
 
@@ -171,18 +171,6 @@ public class ParameterPanel extends JPanel {
 
 
 
-        // ==================== Combo Box Logic ==================== //
-        cutDropdown.addActionListener(e -> {
-            if (showCutCheckBox.isSelected()) {
-                String cutGenerator = (String) cutDropdown.getSelectedItem();
-                generateAndSortCutsAndCosts(cutGenerator);
-                int currentCut = Integer.parseInt(cutNumberField.getText());
-                view.showCut(cuts[currentCut]);
-            }
-        });
-
-
-
         // ==================== Text Field Logic ==================== //
         cutNumberField.addActionListener(e -> {
             if (showCutCheckBox.isSelected()) {
@@ -217,9 +205,9 @@ public class ParameterPanel extends JPanel {
         return textLabel;
     }
 
-    private void generateAndSortCutsAndCosts(String cutGenerator) {
-        cuts = view.getCuts(cutGenerator);
-        cutCosts = view.getCutCosts("Distance To Mean");
+    private void getAndSortCutsAndCosts() {
+        cuts = view.getCuts();
+        cutCosts = view.getCutCosts();
 
         int n = cutCosts.length;
         Integer[] indices = new Integer[n];
