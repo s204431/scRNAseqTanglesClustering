@@ -56,4 +56,8 @@ public class View {
     public double[] getCutCosts() {
         return model.getCutCosts();
     }
+
+    public void drawTangleSearchTree() {
+        window.drawTangleSearchTree();
+    }
 }

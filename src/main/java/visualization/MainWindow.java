@@ -31,9 +31,9 @@ public class MainWindow extends JFrame {
         JSplitPane horizontalSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tangleTreePanel, verticalSplit);
         horizontalSplit.setResizeWeight(0.4); // % space the tangle tree panel takes initially
 
-        add(horizontalSplit, BorderLayout.CENTER);
-        add(parameterPanel, BorderLayout.EAST);
-        add(topPanel, BorderLayout.NORTH);
+        getContentPane().add(horizontalSplit, BorderLayout.CENTER);
+        getContentPane().add(parameterPanel, BorderLayout.EAST);
+        getContentPane().add(topPanel, BorderLayout.NORTH);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -46,5 +46,9 @@ public class MainWindow extends JFrame {
 
     public void drawClusters(double[][] points, int[] clustering) {
         scatterPanel.drawClusters(points, clustering);
+    }
+
+    public void drawTangleSearchTree() {
+        tangleTreePanel.drawTree();
     }
 }

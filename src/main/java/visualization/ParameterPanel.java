@@ -11,11 +11,16 @@ import java.util.Comparator;
 public class ParameterPanel extends JPanel {
     private View view;
 
-    private GridBagConstraints gbc = new GridBagConstraints();
+    // Font and text size
+    private static final String FONT_NAME = "Arial";
+    private static final int TITLE_TEXT_SIZE = 18;
+    private static final int DEFAULT_TEXT_SIZE = 14;
 
-    private String fontName = "Arial";
-    private int titleSize = 18;
-    private int textSize = 14;
+    // Insets used for spacing between components
+    private static final Insets DEFAULT_INSETS = new Insets(5, 5, 5, 5);
+    private static final Insets TITLE_INSETS = new Insets(25, 20, 10, 20);
+
+    private final GridBagConstraints gbc = new GridBagConstraints();
 
     private BitSet[] cuts;
     private double[] cutCosts;
@@ -23,18 +28,20 @@ public class ParameterPanel extends JPanel {
     public ParameterPanel(View view) {
         this.view = view;
 
-        getAndSortCutsAndCosts();
-
         setLayout(new GridBagLayout());
-        gbc.insets = new Insets(5, 5, 5, 5); // Spacing
+        gbc.insets = DEFAULT_INSETS;
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         int x = 0;
 
+        gbc.insets = TITLE_INSETS;
         addToPanel(x, 0, createTitleLabel("Dimension"));
+        gbc.insets = DEFAULT_INSETS;
         x++;
 
+        gbc.insets = TITLE_INSETS;
         addToPanel(x, 0, createTitleLabel("Clustering"));
+        gbc.insets = DEFAULT_INSETS;
         x++;
 
         JTextField aField = new JTextField(10);
@@ -67,7 +74,9 @@ public class ParameterPanel extends JPanel {
         x++;
         x++;
 
+        gbc.insets = TITLE_INSETS;
         addToPanel(x, 0, createTitleLabel("Cuts"));
+        gbc.insets = DEFAULT_INSETS;
         x++;
 
         JCheckBox showCutCheckBox = new JCheckBox("Show cuts");
@@ -108,6 +117,8 @@ public class ParameterPanel extends JPanel {
                     (String) cutGeneratorDropdown.getSelectedItem(),
                     (String) costFunctionDropdown.getSelectedItem()
             );
+            view.drawTangleSearchTree();
+            getAndSortCutsAndCosts();
         });
 
         plusButton.addActionListener(e -> {
@@ -194,13 +205,13 @@ public class ParameterPanel extends JPanel {
 
     private JLabel createTitleLabel(String text) {
         JLabel titleLabel = new JLabel(text);
-        titleLabel.setFont(new Font(fontName, Font.BOLD, titleSize));
+        titleLabel.setFont(new Font(FONT_NAME, Font.BOLD, TITLE_TEXT_SIZE));
         return titleLabel;
     }
 
     private JLabel createTextLabel(String text) {
         JLabel textLabel = new JLabel(text);
-        textLabel.setFont(new Font(fontName, Font.PLAIN, textSize));
+        textLabel.setFont(new Font(FONT_NAME, Font.PLAIN, DEFAULT_TEXT_SIZE));
         textLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         return textLabel;
     }

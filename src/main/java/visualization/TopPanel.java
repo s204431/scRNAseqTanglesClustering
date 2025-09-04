@@ -9,7 +9,7 @@ public class TopPanel extends JPanel {
     public TopPanel(View view) {
         this.view = view;
 
-        setPreferredSize(new Dimension(600, 50));
-        setBackground(Color.YELLOW);
+        setPreferredSize(new Dimension(600, 30));
+        setBackground(Color.BLUE);
     }
 }
