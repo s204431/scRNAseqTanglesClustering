@@ -66,6 +66,7 @@ public class ParameterPanel extends JPanel {
 
         String[] cutGeneratorNames = new String[] {"Simple", "Range", "Local Means"};
         JComboBox<String> cutDropdown = new JComboBox<>(cutGeneratorNames);
+        generateAndSortCutsAndCosts(cutGeneratorNames[0]);
         addToPanel(x, 1, cutDropdown);
         x++;
 
@@ -113,15 +114,14 @@ public class ParameterPanel extends JPanel {
             try {
                 int value = Integer.parseInt(cutNumberField.getText()) + 1;
                 cutNumberField.setText(String.valueOf(value));
-                if (showCutCheckBox.isSelected()) {
-                    String cutGenerator = (String) cutDropdown.getSelectedItem();
-                    generateAndSortCutsAndCosts(cutGenerator);
+                if (cuts != null && showCutCheckBox.isSelected()) {
                     if (value >= cuts.length) {
                         value = cuts.length - 1;
                         cutNumberField.setText(String.valueOf(value));
                     }
                     int currentCut = Integer.parseInt(cutNumberField.getText());
                     view.showCut(cuts[currentCut]);
+                    System.out.println(cutCosts[currentCut]);
                 }
             } catch (NumberFormatException ex) {
                 cutNumberField.setText("0");
@@ -135,11 +135,10 @@ public class ParameterPanel extends JPanel {
                     value = 0;
                 }
                 cutNumberField.setText(String.valueOf(value));
-                if (showCutCheckBox.isSelected()) {
-                    String cutGenerator = (String) cutDropdown.getSelectedItem();
-                    generateAndSortCutsAndCosts(cutGenerator);
+                if (cuts != null && showCutCheckBox.isSelected()) {
                     int currentCut = Integer.parseInt(cutNumberField.getText());
                     view.showCut(cuts[currentCut]);
+                    System.out.println(cutCosts[currentCut]);
                 }
             } catch (NumberFormatException ex) {
                 cutNumberField.setText("0");
@@ -163,8 +162,6 @@ public class ParameterPanel extends JPanel {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
             if (isChecked) {
                 groundTruthCheckBox.setSelected(false);
-                String cutGenerator = (String) cutDropdown.getSelectedItem();
-                generateAndSortCutsAndCosts(cutGenerator);
                 int currentCut = Integer.parseInt(cutNumberField.getText());
                 view.showCut(cuts[currentCut]);
             } else {
@@ -190,15 +187,13 @@ public class ParameterPanel extends JPanel {
         cutNumberField.addActionListener(e -> {
             if (showCutCheckBox.isSelected()) {
                 int value = Integer.parseInt(cutNumberField.getText());
-                String cutGenerator = (String) cutDropdown.getSelectedItem();
-                generateAndSortCutsAndCosts(cutGenerator);
-
                 if (value >= cuts.length) {
                     value = cuts.length - 1;
                     cutNumberField.setText(String.valueOf(value));
                 }
                 int currentCut = Integer.parseInt(cutNumberField.getText());
                 view.showCut(cuts[currentCut]);
+                System.out.println(cutCosts[currentCut]);
             }
         });
     }
