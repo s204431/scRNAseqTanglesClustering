@@ -4,11 +4,14 @@ import com.jujutsu.tsne.TSneConfiguration;
 import com.jujutsu.tsne.barneshut.BHTSne;
 import com.jujutsu.tsne.barneshut.BarnesHutTSne;
 import com.jujutsu.utils.TSneUtils;
+import datasets.CostFunctions;
+import datasets.CutGenerators;
 import datasets.ScRNAseqDataset;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
 import smile.math.matrix.Matrix;
 import smile.validation.metric.NormalizedMutualInformation;
+import util.BitSet;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -32,10 +35,10 @@ public class Model {
         originalData = loadData("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
         groundTruth = loadGroundTruth("data/symsim_labels_5000genes_1000cells_complex.csv");
         doubleData = convertToDouble(originalData);
-        hvgData = highlyVariableGenes(doubleData, 1000);
+        hvgData = highlyVariableGenes(doubleData, 100);
 
         long time = System.currentTimeMillis();
-        projectedData = tsne(doubleData, 2);
+        projectedData = tsne(hvgData, 2);
         //projectedData = doubleData;
         System.out.println(System.currentTimeMillis() - time);
 
@@ -94,8 +97,7 @@ public class Model {
     }
 
     public int[] loadGroundTruth(String filePath) {
-        int[][] temp = loadData("data/symsim_labels_5000genes_1000cells_complex.csv");
-        int[] groundTruth = new int[temp.length];
+        int[][] temp = loadData(filePath);
         int[] gt = new int[temp.length];
         for (int i = 0; i < temp.length; i++) {
             gt[i] = temp[i][0];
@@ -208,6 +210,14 @@ public class Model {
         return data;
     }
 
+    public BitSet[] getCuts(String initialCutGenerator) {
+        return dataset.getInitialCuts(initialCutGenerator);
+    }
+
+    public double[] getCutCosts(String costFunctionName) {
+        return dataset.getCutCosts(costFunctionName);
+    }
+
     public int[] getGroundTruth() {
         return groundTruth;
     }
@@ -235,4 +245,6 @@ public class Model {
     public ScRNAseqDataset getDataset() {
         return dataset;
     }
+
+
 }

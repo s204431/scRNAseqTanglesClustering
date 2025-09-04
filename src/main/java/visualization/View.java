@@ -1,6 +1,7 @@
 package visualization;
 
 import clustering.Model;
+import util.BitSet;
 
 import javax.swing.*;
 
@@ -13,7 +14,7 @@ public class View {
     public View(Model model) {
         this.model = model;
 
-        points = model.tsne(model.getDoubleData(), 2);
+        points = model.tsne(model.getHvgData(), 2);
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
@@ -36,5 +37,23 @@ public class View {
 
     public void showGroundTruth() {
         showClustering(model.getGroundTruth());
+    }
+
+    public void showCut(BitSet cut) {
+        int[] clustering = new int[cut.size()];
+        for (int i = 0; i < cut.size(); i++) {
+            if (cut.get(i)) {
+                clustering[i] = 1;
+            }
+        }
+        showClustering(clustering);
+    }
+
+    public BitSet[] getCuts(String initialCutGenerator) {
+        return model.getCuts(initialCutGenerator);
+    }
+
+    public double[] getCutCosts(String costFunctionName) {
+        return model.getCutCosts(costFunctionName);
     }
 }
