@@ -56,12 +56,12 @@ public class CutGenerators {
         bitSets.add(getInitialCutsLocalMeans(Model.pca(dataPoints, nComponents), a));
 
         bitSets.add(getInitialCutsLocalMeans(Model.tsne(dataPoints, nComponents), a));
-        try {
+        /*try {
             bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
         }
         catch (Exception e) {
 
-        }
+        }*/
         bitSets.add(getInitialCutsLocalMeans(Model.svd(dataPoints, nComponents), a));
 
         return mergeCuts(bitSets);

@@ -11,7 +11,9 @@ import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
 import smile.math.matrix.Matrix;
 import smile.validation.metric.NormalizedMutualInformation;
+import smile.validation.metric.AdjustedRandIndex;
 import util.BitSet;
+import util.Tuple;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -19,6 +21,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+
+import static main.Main.runPython;
 
 public class Model {
     private int[][] originalData;
@@ -45,16 +49,20 @@ public class Model {
         dataset = new ScRNAseqDataset(projectedData);
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
-        //Tuple<int[], Integer> pythonResult = runPython(filePath);
-        //double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, gt);
-        //System.out.println("NMI python: " + NMIPython);
+        /*Tuple<int[], Integer> pythonResult = runPython("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
+        double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
+        double randIndex = AdjustedRandIndex.of(groundTruth, pythonResult.x);
+        System.out.println("NMI python: " + NMIPython);
+        System.out.println("Rand index python: " + randIndex);*/
     }
 
     public void cluster(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
         tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
         hardClustering = tangleClusterer.getHardClustering();
         double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+        double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
         System.out.println(NMIScore);
+        System.out.println(randIndex);
     }
 
     public static double[][] pca(double[][] data, int nComponents) {
