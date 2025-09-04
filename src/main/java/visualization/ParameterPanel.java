@@ -1,6 +1,8 @@
 package visualization;
 
+import clustering.TangleClusterer;
 import util.BitSet;
+import util.Tuple;
 
 import javax.swing.*;
 import java.awt.*;
@@ -219,6 +221,9 @@ public class ParameterPanel extends JPanel {
     private void getAndSortCutsAndCosts() {
         cuts = view.getCuts();
         cutCosts = view.getCutCosts();
+        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
+        cuts = result.x;
+        cutCosts = result.y;
 
         int n = cutCosts.length;
         Integer[] indices = new Integer[n];

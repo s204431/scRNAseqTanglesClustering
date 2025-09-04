@@ -1,15 +1,87 @@
 package datasets;
 
+import clustering.Model;
+import main.Main;
 import util.BitSet;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 public class CutGenerators {
 
     //NOTE: The content in this file is from the bachelor project.
 
-    private static final int precision = 1; //Determines the number of cuts generated.
+    private static final double precision = 1; //Determines the number of cuts generated.
+
+    public double[] cutCosts; //For local means only
+
+
+    public BitSet[] splitCutGenerator(double[][] dataPoints, int a) {
+        int splitSize = 1000;
+
+        List<double[][]> splits = new ArrayList<>();
+
+
+        splits.add(new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length)]);
+
+        int index = 0;
+        for (int i = 0; i < dataPoints[0].length; i++) {
+            for (int j = 0; j < dataPoints.length; j++) {
+                splits.getLast()[j][index] = dataPoints[j][i];
+            }
+            index++;
+            if (index == splitSize && i < dataPoints[0].length-1) {
+                index = 0;
+                splits.add(new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length - i - 1)]);
+            }
+        }
+
+        List<BitSet[]> bitSets = new ArrayList<>();
+
+        for (int i = 0; i < splits.size(); i++) {
+            System.out.println(splits.get(i)[0].length);
+            bitSets.add(combinedCutGenerator(splits.get(i), a));
+        }
+
+        return mergeCuts(bitSets);
+    }
+
+    public BitSet[] combinedCutGenerator(double[][] dataPoints, int a) {
+        int nComponents = 3;
+
+        List<BitSet[]> bitSets = new ArrayList<>();
+
+        bitSets.add(getInitialCutsLocalMeans(Model.pca(dataPoints, nComponents), a));
+
+        bitSets.add(getInitialCutsLocalMeans(Model.tsne(dataPoints, nComponents), a));
+        try {
+            bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
+        }
+        catch (Exception e) {
+
+        }
+        bitSets.add(getInitialCutsLocalMeans(Model.svd(dataPoints, nComponents), a));
+
+        return mergeCuts(bitSets);
+    }
+
+    public BitSet[] mergeCuts(List<BitSet[]> bitSets) {
+        int length = 0;
+        for (int i = 0; i < bitSets.size(); i++) {
+            length += bitSets.get(i).length;
+        }
+        BitSet[] merged = new BitSet[length];
+        int index = 0;
+        for (int i = 0; i < bitSets.size(); i++) {
+            for (int j = 0; j < bitSets.get(i).length; j++) {
+                merged[index] = bitSets.get(i)[j];
+                index++;
+            }
+        }
+        return merged;
+    }
 
     //Original initial cut generator using simple axis parallel cuts with specific amount of points between them.
     public BitSet[] getInitialCutsSimple(double[][] dataPoints, int a) {
@@ -118,6 +190,7 @@ public class CutGenerators {
             }
         }
         cutsAreAxisParallel = true;*/
+        System.out.println(result.length);
         return result;
     }
 
@@ -218,12 +291,12 @@ public class CutGenerators {
             for (int j = 0; j < axisParallelCuts[i].size(); j++) {
                 this.axisParallelCuts[i][j] = axisParallelCuts[i].get(j);
             }
-        }
+        }*/
         cutCosts = new double[costs.size()];
         for (int i = 0; i < costs.size(); i++) {
             cutCosts[i] = costs.get(i);
         }
-        cutsAreAxisParallel = false;*/
+        //cutsAreAxisParallel = false;
         return result;
     }
 

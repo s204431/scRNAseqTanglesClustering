@@ -8,6 +8,7 @@ import json
 input_str = sys.stdin.readline().strip()
 
 #df = pd.read_csv("data/symsim_observed_counts_5000genes_1000cells_complex.csv", index_col=0)
+
 df = pd.read_csv(input_str, index_col=0)
 adata = ad.AnnData(df)
 

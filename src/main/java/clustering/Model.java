@@ -35,15 +35,15 @@ public class Model {
         originalData = loadData("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
         groundTruth = loadGroundTruth("data/symsim_labels_5000genes_1000cells_complex.csv");
         doubleData = convertToDouble(originalData);
-        hvgData = highlyVariableGenes(doubleData, 100);
+        hvgData = highlyVariableGenes(doubleData, 5000);
 
         long time = System.currentTimeMillis();
-        projectedData = tsne(hvgData, 2);
-        //projectedData = doubleData;
+        //projectedData = tsne(hvgData, 2);
+        projectedData = hvgData;
         System.out.println(System.currentTimeMillis() - time);
 
         dataset = new ScRNAseqDataset(projectedData);
-        cluster(dataset, 70, 0, "Range", "Distance To Mean");
+        //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
         //Tuple<int[], Integer> pythonResult = runPython(filePath);
         //double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, gt);
@@ -57,12 +57,12 @@ public class Model {
         System.out.println(NMIScore);
     }
 
-    public double[][] pca(double[][] data, int nComponents) {
+    public static double[][] pca(double[][] data, int nComponents) {
         PCA pca = PCA.cor(data);
         return pca.getProjection(nComponents).apply(data);
     }
 
-    public double[][] svd(double[][] data, int nComponents) {
+    public static double[][] svd(double[][] data, int nComponents) {
         Matrix X = Matrix.of(data);
         Matrix.SVD svd = X.svd();
 
@@ -79,7 +79,7 @@ public class Model {
         return projectedData.toArray();
     }
 
-    public double[][] tsne(double[][] data, int nComponents) {
+    public static double[][] tsne(double[][] data, int nComponents) {
         int initialDims = data[0].length;
         double perplexity = 20.0;
         int maxIterations = 500;
@@ -88,7 +88,7 @@ public class Model {
         return tsne.tsne(config);
     }
 
-    public double[][] umap(double[][] data, int nComponents) {
+    public static double[][] umap(double[][] data, int nComponents) {
         return UMAP.fit(data, new UMAP.Options(2, nComponents, 200, 1, 0.1, 1.0, 5, 1.0, 2));
     }
 

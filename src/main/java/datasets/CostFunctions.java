@@ -1,5 +1,6 @@
 package datasets;
 
+import main.Main;
 import util.BitSet;
 
 public class CostFunctions {
@@ -8,6 +9,9 @@ public class CostFunctions {
 
     //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.
     public double[] pairwiseDistanceCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+
+        dataPoints = Main.tsne(dataPoints, 2);
+
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
@@ -31,13 +35,22 @@ public class CostFunctions {
 
     //Distance to mean cost function, which uses the sum of the distance to the opposite side mean for every point (has linear time complexity).
     public double[] distanceToMeanCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+        long time1 = System.nanoTime();
+
+        dataPoints = Main.tsne(dataPoints, 2);
+
+        long expTime = 0;
+
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
+
         for (int i = 0; i < initialCuts.length; i++) {
             int cutCount = initialCuts[i].count();
             double[] mean1 = new double[dataPoints[0].length];
             double[] mean2 = new double[dataPoints[0].length];
             //Calculate means of the two sides of the cut.
+
+            long time2 = System.nanoTime();
             for (int j = 0; j < initialCuts[i].size(); j++) {
                 for (int k = 0; k < dataPoints[0].length; k++) {
                     if (initialCuts[i].get(j)) {
@@ -48,6 +61,7 @@ public class CostFunctions {
                     }
                 }
             }
+            expTime += System.nanoTime() - time2;
             for (int j = 0; j < mean1.length; j++) {
                 mean1[j] /= cutCount;
                 mean2[j] /= initialCuts[i].size() - cutCount;
@@ -59,6 +73,8 @@ public class CostFunctions {
             }
         }
         //cutCosts = costs;
+        System.out.println(expTime/1000000.0);
+        System.out.println((System.nanoTime() - time1)/1000000.0);
         return costs;
     }
 

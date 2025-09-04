@@ -38,7 +38,8 @@ public class ScRNAseqDataset {
                 break;
 
             default:
-                initialCuts = cutGenerators.getInitialCutsSimple(data, a);
+                //initialCuts = cutGenerators.getInitialCutsSimple(data, a);
+                initialCuts = cutGenerators.splitCutGenerator(data, a);
                 break;
         }
 
@@ -52,7 +53,8 @@ public class ScRNAseqDataset {
                 break;
 
             default:
-                cutCosts = costFunctions.pairwiseDistanceCostFunction(data, initialCuts);
+                //cutCosts = costFunctions.pairwiseDistanceCostFunction(data, initialCuts);
+                cutCosts = cutGenerators.cutCosts;
                 break;
         }
 
