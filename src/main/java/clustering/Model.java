@@ -7,6 +7,7 @@ import com.jujutsu.utils.TSneUtils;
 import datasets.CostFunctions;
 import datasets.CutGenerators;
 import datasets.ScRNAseqDataset;
+import monitor.Monitor;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
 import smile.math.matrix.Matrix;
@@ -32,6 +33,8 @@ public class Model {
     private ScRNAseqDataset dataset;
     private int[] groundTruth;
     private int[] hardClustering;
+
+    private Monitor monitor;
 
     private TangleClusterer tangleClusterer = new TangleClusterer();
 
@@ -254,5 +257,9 @@ public class Model {
         return dataset;
     }
 
+    public void setMonitor(Monitor monitor) {
+        this.monitor = monitor;
+        tangleClusterer.setMonitor(monitor);
+    }
 
 }

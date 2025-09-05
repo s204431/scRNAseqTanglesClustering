@@ -1,6 +1,7 @@
 package clustering;
 
 import clustering.TangleSearchTree.Node;
+import monitor.Monitor;
 import util.BitSet;
 import util.Tuple;
 import datasets.ScRNAseqDataset;
@@ -14,6 +15,8 @@ public class TangleClusterer {
     //This class is used to generate a clustering with tangles.
 
     private TangleSearchTree tangleSearchTree;
+
+    private Monitor monitor;
 
     //Ensure that it can only be created within this package.
     public TangleClusterer() {}
@@ -139,6 +142,10 @@ public class TangleClusterer {
         indices[i] = indices[h];
         indices[h] = temp2;
         return i;
+    }
+
+    public void setMonitor(Monitor monitor) {
+        this.monitor = monitor;
     }
 
 }

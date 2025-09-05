@@ -1,6 +1,7 @@
 package visualization;
 
 import clustering.Model;
+import monitor.Monitor;
 import util.BitSet;
 
 import javax.swing.*;
@@ -10,6 +11,8 @@ public class View {
     private MainWindow window;
 
     private double[][] points;
+
+    private Monitor monitor;
 
     public View(Model model) {
         this.model = model;
@@ -59,5 +62,9 @@ public class View {
 
     public void drawTangleSearchTree() {
         window.drawTangleSearchTree();
+    }
+
+    public void setMonitor(Monitor monitor) {
+        this.monitor = monitor;
     }
 }

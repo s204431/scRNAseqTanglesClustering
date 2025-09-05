@@ -6,6 +6,7 @@ import com.jujutsu.tsne.barneshut.BHTSne;
 import com.jujutsu.tsne.barneshut.BarnesHutTSne;
 import com.jujutsu.utils.TSneUtils;
 
+import monitor.Monitor;
 import smile.feature.extraction.PCA;
 import smile.math.matrix.Matrix;
 import util.Tuple;
@@ -25,6 +26,10 @@ public class Main {
     public static void main(String[] args) {
         Model model = new Model();
         View view = new View(model);
+
+        Monitor monitor = new Monitor();
+        model.setMonitor(monitor);
+        view.setMonitor(monitor);
 
         /*
         // Read data
