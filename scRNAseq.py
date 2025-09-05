@@ -24,7 +24,7 @@ sc.pp.log1p(adata)
 
 sc.pp.highly_variable_genes(adata, n_top_genes=2000)
 
-sc.tl.pca(adata)
+sc.tl.pca(adata, n_comps=100)
 
 sc.pp.neighbors(adata)
 

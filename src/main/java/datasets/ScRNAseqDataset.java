@@ -53,7 +53,9 @@ public class ScRNAseqDataset {
                 break;
 
             default:
-                cutCosts = costFunctions.pairwiseDistanceCostFunction(data, initialCuts);
+                //cutCosts = costFunctions.pairwiseDistanceCostFunction(data, initialCuts);
+                //cutCosts = costFunctions.shortestDistanceCostFunction(data, initialCuts);
+                cutCosts = costFunctions.averageCostFunction(data, initialCuts);
                 //cutCosts = cutGenerators.cutCosts;
                 break;
         }

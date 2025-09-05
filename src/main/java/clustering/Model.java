@@ -7,6 +7,20 @@ import com.jujutsu.utils.TSneUtils;
 import datasets.CostFunctions;
 import datasets.CutGenerators;
 import datasets.ScRNAseqDataset;
+import elki.data.DoubleVector;
+import elki.data.type.SimpleTypeInformation;
+import elki.data.type.TypeUtil;
+import elki.database.Database;
+import elki.database.ids.DBIDIter;
+import elki.database.relation.Relation;
+import elki.database.StaticArrayDatabase;
+import elki.datasource.ArrayAdapterDatabaseConnection;
+import elki.datasource.DatabaseConnection;
+import elki.projection.AffinityMatrixBuilder;
+import elki.projection.BarnesHutTSNE;
+import elki.projection.PerplexityAffinityMatrixBuilder;
+import elki.utilities.random.RandomFactory;
+import elki.distance.minkowski.EuclideanDistance;
 import monitor.Monitor;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
@@ -19,9 +33,7 @@ import util.Tuple;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 import static main.Main.runPython;
 
@@ -91,12 +103,63 @@ public class Model {
     }
 
     public static double[][] tsne(double[][] data, int nComponents) {
+        long time = System.currentTimeMillis();
+
         int initialDims = data[0].length;
         double perplexity = 20.0;
-        int maxIterations = 500;
-        BarnesHutTSne tsne = new BHTSne();
+        int maxIterations = 100;
+        /*BarnesHutTSne tsne = new BHTSne();
         TSneConfiguration config = TSneUtils.buildConfig(data, nComponents, initialDims, perplexity, maxIterations);
-        return tsne.tsne(config);
+
+        double[][] output = tsne.tsne(config);
+        System.out.println("TSNE time: " + (System.currentTimeMillis() - time));
+        return output;*/
+
+
+        // Wrap raw data into ELKI database
+        Database db = new StaticArrayDatabase(new ArrayAdapterDatabaseConnection(data), null);
+        db.initialize();
+        Relation<DoubleVector> rel = db.getRelation(TypeUtil.DOUBLE_VECTOR_FIELD);
+
+        // Affinity matrix builder (perplexity 30, Euclidean distance)
+        AffinityMatrixBuilder<DoubleVector> affinity =
+                new PerplexityAffinityMatrixBuilder<>(EuclideanDistance.STATIC, perplexity);
+
+        // Construct Barnes-Hut t-SNE
+        BarnesHutTSNE<DoubleVector> tsne = new BarnesHutTSNE<>(
+                affinity,
+                nComponents,
+                0.8,              // finalMomentum
+                200.0,            // learningRate
+                maxIterations,             // maxIterations
+                RandomFactory.DEFAULT,
+                false,            // keep original data
+                0.5               // theta (Barnes-Hut approximation)
+        );
+
+        // Run algorithm
+        Relation<DoubleVector> projected = tsne.run(db, rel);
+
+        // Collect results using DBIDIter
+        List<double[]> resultList = new ArrayList<>();
+        for (DBIDIter iter = projected.getDBIDs().iter(); iter.valid(); iter.advance()) {
+            DoubleVector vec = projected.get(iter);
+            double[] coords = new double[nComponents];
+            for (int j = 0; j < nComponents; j++) {
+                coords[j] = vec.doubleValue(j);
+            }
+            resultList.add(coords);
+        }
+
+        // Convert list to array
+        double[][] output = new double[resultList.size()][nComponents];
+        for (int i = 0; i < output.length; i++) {
+            output[i] = resultList.get(i);
+        }
+
+        System.out.println("TSNE time: " + (System.currentTimeMillis() - time));
+
+        return output;
     }
 
     public static double[][] umap(double[][] data, int nComponents) {
@@ -160,7 +223,7 @@ public class Model {
     }
 
     private double[][] convertToDouble(int[][] intData) {
-        int dimensions = 5000;//data[0].length;
+        int dimensions = intData[0].length;//data[0].length;
         double[][] doubleData = new double[intData.length][];
         int nZeros = 0;
         for (int i = 0; i < intData.length; i++) {
