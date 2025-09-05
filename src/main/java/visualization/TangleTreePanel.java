@@ -31,6 +31,8 @@ public class TangleTreePanel extends JPanel {
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
 
+    private boolean condensed = false;
+
     public TangleTreePanel(View view) {
         this.view = view;
 
@@ -46,7 +48,7 @@ public class TangleTreePanel extends JPanel {
         DelegateTree<String, String> tree = new DelegateTree<>();
 
         // Add nodes to tree
-        addNodes(tree, root, "None", 0, false);
+        addNodes(tree, root, "None", 0, condensed);
 
         // Layout
         TreeLayout<String, String> layout = new TreeLayout<>(tree);
@@ -84,6 +86,8 @@ public class TangleTreePanel extends JPanel {
                 BitSet cut = idToCut.get(uniqueId);
                 int cutIndex = idToCutIndex.get(uniqueId);
                 view.showCut(cut, cutIndex);
+
+                System.out.println(sortedCutCosts[cutIndex]);
             }
         });
 

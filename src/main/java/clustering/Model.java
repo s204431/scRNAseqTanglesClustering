@@ -54,7 +54,7 @@ public class Model {
         originalData = loadData("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
         groundTruth = loadGroundTruth("data/symsim_labels_5000genes_1000cells_complex.csv");
         doubleData = convertToDouble(originalData);
-        hvgData = highlyVariableGenes(doubleData, 100);
+        hvgData = highlyVariableGenes(doubleData, 5000);
 
         long time = System.currentTimeMillis();
         //projectedData = tsne(hvgData, 2);
