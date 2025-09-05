@@ -30,6 +30,7 @@ public class TangleClusterer {
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
         TangleSearchTree tree = generateTangleSearchTree(initialCuts, costs, a, psi);
+        monitor.setTree(tree);
         tangleSearchTree = tree;
         try {
             tree.condenseTree(1);

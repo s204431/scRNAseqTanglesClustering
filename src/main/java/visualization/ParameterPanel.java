@@ -24,8 +24,11 @@ public class ParameterPanel extends JPanel {
 
     private final GridBagConstraints gbc = new GridBagConstraints();
 
-    private BitSet[] cuts;
-    private double[] cutCosts;
+    private BitSet[] sortedCuts;
+    private double[] sortedCutCosts;
+
+    private JTextField cutNumberField;
+    private JCheckBox showCutCheckBox;
 
     public ParameterPanel(View view) {
         this.view = view;
@@ -81,12 +84,12 @@ public class ParameterPanel extends JPanel {
         gbc.insets = DEFAULT_INSETS;
         x++;
 
-        JCheckBox showCutCheckBox = new JCheckBox("Show cuts");
+        showCutCheckBox = new JCheckBox("Show cuts");
         showCutCheckBox.setSelected(false);
         addToPanel(x, 0, showCutCheckBox);
 
         // A text field with buttons on each side to increment or decrement the cut number
-        JTextField cutNumberField = new JTextField("0", 3);
+        cutNumberField = new JTextField("0", 3);
         JButton minusButton = new JButton("-");
         JButton plusButton = new JButton("+");
 
@@ -121,20 +124,22 @@ public class ParameterPanel extends JPanel {
             );
             view.drawTangleSearchTree();
             getAndSortCutsAndCosts();
+            groundTruthCheckBox.setSelected(false);
+            turnOffCuts();
         });
 
         plusButton.addActionListener(e -> {
             try {
                 int value = Integer.parseInt(cutNumberField.getText()) + 1;
                 cutNumberField.setText(String.valueOf(value));
-                if (cuts != null && showCutCheckBox.isSelected()) {
-                    if (value >= cuts.length) {
-                        value = cuts.length - 1;
+                if (sortedCuts != null && showCutCheckBox.isSelected()) {
+                    if (value >= sortedCuts.length) {
+                        value = sortedCuts.length - 1;
                         cutNumberField.setText(String.valueOf(value));
                     }
                     int currentCut = Integer.parseInt(cutNumberField.getText());
-                    view.showCut(cuts[currentCut]);
-                    System.out.println(cutCosts[currentCut]);
+                    view.showCut(sortedCuts[currentCut], currentCut);
+                    System.out.println(sortedCutCosts[currentCut]);
                 }
             } catch (NumberFormatException ex) {
                 cutNumberField.setText("0");
@@ -148,10 +153,10 @@ public class ParameterPanel extends JPanel {
                     value = 0;
                 }
                 cutNumberField.setText(String.valueOf(value));
-                if (cuts != null && showCutCheckBox.isSelected()) {
+                if (sortedCuts != null && showCutCheckBox.isSelected()) {
                     int currentCut = Integer.parseInt(cutNumberField.getText());
-                    view.showCut(cuts[currentCut]);
-                    System.out.println(cutCosts[currentCut]);
+                    view.showCut(sortedCuts[currentCut], currentCut);
+                    System.out.println(sortedCutCosts[currentCut]);
                 }
             } catch (NumberFormatException ex) {
                 cutNumberField.setText("0");
@@ -175,8 +180,12 @@ public class ParameterPanel extends JPanel {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
             if (isChecked) {
                 groundTruthCheckBox.setSelected(false);
+                if (sortedCuts == null) {
+                    view.showClustering();
+                    return;
+                }
                 int currentCut = Integer.parseInt(cutNumberField.getText());
-                view.showCut(cuts[currentCut]);
+                view.showCut(sortedCuts[currentCut], currentCut);
             } else {
                 view.showClustering();
             }
@@ -188,13 +197,13 @@ public class ParameterPanel extends JPanel {
         cutNumberField.addActionListener(e -> {
             if (showCutCheckBox.isSelected()) {
                 int value = Integer.parseInt(cutNumberField.getText());
-                if (value >= cuts.length) {
-                    value = cuts.length - 1;
+                if (value >= sortedCuts.length) {
+                    value = sortedCuts.length - 1;
                     cutNumberField.setText(String.valueOf(value));
                 }
                 int currentCut = Integer.parseInt(cutNumberField.getText());
-                view.showCut(cuts[currentCut]);
-                System.out.println(cutCosts[currentCut]);
+                view.showCut(sortedCuts[currentCut], currentCut);
+                System.out.println(sortedCutCosts[currentCut]);
             }
         });
     }
@@ -219,8 +228,8 @@ public class ParameterPanel extends JPanel {
     }
 
     private void getAndSortCutsAndCosts() {
-        cuts = view.getCuts();
-        cutCosts = view.getCutCosts();
+        BitSet[] cuts = view.getCuts();
+        double[] cutCosts = view.getCutCosts();
         Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
         cuts = result.x;
         cutCosts = result.y;
@@ -229,7 +238,8 @@ public class ParameterPanel extends JPanel {
         Integer[] indices = new Integer[n];
         for (int i = 0; i < n; i++) indices[i] = i;
 
-        Arrays.sort(indices, Comparator.comparingDouble(i -> cutCosts[i]));
+        final double[] finalCutCosts = cutCosts;
+        Arrays.sort(indices, Comparator.comparingDouble(i -> finalCutCosts[i]));
         BitSet[] cutsSorted = new BitSet[n];
         double[] costsSorted = new double[n];
 
@@ -238,7 +248,16 @@ public class ParameterPanel extends JPanel {
             costsSorted[i] = cutCosts[indices[i]];
         }
 
-        cuts = cutsSorted;
-        cutCosts = costsSorted;
+        sortedCuts = cutsSorted;
+        sortedCutCosts = costsSorted;
+    }
+
+    public void turnOnCuts(int cutIndex) {
+        cutNumberField.setText("" + cutIndex);
+        showCutCheckBox.setSelected(true);
+    }
+
+    public void turnOffCuts() {
+        showCutCheckBox.setSelected(false);
     }
 }

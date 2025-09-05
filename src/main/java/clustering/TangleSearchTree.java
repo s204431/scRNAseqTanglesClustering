@@ -371,18 +371,23 @@ public class TangleSearchTree {
         return l1 | l2 | l3;
     }
 
-    protected class Node {
+    //Returns the root of the tree
+    public Node getRoot() {
+        return root;
+    }
+
+    public class Node {
 
         //This class represents the node of the tree.
 
-        private int originalOrientation;
-        private final BitSet condensedOrientations;
-        private final List<Integer> distinguishedCuts = new ArrayList<>();
-        private Node leftChild;
-        private Node rightChild;
-        private Node parent;
-        private boolean side;
-        private int originalDepth = 1;
+        public int originalOrientation;
+        public final BitSet condensedOrientations;
+        public final List<Integer> distinguishedCuts = new ArrayList<>();
+        public Node leftChild;
+        public Node rightChild;
+        public Node parent;
+        public boolean side;
+        public int originalDepth = 1;
 
         //Creates a default node (used to generate the root).
         private Node() {

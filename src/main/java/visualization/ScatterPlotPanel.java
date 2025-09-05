@@ -31,6 +31,11 @@ public class ScatterPlotPanel extends JPanel {
     }
 
     public void drawClusters(double[][] points, int[] clusters) {
+        if (clusters == null) {
+            drawScatterPlot(points);
+            return;
+        }
+
         if (clusters.length != points.length) {
             System.out.println("Cluster length does not match points length in ScatterPlotPanel. Maybe use setPoints()");
             return;

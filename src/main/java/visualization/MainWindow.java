@@ -1,6 +1,8 @@
 package visualization;
 
+import clustering.TangleSearchTree;
 import com.sun.tools.javac.Main;
+import util.BitSet;
 
 import javax.swing.*;
 import javax.swing.text.StyledEditorKit;
@@ -48,7 +50,15 @@ public class MainWindow extends JFrame {
         scatterPanel.drawClusters(points, clustering);
     }
 
-    public void drawTangleSearchTree() {
-        tangleTreePanel.drawTree();
+    public void drawTangleSearchTree(TangleSearchTree tree) {
+        tangleTreePanel.drawTree(tree);
+    }
+
+    public void turnOnCuts(int cutIndex) {
+        parameterPanel.turnOnCuts(cutIndex);
+    }
+
+    public void turnOffCuts() {
+        parameterPanel.turnOffCuts();
     }
 }

@@ -1,6 +1,7 @@
 package visualization;
 
 import clustering.Model;
+import clustering.TangleSearchTree;
 import monitor.Monitor;
 import util.BitSet;
 
@@ -36,13 +37,14 @@ public class View {
 
     public void showClustering() {
         window.drawClusters(points, model.getHardClustering());
+        window.turnOffCuts();
     }
 
     public void showGroundTruth() {
         showClustering(model.getGroundTruth());
     }
 
-    public void showCut(BitSet cut) {
+    public void showCut(BitSet cut, int cutIndex) {
         int[] clustering = new int[cut.size()];
         for (int i = 0; i < cut.size(); i++) {
             if (cut.get(i)) {
@@ -50,6 +52,7 @@ public class View {
             }
         }
         showClustering(clustering);
+        window.turnOnCuts(cutIndex);
     }
 
     public BitSet[] getCuts() {
@@ -61,7 +64,7 @@ public class View {
     }
 
     public void drawTangleSearchTree() {
-        window.drawTangleSearchTree();
+        window.drawTangleSearchTree(monitor.getTree());
     }
 
     public void setMonitor(Monitor monitor) {
