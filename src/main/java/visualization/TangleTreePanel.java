@@ -27,6 +27,7 @@ public class TangleTreePanel extends JPanel {
     private HashMap<String, BitSet> idToCut = new HashMap<>();
     private HashMap<String, Integer> idToCutIndex = new HashMap<>();
     private HashMap<Integer, Integer> originalCutIndexToSortedCutIndex = new HashMap<>();
+    private HashMap<Integer, Integer> sortedCutIndexToOriginalCutIndex = new HashMap<>();
 
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
@@ -117,7 +118,7 @@ public class TangleTreePanel extends JPanel {
                 idToCutIndex.put(uniqueId, cutIndex);
             } else {
                 for (int i = parentCutIndex + 1; i <= cutIndex; i++) {
-                    boolean left = node.condensedOrientations.get(i);
+                    boolean left = node.condensedOrientations.get(sortedCutIndexToOriginalCutIndex.get(i));
                     uniqueId = "" + UUID.randomUUID();
                     nodeName = i + (left ? "L" : "R");
 
@@ -173,6 +174,7 @@ public class TangleTreePanel extends JPanel {
             cutsSorted[i] = cuts[indices[i]];
             costsSorted[i] = cutCosts[indices[i]];
             originalCutIndexToSortedCutIndex.put(indices[i], i);
+            sortedCutIndexToOriginalCutIndex.put(i, indices[i]);
         }
 
         sortedCuts = cutsSorted;

@@ -51,8 +51,8 @@ public class View {
                 clustering[i] = 1;
             }
         }
-        showClustering(clustering);
         window.turnOnCuts(cutIndex);
+        showClustering(clustering);
     }
 
     public BitSet[] getCuts() {

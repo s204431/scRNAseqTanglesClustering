@@ -1,11 +1,8 @@
 package visualization;
 
 import clustering.TangleSearchTree;
-import com.sun.tools.javac.Main;
-import util.BitSet;
 
 import javax.swing.*;
-import javax.swing.text.StyledEditorKit;
 import java.awt.*;
 
 public class MainWindow extends JFrame {
