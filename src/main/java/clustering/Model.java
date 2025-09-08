@@ -29,6 +29,19 @@ import java.util.*;
 
 import static main.Main.runPython;
 
+
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.layers.variational.VariationalAutoencoder;
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.dataset.DataSet;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
+
+
 public class Model {
     private double[][] originalData;
     private double[][] normalizedData;
@@ -57,7 +70,7 @@ public class Model {
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
         /*
-        Tuple<int[], Integer> pythonResult = runPython("data/Ear_data.csv");
+        Tuple<int[], Integer> pythonResult = runPython("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
         double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
         double randIndex = AdjustedRandIndex.of(groundTruth, pythonResult.x);
         System.out.println("NMI python: " + NMIPython);
@@ -161,6 +174,41 @@ public class Model {
         return UMAP.fit(data, new UMAP.Options(2, nComponents, 200, 1, 0.1, 1.0, 5, 1.0, 2));
     }
 
+    public static double[][] vae(double[][] data, int nComponents) {
+
+        INDArray input = Nd4j.create(data);
+
+        MultiLayerNetwork model = new MultiLayerNetwork(new NeuralNetConfiguration.Builder()
+                .seed(123)
+                .list()
+
+                .layer(0, new VariationalAutoencoder.Builder()
+                        .nIn(data[0].length)
+                        .nOut(100)
+                        .activation(Activation.RELU)
+                        .build())
+
+                .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+                        .nIn(100)
+                        .nOut(data[0].length)
+                        .activation(Activation.SIGMOID)
+                        .build())
+                .build());
+
+        model.init();
+        model.setListeners(new ScoreIterationListener(10));
+
+        DataSet ds = new DataSet(input, input);
+
+        for (int i = 0; i < 1000; i++) {
+            model.fit(ds);
+        }
+
+        INDArray encoded = model.feedForwardToLayer(0, input, false).get(1);
+
+        return tsne(encoded.toDoubleMatrix(), nComponents);
+    }
+
     public double[][] loadData(String filePath) {
         return readCSV(filePath);
     }
@@ -193,7 +241,7 @@ public class Model {
             }
             double variance = sqDiff / (nCells - 1);
 
-            dispersions[g] = mean > 0 ? -variance / mean : 0.0;
+            dispersions[g] = mean > 0 ? variance / mean : 0.0;
         }
 
         // Get indices sorted by dispersion (descending)

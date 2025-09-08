@@ -16,6 +16,7 @@ public class CostFunctions {
 
         double[] costs = new double[initialCuts.length];
         double[][] currentSplit = new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length)];
+        List<double[][]> splits = new ArrayList<>();
         int index = 0;
 
         for (int i = 0; i < dataPoints[0].length; i++) {
@@ -25,20 +26,61 @@ public class CostFunctions {
             index++;
             if (index == splitSize && i < dataPoints[0].length-1) {
                 index = 0;
-                double[] splitCosts = shortestDistanceCostFunction(currentSplit, initialCuts);
+                splits.add(currentSplit);
+                /*double[] splitCosts = shortestDistanceCostFunction(currentSplit, initialCuts);
                 for (int j = 0; j < costs.length; j++) {
                     costs[j] += splitCosts[j];
-                }
+                }*/
                 currentSplit = new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length - i - 1)];
             }
         }
 
-        double[] splitCosts = pairwiseDistanceCostFunction(currentSplit, initialCuts);
+        splits.add(currentSplit);
+        /*double[] splitCosts = pairwiseDistanceCostFunction(currentSplit, initialCuts);
         for (int j = 0; j < costs.length; j++) {
             costs[j] += splitCosts[j];
+        }*/
+
+        AverageParallelRunner[] runnables = new AverageParallelRunner[splits.size()];
+        Thread[] threads = new Thread[splits.size()];
+        for (int i = 0; i < splits.size(); i++) {
+            runnables[i] = new AverageParallelRunner();
+            runnables[i].data = splits.get(i);
+            runnables[i].initialCuts = initialCuts;
+            threads[i] = new Thread(runnables[i]);
+            threads[i].start();
+        }
+
+        /*for (int i = 0; i < splits.size(); i++) {
+            System.out.println(splits.get(i)[0].length);
+            bitSets.add(combinedCutGenerator(splits.get(i), a));
+        }*/
+
+        for (int i = 0; i < splits.size(); i++) {
+            try {
+                threads[i].join();
+                double[] splitCosts = runnables[i].result;
+                for (int j = 0; j < costs.length; j++) {
+                    costs[j] += splitCosts[j];
+                }
+            }
+            catch (Exception e) {
+
+            }
         }
 
         return costs;
+    }
+
+    public class AverageParallelRunner implements Runnable {
+
+        public double[] result;
+        public double[][] data;
+        public BitSet[] initialCuts;
+        @Override
+        public void run() {
+            result = shortestDistanceCostFunction(data, initialCuts);
+        }
     }
 
     //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.

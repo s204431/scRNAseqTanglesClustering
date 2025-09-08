@@ -13,7 +13,7 @@ public class CutGenerators {
 
     //NOTE: The content in this file is from the bachelor project.
 
-    private static final double precision = 1; //Determines the number of cuts generated.
+    private static final double precision = 1.0; //Determines the number of cuts generated.
 
     public double[] cutCosts; //For local means only
 
@@ -40,12 +40,43 @@ public class CutGenerators {
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
+        SplitParallelRunner[] runnables = new SplitParallelRunner[splits.size()];
+        Thread[] threads = new Thread[splits.size()];
         for (int i = 0; i < splits.size(); i++) {
+            runnables[i] = new SplitParallelRunner();
+            runnables[i].data = splits.get(i);
+            runnables[i].a = a;
+            threads[i] = new Thread(runnables[i]);
+            threads[i].start();
+        }
+
+        /*for (int i = 0; i < splits.size(); i++) {
             System.out.println(splits.get(i)[0].length);
             bitSets.add(combinedCutGenerator(splits.get(i), a));
+        }*/
+
+        for (int i = 0; i < splits.size(); i++) {
+            try {
+                threads[i].join();
+                bitSets.add(runnables[i].result);
+            }
+            catch (Exception e) {
+
+            }
         }
 
         return mergeCuts(bitSets);
+    }
+
+    public class SplitParallelRunner implements Runnable {
+
+        public BitSet[] result;
+        public double[][] data;
+        public int a;
+        @Override
+        public void run() {
+            result = combinedCutGenerator(data, a);
+        }
     }
 
     public BitSet[] combinedCutGenerator(double[][] dataPoints, int a) {
@@ -56,15 +87,15 @@ public class CutGenerators {
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
-        //bitSets.add(getInitialCutsLocalMeans(Model.pca(dataPoints, nComponents), a));
+        bitSets.add(getInitialCutsLocalMeans(Model.pca(dataPoints, nComponents), a));
 
         bitSets.add(getInitialCutsLocalMeans(Model.tsne(dataPoints, nComponents), a));
-        try {
+        /*try {
             bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
         }
         catch (Exception e) {
 
-        }
+        }*/
         bitSets.add(getInitialCutsLocalMeans(Model.svd(dataPoints, nComponents), a));
 
         return mergeCuts(bitSets);
@@ -295,10 +326,10 @@ public class CutGenerators {
                 this.axisParallelCuts[i][j] = axisParallelCuts[i].get(j);
             }
         }*/
-        cutCosts = new double[costs.size()];
+        /*cutCosts = new double[costs.size()];
         for (int i = 0; i < costs.size(); i++) {
             cutCosts[i] = costs.get(i);
-        }
+        }*/
         //cutsAreAxisParallel = false;
         return result;
     }

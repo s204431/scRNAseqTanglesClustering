@@ -18,7 +18,7 @@ public class View {
     public View(Model model) {
         this.model = model;
 
-        points = model.tsne(model.getHvgData(), 2);
+        points = Model.tsne(model.getHvgData(), 2);
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
