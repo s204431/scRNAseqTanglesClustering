@@ -196,14 +196,18 @@ public class ParameterPanel extends JPanel {
         // ==================== Text Field Logic ==================== //
         cutNumberField.addActionListener(e -> {
             if (showCutCheckBox.isSelected()) {
-                int value = Integer.parseInt(cutNumberField.getText());
-                if (value >= sortedCuts.length) {
-                    value = sortedCuts.length - 1;
-                    cutNumberField.setText(String.valueOf(value));
+                try {
+                    int value = Integer.parseInt(cutNumberField.getText());
+                    if (value >= sortedCuts.length) {
+                        value = sortedCuts.length - 1;
+                        cutNumberField.setText(String.valueOf(value));
+                    }
+                    int currentCut = Integer.parseInt(cutNumberField.getText());
+                    view.showCut(sortedCuts[currentCut], currentCut);
+                    System.out.println(sortedCutCosts[currentCut]);
+                } catch (NumberFormatException ex) {
+                    cutNumberField.setText("0");
                 }
-                int currentCut = Integer.parseInt(cutNumberField.getText());
-                view.showCut(sortedCuts[currentCut], currentCut);
-                System.out.println(sortedCutCosts[currentCut]);
             }
         });
     }

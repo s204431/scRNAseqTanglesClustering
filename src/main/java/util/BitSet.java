@@ -135,6 +135,13 @@ public class BitSet {
         }
     }
 
+    // Intersects this bitset with otherSet.
+    public void intersectWith(BitSet otherSet) {
+        for (int i = 0; i < set.length; i++) {
+            set[i] = set[i] & otherSet.set[i];
+        }
+    }
+
     //Returns the size of the intersection between two bitsets.
     //Requires same maximum size. flip specifies if the corresponding bit set should have all bits flipped before calculating the intersection.
     public static int intersection(BitSet set1, BitSet set2, boolean flip1, boolean flip2) {

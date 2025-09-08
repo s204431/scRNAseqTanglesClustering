@@ -64,7 +64,10 @@ public class View {
     }
 
     public void drawTangleSearchTree() {
-        window.drawTangleSearchTree(monitor.getTree());
+        TangleSearchTree tree = monitor.getTree();
+        if (tree != null) {
+            window.drawTangleSearchTree(tree);
+        }
     }
 
     public void setMonitor(Monitor monitor) {

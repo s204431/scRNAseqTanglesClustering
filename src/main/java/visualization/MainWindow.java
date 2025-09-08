@@ -28,7 +28,7 @@ public class MainWindow extends JFrame {
         verticalSplit.setResizeWeight(0.7); // % space the scatter panel takes initially
 
         JSplitPane horizontalSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tangleTreePanel, verticalSplit);
-        horizontalSplit.setResizeWeight(0.4); // % space the tangle tree panel takes initially
+        horizontalSplit.setResizeWeight(0.2); // % space the tangle tree panel takes initially
 
         getContentPane().add(horizontalSplit, BorderLayout.CENTER);
         getContentPane().add(parameterPanel, BorderLayout.EAST);
