@@ -49,6 +49,9 @@ public class CutGenerators {
     }
 
     public BitSet[] combinedCutGenerator(double[][] dataPoints, int a) {
+
+        //dataPoints = Model.pca(dataPoints, 100);
+
         int nComponents = 3;
 
         List<BitSet[]> bitSets = new ArrayList<>();

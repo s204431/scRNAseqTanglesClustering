@@ -1,21 +1,13 @@
 package clustering;
 
-import com.jujutsu.tsne.TSneConfiguration;
-import com.jujutsu.tsne.barneshut.BHTSne;
-import com.jujutsu.tsne.barneshut.BarnesHutTSne;
-import com.jujutsu.utils.TSneUtils;
-import datasets.CostFunctions;
-import datasets.CutGenerators;
 import datasets.ScRNAseqDataset;
 import elki.data.DoubleVector;
-import elki.data.type.SimpleTypeInformation;
 import elki.data.type.TypeUtil;
 import elki.database.Database;
 import elki.database.ids.DBIDIter;
 import elki.database.relation.Relation;
 import elki.database.StaticArrayDatabase;
 import elki.datasource.ArrayAdapterDatabaseConnection;
-import elki.datasource.DatabaseConnection;
 import elki.projection.AffinityMatrixBuilder;
 import elki.projection.BarnesHutTSNE;
 import elki.projection.PerplexityAffinityMatrixBuilder;
@@ -38,8 +30,8 @@ import java.util.*;
 import static main.Main.runPython;
 
 public class Model {
-    private int[][] originalData;
-    private double[][] doubleData;
+    private double[][] originalData;
+    private double[][] normalizedData;
     private double[][] hvgData;
     private double[][] projectedData;
     private ScRNAseqDataset dataset;
@@ -53,8 +45,8 @@ public class Model {
     public Model() {
         originalData = loadData("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
         groundTruth = loadGroundTruth("data/symsim_labels_5000genes_1000cells_complex.csv");
-        doubleData = convertToDouble(originalData);
-        hvgData = highlyVariableGenes(doubleData, 5000);
+        normalizedData = logNormalize(originalData);
+        hvgData = highlyVariableGenes(normalizedData, 5000);
 
         long time = System.currentTimeMillis();
         //projectedData = tsne(hvgData, 2);
@@ -64,11 +56,13 @@ public class Model {
         dataset = new ScRNAseqDataset(projectedData);
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
-        /*Tuple<int[], Integer> pythonResult = runPython("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
+        /*
+        Tuple<int[], Integer> pythonResult = runPython("data/Ear_data.csv");
         double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
         double randIndex = AdjustedRandIndex.of(groundTruth, pythonResult.x);
         System.out.println("NMI python: " + NMIPython);
-        System.out.println("Rand index python: " + randIndex);*/
+        System.out.println("Rand index python: " + randIndex);
+        */
     }
 
     public void cluster(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
@@ -167,15 +161,15 @@ public class Model {
         return UMAP.fit(data, new UMAP.Options(2, nComponents, 200, 1, 0.1, 1.0, 5, 1.0, 2));
     }
 
-    public int[][] loadData(String filePath) {
+    public double[][] loadData(String filePath) {
         return readCSV(filePath);
     }
 
     public int[] loadGroundTruth(String filePath) {
-        int[][] temp = loadData(filePath);
+        double[][] temp = loadData(filePath);
         int[] gt = new int[temp.length];
         for (int i = 0; i < temp.length; i++) {
-            gt[i] = temp[i][0];
+            gt[i] = (int)temp[i][0];
         }
         return gt;
     }
@@ -199,7 +193,7 @@ public class Model {
             }
             double variance = sqDiff / (nCells - 1);
 
-            dispersions[g] = mean > 0 ? variance / mean : 0.0;
+            dispersions[g] = mean > 0 ? -variance / mean : 0.0;
         }
 
         // Get indices sorted by dispersion (descending)
@@ -223,28 +217,24 @@ public class Model {
         return newData;
     }
 
-    private double[][] convertToDouble(int[][] intData) {
-        int dimensions = intData[0].length;//data[0].length;
-        double[][] doubleData = new double[intData.length][];
+    private double[][] logNormalize(double[][] data) {
+        double[][] normalized = new double[data.length][data[0].length];
         int nZeros = 0;
-        for (int i = 0; i < intData.length; i++) {
-            doubleData[i] = new double[dimensions];
-            //doubleData[i][0] = (double) intData[i][0];
-            //doubleData[i][1] = (double) intData[i][1];
-            for (int j = 0; j < dimensions; j++) {
-                doubleData[i][j] = Math.log(1 + (double) intData[i][j]);
-                if (intData[i][j] == 0) {
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++) {
+                normalized[i][j] = Math.log(1.0 + data[i][j]);
+                if (data[i][j] == 0.0) {
                     nZeros++;
                 }
             }
         }
-        System.out.println("Sparsity: " + ((double)nZeros)/(doubleData.length*doubleData[0].length));
-        System.out.println("Dimension: " + doubleData.length + " " + doubleData[0].length);
-        return doubleData;
+        System.out.println("Sparsity: " + ((double)nZeros)/(normalized.length*normalized[0].length));
+        System.out.println("Dimension: " + normalized.length + " " + normalized[0].length);
+        return normalized;
     }
 
-    public int[][] readCSV(String filePath) {
-        ArrayList<int[]> rows = new ArrayList<>();
+    public double[][] readCSV(String filePath) {
+        ArrayList<double[]> rows = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
@@ -258,14 +248,14 @@ public class Model {
                 // Skip first value in the row
                 if (stringValues.length <= 1) continue; // skip row if no data after first value
 
-                int[] values = new int[stringValues.length - 1];
+                double[] values = new double[stringValues.length - 1];
                 for (int i = 1; i < stringValues.length; i++) { // start from index 1
                     String cleaned = stringValues[i].replaceAll("\"", "").trim();
 
                     if (cleaned.isEmpty()) {
                         values[i - 1] = 0; // empty cell → 0
                     } else {
-                        values[i - 1] = Integer.parseInt(cleaned);
+                        values[i - 1] = Double.parseDouble(cleaned);
                     }
                 }
                 rows.add(values);
@@ -277,7 +267,7 @@ public class Model {
         }
 
         // Convert ArrayList<int[]> to int[][]
-        int[][] data = new int[rows.size()][];
+        double[][] data = new double[rows.size()][];
         for (int i = 0; i < rows.size(); i++) {
             data[i] = rows.get(i);
         }
@@ -305,11 +295,11 @@ public class Model {
         return hvgData;
     }
 
-    public double[][] getDoubleData() {
-        return doubleData;
+    public double[][] getNormalizedData() {
+        return normalizedData;
     }
 
-    public int[][] getOriginalData() {
+    public double[][] getOriginalData() {
         return originalData;
     }
 

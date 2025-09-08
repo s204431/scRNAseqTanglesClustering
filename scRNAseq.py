@@ -7,10 +7,10 @@ import json
 
 input_str = sys.stdin.readline().strip()
 
-#df = pd.read_csv("data/symsim_observed_counts_5000genes_1000cells_complex.csv", index_col=0)
+adata = sc.read("data/Ear_TSP1_30_version2d_10X_smartseq_scvi_Nov122024.h5ad", index_col=0)
 
-df = pd.read_csv(input_str, index_col=0)
-adata = ad.AnnData(df)
+#df = pd.read_csv(input_str, index_col=0)
+#adata = ad.AnnData(df)
 
 #sc.pp.filter_cells(adata, min_genes=100)
 #sc.pp.filter_genes(adata, min_cells=3)
@@ -20,7 +20,7 @@ adata.layers["counts"] = adata.X.copy()
 # Normalizing to median total counts
 sc.pp.normalize_total(adata)
 # Logarithmize the data
-sc.pp.log1p(adata)
+#sc.pp.log1p(adata)
 
 sc.pp.highly_variable_genes(adata, n_top_genes=2000)
 
@@ -38,3 +38,27 @@ sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
 clusters = adata.obs["leiden"]
 
 print(json.dumps(clusters.tolist()))
+
+
+
+
+"""
+datapath = 'Ear_TSP1_30_version2d_10X_smartseq_scvi_Nov122024.h5ad'
+
+adata  = sc.read(datapath)
+
+labels = adata.obs['cell_ontology_class']
+
+labels = labels.reset_index(drop=True)
+
+labels_table = labels.value_counts()
+
+labels, uniques = pd.factorize(labels)
+labels = pd.Series(labels)
+labels.to_csv("Ear_labels.csv")
+
+
+data = adata.to_df("log_normalized")
+data = data.reset_index(drop=True)
+data.to_csv("Ear_data.csv")
+"""

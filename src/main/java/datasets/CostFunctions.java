@@ -44,6 +44,8 @@ public class CostFunctions {
     //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.
     public double[] shortestDistanceCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
 
+        //dataPoints = Model.pca(dataPoints, 100);
+
         dataPoints = Model.tsne(dataPoints, 3);
 
         double[] costs = new double[initialCuts.length];
