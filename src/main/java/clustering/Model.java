@@ -63,6 +63,13 @@ public class Model {
         groundTruth = loadGroundTruth(labelFilePath);
         normalizedData = logNormalize(originalData);
         hvgData = highlyVariableGenes(normalizedData, 500);
+        /*double[][] newHvgData = new double[hvgData.length][2];
+        for (int i = 0; i < hvgData.length; i++) {
+            newHvgData[i][0] = hvgData[i][4];
+            newHvgData[i][1] = hvgData[i][5];
+        }
+        hvgData = newHvgData;*/
+
 
         long time = System.currentTimeMillis();
         //projectedData = tsne(hvgData, 2);
