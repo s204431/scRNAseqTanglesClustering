@@ -88,7 +88,7 @@ public class CostFunctions {
 
         //dataPoints = Model.pca(dataPoints, 100);
 
-        dataPoints = Model.tsne(dataPoints, 3);
+        dataPoints = Model.tsne(dataPoints, 5);
 
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);

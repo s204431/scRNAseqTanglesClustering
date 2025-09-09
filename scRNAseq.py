@@ -7,10 +7,10 @@ import json
 
 input_str = sys.stdin.readline().strip()
 
-adata = sc.read("data/Ear_TSP1_30_version2d_10X_smartseq_scvi_Nov122024.h5ad", index_col=0)
+#adata = sc.read("data/Ear_TSP1_30_version2d_10X_smartseq_scvi_Nov122024.h5ad", index_col=0)
 
-#df = pd.read_csv(input_str, index_col=0)
-#adata = ad.AnnData(df)
+df = pd.read_csv(input_str, index_col=0)
+adata = ad.AnnData(df)
 
 #sc.pp.filter_cells(adata, min_genes=100)
 #sc.pp.filter_genes(adata, min_cells=3)
@@ -20,9 +20,9 @@ adata.layers["counts"] = adata.X.copy()
 # Normalizing to median total counts
 sc.pp.normalize_total(adata)
 # Logarithmize the data
-#sc.pp.log1p(adata)
+sc.pp.log1p(adata)
 
-sc.pp.highly_variable_genes(adata, n_top_genes=2000)
+sc.pp.highly_variable_genes(adata, n_top_genes=500)
 
 sc.tl.pca(adata, n_comps=100)
 

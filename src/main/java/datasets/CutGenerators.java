@@ -87,8 +87,12 @@ public class CutGenerators {
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
-        bitSets.add(getInitialCutsLocalMeans(Model.pca(dataPoints, nComponents), a));
+        try {
+            bitSets.add(getInitialCutsLocalMeans(Model.pca(dataPoints, nComponents), a));
+        }
+        catch (Exception e) {
 
+        }
         bitSets.add(getInitialCutsLocalMeans(Model.tsne(dataPoints, nComponents), a));
         /*try {
             bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
