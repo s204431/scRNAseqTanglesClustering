@@ -56,10 +56,13 @@ public class Model {
     private TangleClusterer tangleClusterer = new TangleClusterer();
 
     public Model() {
-        originalData = loadData("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
-        groundTruth = loadGroundTruth("data/symsim_labels_5000genes_1000cells_complex.csv");
+        String observedFilePath = "data/symsim_observed_counts_500genes_500cells_complex.csv";
+        String labelFilePath = observedFilePath.replace("observed_counts", "labels");
+
+        originalData = loadData(observedFilePath);
+        groundTruth = loadGroundTruth(labelFilePath);
         normalizedData = logNormalize(originalData);
-        hvgData = highlyVariableGenes(normalizedData, 5000);
+        hvgData = highlyVariableGenes(normalizedData, 500);
 
         long time = System.currentTimeMillis();
         //projectedData = tsne(hvgData, 2);
@@ -69,13 +72,13 @@ public class Model {
         dataset = new ScRNAseqDataset(projectedData);
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
-        /*
-        Tuple<int[], Integer> pythonResult = runPython("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
+
+        /*Tuple<int[], Integer> pythonResult = runPython(observedFilePath);
         double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
         double randIndex = AdjustedRandIndex.of(groundTruth, pythonResult.x);
         System.out.println("NMI python: " + NMIPython);
-        System.out.println("Rand index python: " + randIndex);
-        */
+        System.out.println("Rand index python: " + randIndex);*/
+
     }
 
     public void cluster(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {

@@ -2,6 +2,7 @@ package visualization;
 
 import clustering.TangleClusterer;
 import util.BitSet;
+import util.GlobalConstants;
 import util.Tuple;
 
 import javax.swing.*;
@@ -59,14 +60,12 @@ public class ParameterPanel extends JPanel {
         addToPanel(x, 1, psiField);
         x++;
 
-        String[] cutGeneratorNames = new String[] {"Simple", "Range", "Local Means"};
-        JComboBox<String> cutGeneratorDropdown = new JComboBox<>(cutGeneratorNames);
+        JComboBox<String> cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
         addToPanel(x, 0, createTextLabel("Cut Generator: "));
         addToPanel(x, 1, cutGeneratorDropdown);
         x++;
 
-        String[] costFunctionNames = new String[] {"Distance To Mean", "Pairwise Distance"};
-        JComboBox<String> costFunctionDropdown = new JComboBox<>(costFunctionNames);
+        JComboBox<String> costFunctionDropdown = new JComboBox<>(GlobalConstants.COST_FUNCTION_NAMES);
         addToPanel(x, 0, createTextLabel("Cost Function: "));
         addToPanel(x, 1, costFunctionDropdown);
         x++;

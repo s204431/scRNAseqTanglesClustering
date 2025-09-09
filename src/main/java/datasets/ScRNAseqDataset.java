@@ -1,6 +1,7 @@
 package datasets;
 
 import util.BitSet;
+import util.GlobalConstants;
 
 import java.util.Arrays;
 
@@ -29,16 +30,19 @@ public class ScRNAseqDataset {
         }
 
         switch (initialCutGenerator) {
-            case "Range":
+            case GlobalConstants.CUT_GENERATOR_RANGE:
                 initialCuts = cutGenerators.getInitialCutsRange(data, a);
                 break;
 
-            case "Local Means":
+            case GlobalConstants.CUT_GENERATOR_LOCAL_MEANS:
                 initialCuts = cutGenerators.getInitialCutsLocalMeans(data, a);
                 break;
 
+            case GlobalConstants.CUT_GENERATOR_SIMPLE:
+                initialCuts = cutGenerators.getInitialCutsSimple(data, a);
+                break;
+
             default:
-                //initialCuts = cutGenerators.getInitialCutsSimple(data, a);
                 initialCuts = cutGenerators.splitCutGenerator(data, a);
                 break;
         }
@@ -48,13 +52,18 @@ public class ScRNAseqDataset {
 
     public double[] getCutCosts(String costFunctionName) {
         switch (costFunctionName) {
-            case "Distance To Mean":
+            case GlobalConstants.COST_FUNCTION_DISTANCE_TO_MEAN:
                 cutCosts = costFunctions.distanceToMeanCostFunction(data, initialCuts);
                 break;
 
+            case GlobalConstants.COST_FUNCTION_PAIRWISE:
+                cutCosts = costFunctions.pairwiseDistanceCostFunction(data, initialCuts);
+                break;
+
+            case GlobalConstants.COST_FUNCTION_SHORTEST:
+                cutCosts = costFunctions.shortestDistanceCostFunction(data, initialCuts);
+
             default:
-                //cutCosts = costFunctions.pairwiseDistanceCostFunction(data, initialCuts);
-                //cutCosts = costFunctions.shortestDistanceCostFunction(data, initialCuts);
                 cutCosts = costFunctions.averageCostFunction(data, initialCuts);
                 //cutCosts = cutGenerators.cutCosts;
                 break;

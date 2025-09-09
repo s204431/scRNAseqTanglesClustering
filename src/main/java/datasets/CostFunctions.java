@@ -5,6 +5,8 @@ import main.Main;
 import util.BitSet;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class CostFunctions {
@@ -79,7 +81,7 @@ public class CostFunctions {
         public BitSet[] initialCuts;
         @Override
         public void run() {
-            result = shortestDistanceCostFunction(data, initialCuts);
+            result = pairwiseDistanceCostFunction(data, initialCuts);
         }
     }
 
@@ -179,6 +181,55 @@ public class CostFunctions {
         //cutCosts = costs;
         System.out.println(expTime/1000000.0);
         System.out.println((System.nanoTime() - time1)/1000000.0);
+        return costs;
+    }
+
+    //Dimensional error cost function
+    public double[] dimensionalErrorCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+        long time1 = System.nanoTime();
+
+        int cuts = initialCuts.length;
+        double[] costs = new double[cuts];
+
+        for (int dimension = 0; dimension < dataPoints[0].length; dimension++) {
+
+            Integer[] sortedIndices = new Integer[dataPoints.length];
+            for (int i = 0; i < sortedIndices.length; i++) sortedIndices[i] = i;
+            final int dim = dimension;
+            Arrays.sort(sortedIndices, Comparator.comparingDouble(i -> dataPoints[i][dim]));
+
+            for (int cutIndex = 0; cutIndex < cuts; cutIndex++) {
+                BitSet cut = initialCuts[cutIndex];
+                int cutCount = cut.count();
+                //Flip the cut if the majority of points are 0
+                boolean flip = cutCount < (cut.size() / 2);
+                int highIndex = cut.countFlipped(flip);
+                int lowIndex = cut.size() - highIndex;
+                double highValue = dataPoints[sortedIndices[highIndex]][dimension];
+                double lowValue = dataPoints[sortedIndices[lowIndex]][dimension];
+
+                int errors = 0;
+                for (int pointIndex = 0; pointIndex < dataPoints.length; pointIndex++) {
+                    double value = dataPoints[pointIndex][dimension];
+                    if (value == 0) continue;
+
+                    // Cut majority
+                    if ((!flip && cut.get(pointIndex)) || (flip && !cut.get(pointIndex))) {
+                        if (value < lowValue) errors++;
+                        if (value > highValue) errors++;
+
+                        // Cut minority
+                    } else {
+                        if (value > lowValue) errors++;
+                        if (value < highValue) errors++;
+                    }
+                }
+                costs[cutIndex] += (double) errors / dataPoints.length;
+            }
+        }
+
+        System.out.println((System.nanoTime() - time1)/1000000.0);
+
         return costs;
     }
 
