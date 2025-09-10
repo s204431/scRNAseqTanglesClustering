@@ -37,6 +37,8 @@ public class TangleTreePanel extends JPanel {
     private boolean showCondensedTree = false;
     private boolean useIntersections = false;
 
+    private int nodeCounter = 0;
+
     public TangleTreePanel(View view) {
         this.view = view;
         setLayout(new BorderLayout());
@@ -45,7 +47,7 @@ public class TangleTreePanel extends JPanel {
         JCheckBox condensedCheckBox = new JCheckBox("Condense tree", showCondensedTree);
         condensedCheckBox.addActionListener(e -> {
             showCondensedTree = condensedCheckBox.isSelected();
-            view.drawTangleSearchTree();
+            view.drawTangleSearchTree(showCondensedTree);
         });
         topPanel.add(condensedCheckBox);
 
@@ -53,7 +55,7 @@ public class TangleTreePanel extends JPanel {
         JCheckBox intersectionCheckBox = new JCheckBox("Use intersections", useIntersections);
         intersectionCheckBox.addActionListener(e -> {
             useIntersections = intersectionCheckBox.isSelected();
-            view.drawTangleSearchTree();
+            view.drawTangleSearchTree(showCondensedTree);
         });
         topPanel.add(intersectionCheckBox);
 
@@ -75,7 +77,9 @@ public class TangleTreePanel extends JPanel {
         for (int i = 0; i < n; i++) {
             cutIncludingAllPoints.flip(i);
         }
-        addNodes(tree, root, "None", 0, cutIncludingAllPoints, showCondensedTree);
+        //addNodes(tree, root, "None", 0, cutIncludingAllPoints, showCondensedTree);
+        String parent = "None";
+        addNode(tree, root, parent);
 
         // Layout
         TreeLayout<String, String> layout = new TreeLayout<>(tree);
@@ -124,95 +128,45 @@ public class TangleTreePanel extends JPanel {
         treePanel.repaint();
     }
 
-    public void addNodes(DelegateTree<String, String> tree, TangleSearchTree.Node node, String parent, int parentCutIndex, BitSet parentCut, boolean condensed) {
-        int cutIndex = parent.equals("None") ? -1 : originalCutIndexToSortedCutIndex.get(node.originalOrientation);
+    public void addNode(DelegateTree<String, String> tree, TangleSearchTree.Node node, String parent) {
+        if (node == null) {
+            return;
+        }
+
+        int cutIndex = originalCutIndexToSortedCutIndex.get(node.originalOrientation);
 
         // Temporary unique ID for each node as identical node names are currently not allowed
-        String uniqueId = "" + UUID.randomUUID();
+        String uniqueId = "" + nodeCounter++;//UUID.randomUUID();
         String nodeName = originalCutIndexToSortedCutIndex.get(node.originalOrientation) + (node.side ? "L" : "R");
-        BitSet intersection = new BitSet(parentCut.toString());
 
-        if (parent.equals("None")) {
+        if (parent.equals("None")) {    // Root
             tree.setRoot(uniqueId);
             idToNodeName.put(uniqueId, "Root");
+            addNode(tree, node.leftChild, uniqueId);
+            addNode(tree, node.rightChild, uniqueId);
+            return;
+        }
 
-        } else {
-            if (condensed) {
-                // Loop over every condensed node and compute the intersection between their respective cuts
-                for (int i = parentCutIndex + 1; i <= cutIndex; i++) {
-                    boolean left = node.condensedOrientations.get(sortedCutIndexToOriginalCutIndex.get(i));
-                    boolean right = node.condensedOrientations.get(sortedCutIndexToOriginalCutIndex.get(i) + node.condensedOrientations.size()/2);
-                    if (!left && !right) {
-                        continue;
-                    }
-
-                    BitSet cut = new BitSet(sortedCuts[i].toString());
-                    if (left) {
-                        for (int j = 0; j < cut.size(); j++) {
-                            cut.flip(j);
-                        }
-                    }
-
-                    if (useIntersections) {
-                        intersection.intersectWith(cut);
-                    }
-                }
-
-                tree.addChild(parent + "-" + uniqueId, parent, uniqueId);
-                idToNodeName.put(uniqueId, nodeName);
-                idToEdgeName.put(uniqueId, "");
-                idToCut.put(uniqueId, intersection);
-                idToCutIndex.put(uniqueId, cutIndex);
-
-            // Not condensed
-            } else {
-                // Loop over every condensed node and add them to the tree
-                for (int i = parentCutIndex + 1; i <= cutIndex; i++) {
-                    boolean left = node.condensedOrientations.get(sortedCutIndexToOriginalCutIndex.get(i));
-                    boolean right = node.condensedOrientations.get(sortedCutIndexToOriginalCutIndex.get(i) + node.condensedOrientations.size()/2);
-                    if (!left && !right) {
-                        continue;
-                    }
-
-                    uniqueId = "" + UUID.randomUUID();
-                    nodeName = i + (left ? "L" : "R");
-
-                    tree.addChild(parent + "-" + uniqueId, parent, uniqueId);
-
-                    idToNodeName.put(uniqueId, nodeName);
-                    idToEdgeName.put(uniqueId, "");
-                    BitSet cut = new BitSet(sortedCuts[i].toString());
-                    if (left) {
-                        for (int j = 0; j < cut.size(); j++) {
-                            cut.flip(j);
-                        }
-                    }
-
-                    if (useIntersections) {
-                        intersection.intersectWith(cut);
-                    } else {
-                        intersection = cut;
-                    }
-
-                    idToCut.put(uniqueId, intersection);
-                    idToCutIndex.put(uniqueId, i);
-
-                    parent = uniqueId;
-                    intersection = new BitSet(intersection.toString());
-                }
+        BitSet cut = sortedCuts[node.originalOrientation].clone();
+        if (node.side) {
+            for (int j = 0; j < cut.size(); j++) {
+                cut.flip(j);
             }
         }
 
-        parent = uniqueId;
-        intersection = new BitSet(intersection.toString());
-
-        if (node.leftChild != null) {
-            addNodes(tree, node.leftChild, parent, cutIndex, intersection, condensed);
+        tree.addChild(parent + "-" + uniqueId, parent, uniqueId);
+        idToNodeName.put(uniqueId, nodeName);
+        idToEdgeName.put(uniqueId, "");
+        idToCutIndex.put(uniqueId, cutIndex);
+        if (useIntersections) {
+            BitSet intersection = node.intersection.clone();
+            idToCut.put(uniqueId, intersection);
+        } else {
+            idToCut.put(uniqueId, cut);
         }
 
-        if (node.rightChild != null) {
-            addNodes(tree, node.rightChild, parent, cutIndex, intersection, condensed);
-        }
+        addNode(tree, node.leftChild, uniqueId);
+        addNode(tree, node.rightChild, uniqueId);
     }
 
     private void getSortedCutsAndCosts() {

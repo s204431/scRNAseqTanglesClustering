@@ -121,7 +121,7 @@ public class ParameterPanel extends JPanel {
                     (String) cutGeneratorDropdown.getSelectedItem(),
                     (String) costFunctionDropdown.getSelectedItem()
             );
-            view.drawTangleSearchTree();
+            view.drawTangleSearchTree(false);
             getAndSortCutsAndCosts();
             groundTruthCheckBox.setSelected(false);
             turnOffCuts();

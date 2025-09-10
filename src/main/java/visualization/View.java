@@ -63,8 +63,11 @@ public class View {
         return model.getCutCosts();
     }
 
-    public void drawTangleSearchTree() {
-        TangleSearchTree tree = monitor.getTree();
+    public void drawTangleSearchTree(boolean condensed) {
+        TangleSearchTree tree = monitor.getUncondensedTree();
+        if (condensed) {
+            tree = monitor.getCondensedTree();
+        }
         if (tree != null) {
             window.drawTangleSearchTree(tree);
         }

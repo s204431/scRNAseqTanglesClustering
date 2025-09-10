@@ -5,21 +5,30 @@ import datasets.ScRNAseqDataset;
 
 public class Monitor {
     private ScRNAseqDataset dataset;
-    private TangleSearchTree tree;
+    private TangleSearchTree uncondensedTree;
+    private TangleSearchTree condensedTree;
 
     public void setDataset(ScRNAseqDataset dataset) {
         this.dataset = dataset;
     }
 
-    public void setTree(TangleSearchTree tree) {
-        this.tree = tree;
+    public void setUncondensedTree(TangleSearchTree tree) {
+        this.uncondensedTree = tree;
+    }
+
+    public void setCondensedTree(TangleSearchTree condensedTree) {
+        this.condensedTree = condensedTree;
     }
 
     public ScRNAseqDataset getDataset() {
         return dataset;
     }
 
-    public TangleSearchTree getTree() {
-        return tree;
+    public TangleSearchTree getUncondensedTree() {
+        return uncondensedTree;
+    }
+
+    public TangleSearchTree getCondensedTree() {
+        return condensedTree;
     }
 }

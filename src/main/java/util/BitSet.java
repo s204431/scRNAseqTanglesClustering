@@ -67,6 +67,13 @@ public class BitSet {
         }
     }
 
+    //Flips every bit in the bit set
+    public void flipALl() {
+        for (int i = 0; i < size; i++) {
+            flip(i);
+        }
+    }
+
     //Sets the bit at the specified index to the specified value.
     public void setValue(int index, boolean value) {
         if (value) {
@@ -217,6 +224,15 @@ public class BitSet {
             }
         }
         return count;
+    }
+
+    @Override
+    public BitSet clone() {
+        BitSet newBitSet = new BitSet(size);
+        for (int i = 0; i < set.length; i++) {
+            newBitSet.set[i] = set[i];
+        }
+        return newBitSet;
     }
 
     //Converts the bit set to a string of bits. Used for debugging.

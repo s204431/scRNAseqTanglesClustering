@@ -1,5 +1,6 @@
 package clustering;
 
+import org.jdesktop.swingx.painter.effects.GlowPathEffect;
 import util.BitSet;
 
 import java.util.ArrayList;
@@ -58,6 +59,17 @@ public class TangleSearchTree {
             }
         }
         else {
+
+            // TODO: LOOK AT THIS!!!!
+            newNode.branchIdx = node.branchIdx;
+            newNode.intersection = cuts[newNode.originalOrientation].clone();
+            if (left) {
+                newNode.intersection.flipALl();
+            }
+            if (newNode.parent.intersection != null) {
+                newNode.intersection.intersectWith(newNode.parent.intersection);
+            }
+
             if (TangleClusterer.earlyStop) {
                 int depth = getDepth(newNode);
                 if (depth != currentDepth) {
@@ -381,18 +393,44 @@ public class TangleSearchTree {
         return root;
     }
 
+    //Returns a copy of the tree with only information used to draw the tree in the GUI
+    public TangleSearchTree copy() {
+        TangleSearchTree tree = new TangleSearchTree(a, cuts, cutCosts);
+        copyNode(root, tree.getRoot());
+        return tree;
+    }
+
+    //Helper for recursively copying the tree
+    public Node copyNode(Node oldNode, Node newNode) {
+        newNode.originalOrientation = oldNode.originalOrientation;
+        newNode.side = oldNode.side;
+        if (oldNode.leftChild != null) {
+            newNode.leftChild = new Node();
+            newNode.leftChild = copyNode(oldNode.leftChild, newNode.leftChild);
+        }
+        if (oldNode.rightChild != null) {
+            newNode.rightChild = new Node();
+            newNode.rightChild = copyNode(oldNode.rightChild, newNode.rightChild);
+        }
+        return newNode;
+    }
+
     public class Node {
 
         //This class represents the node of the tree.
 
         public int originalOrientation;
-        public final BitSet condensedOrientations;
-        public final List<Integer> distinguishedCuts = new ArrayList<>();
+        public BitSet condensedOrientations;
+        public  List<Integer> distinguishedCuts = new ArrayList<>();
         public Node leftChild;
         public Node rightChild;
         public Node parent;
         public boolean side;
         public int originalDepth = 1;
+
+        // TODO: LOOK AT THESE!!!!
+        public int branchIdx;
+        public BitSet intersection;
 
         //Creates a default node (used to generate the root).
         private Node() {
