@@ -22,9 +22,9 @@ sc.pp.normalize_total(adata)
 # Logarithmize the data
 sc.pp.log1p(adata)
 
-sc.pp.highly_variable_genes(adata, n_top_genes=500)
+sc.pp.highly_variable_genes(adata, n_top_genes=2000)
 
-sc.tl.pca(adata, n_comps=100)
+sc.tl.pca(adata, n_comps=50)
 
 sc.pp.neighbors(adata)
 
