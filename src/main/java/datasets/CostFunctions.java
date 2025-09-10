@@ -81,7 +81,7 @@ public class CostFunctions {
         public BitSet[] initialCuts;
         @Override
         public void run() {
-            result = pairwiseDistanceCostFunction(data, initialCuts);
+            result = shortestDistanceCostFunction(data, initialCuts);
         }
     }
 

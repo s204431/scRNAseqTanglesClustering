@@ -58,10 +58,15 @@ public class TangleSearchTree {
             }
         }
         else {
-            int depth = getDepth(newNode);
-            if (depth != currentDepth) {
-                lowestDepthNodes = new ArrayList<>();
-                currentDepth = depth;
+            if (TangleClusterer.earlyStop) {
+                int depth = getDepth(newNode);
+                if (depth != currentDepth) {
+                    lowestDepthNodes = new ArrayList<>();
+                    currentDepth = depth;
+                }
+            }
+            else {
+                lowestDepthNodes.remove(node);
             }
             lowestDepthNodes.add(newNode);
         }

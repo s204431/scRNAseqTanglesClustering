@@ -6,13 +6,17 @@ import util.BitSet;
 import util.Tuple;
 import datasets.ScRNAseqDataset;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class TangleClusterer {
 
     //NOTE: This file is from the bachelor project.
 
     //This class is used to generate a clustering with tangles.
+
+    protected static boolean earlyStop = false;
 
     private TangleSearchTree tangleSearchTree;
 
@@ -68,11 +72,12 @@ public class TangleClusterer {
                 break;
             }
             boolean consistent = false;
-            for (Node node : tree.lowestDepthNodes) {
+            List<Node> lowestDepthNodesCopy = new ArrayList<>(tree.lowestDepthNodes);
+            for (Node node : lowestDepthNodesCopy) {
                 consistent = tree.addOrientation(node, indices[i], true) || consistent;
                 consistent = tree.addOrientation(node, indices[i], false) || consistent;
             }
-            if (!consistent) { //Stop if no nodes were added to the tree.
+            if (earlyStop && !consistent) { //Stop if no nodes were added to the tree.
                 break;
             }
         }
