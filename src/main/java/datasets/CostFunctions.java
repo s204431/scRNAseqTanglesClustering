@@ -74,6 +74,69 @@ public class CostFunctions {
         return costs;
     }
 
+    public double[] bestFirstCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+        int splitSize = 1000;
+
+        double[] costs = new double[initialCuts.length];
+        Arrays.fill(costs, Double.MAX_VALUE);
+
+        double[][] currentSplit = new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length)];
+        List<double[][]> splits = new ArrayList<>();
+        int index = 0;
+
+        for (int i = 0; i < dataPoints[0].length; i++) {
+            for (int j = 0; j < dataPoints.length; j++) {
+                currentSplit[j][index] = dataPoints[j][i];
+            }
+            index++;
+            if (index == splitSize && i < dataPoints[0].length-1) {
+                index = 0;
+                splits.add(currentSplit);
+                /*double[] splitCosts = shortestDistanceCostFunction(currentSplit, initialCuts);
+                for (int j = 0; j < costs.length; j++) {
+                    costs[j] += splitCosts[j];
+                }*/
+                currentSplit = new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length - i - 1)];
+            }
+        }
+
+        splits.add(currentSplit);
+        /*double[] splitCosts = pairwiseDistanceCostFunction(currentSplit, initialCuts);
+        for (int j = 0; j < costs.length; j++) {
+            costs[j] += splitCosts[j];
+        }*/
+
+        AverageParallelRunner[] runnables = new AverageParallelRunner[splits.size()];
+        Thread[] threads = new Thread[splits.size()];
+        for (int i = 0; i < splits.size(); i++) {
+            runnables[i] = new AverageParallelRunner();
+            runnables[i].data = splits.get(i);
+            runnables[i].initialCuts = initialCuts;
+            threads[i] = new Thread(runnables[i]);
+            threads[i].start();
+        }
+
+        /*for (int i = 0; i < splits.size(); i++) {
+            System.out.println(splits.get(i)[0].length);
+            bitSets.add(combinedCutGenerator(splits.get(i), a));
+        }*/
+
+        for (int i = 0; i < splits.size(); i++) {
+            try {
+                threads[i].join();
+                double[] splitCosts = runnables[i].result;
+                for (int j = 0; j < costs.length; j++) {
+                    costs[j] = Math.min(costs[j], splitCosts[j]);
+                }
+            }
+            catch (Exception e) {
+
+            }
+        }
+
+        return costs;
+    }
+
     public class AverageParallelRunner implements Runnable {
 
         public double[] result;
@@ -81,7 +144,7 @@ public class CostFunctions {
         public BitSet[] initialCuts;
         @Override
         public void run() {
-            result = shortestDistanceCostFunction(data, initialCuts);
+            result = pairwiseDistanceCostFunction(data, initialCuts);
         }
     }
 
@@ -139,11 +202,39 @@ public class CostFunctions {
         return costs;
     }
 
+    //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.
+    public double[] pairwiseClosestCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+
+        dataPoints = Model.tsne(dataPoints, 5);
+
+        double[] costs = new double[initialCuts.length];
+        double maxRange = getMaxRange(dataPoints);
+        for (int i = 0; i < initialCuts.length; i++) {
+            double cost = 0;
+            for (int j = 0; j < dataPoints.length; j++) {
+                /*if (initialCuts[i].get(j)) {
+                    continue;
+                }*/
+                double closestDist = Double.MAX_VALUE;
+                for (int k = 0; k < dataPoints.length; k++) {
+                    if (initialCuts[i].get(j) == initialCuts[i].get(k)) {
+                        continue;
+                    }
+                    closestDist = Math.min(closestDist, getDistance(dataPoints[j], dataPoints[k]));
+                }
+                cost += Math.exp(-5.0*(1.0/maxRange)*closestDist);
+            }
+            costs[i] = cost;//(initialCuts[i].count()*(initialCuts[i].size()-initialCuts[i].count()));
+        }
+        //cutCosts = costs;
+        return costs;
+    }
+
     //Distance to mean cost function, which uses the sum of the distance to the opposite side mean for every point (has linear time complexity).
     public double[] distanceToMeanCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
         long time1 = System.nanoTime();
 
-        dataPoints = Model.tsne(dataPoints, 2);
+        dataPoints = Model.tsne(dataPoints, 5);
 
         long expTime = 0;
 
