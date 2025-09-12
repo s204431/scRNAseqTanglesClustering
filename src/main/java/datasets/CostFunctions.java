@@ -144,7 +144,7 @@ public class CostFunctions {
         public BitSet[] initialCuts;
         @Override
         public void run() {
-            result = pairwiseDistanceCostFunction(data, initialCuts);
+            result = shortestDistanceCostFunction(data, initialCuts);
         }
     }
 
@@ -154,10 +154,16 @@ public class CostFunctions {
         //dataPoints = Model.pca(dataPoints, 100);
 
         dataPoints = Model.tsne(dataPoints, 5);
+        Main.zScoreNorm(dataPoints);
 
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
+            int count = initialCuts[i].count();
+            if (count == dataPoints.length || count == 0) {
+                costs[i] = 1000000;
+                continue;
+            }
             double cost = Double.MAX_VALUE;
             for (int j = 0; j < dataPoints.length; j++) {
                 if (initialCuts[i].get(j)) {
@@ -180,10 +186,16 @@ public class CostFunctions {
     public double[] pairwiseDistanceCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
 
         dataPoints = Model.tsne(dataPoints, 2);
+        Main.zScoreNorm(dataPoints);
 
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
+            int count = initialCuts[i].count();
+            if (count == dataPoints.length || count == 0) {
+                costs[i] = 1000000;
+                continue;
+            }
             double cost = 0;
             for (int j = 0; j < dataPoints.length; j++) {
                 if (initialCuts[i].get(j)) {
@@ -193,7 +205,7 @@ public class CostFunctions {
                     if (!initialCuts[i].get(k)) {
                         continue;
                     }
-                    cost += Math.exp(-5.0*(1.0/maxRange)*getDistance(dataPoints[j], dataPoints[k]));
+                    cost += Math.exp(-1.0*(1.0/maxRange)*getDistance(dataPoints[j], dataPoints[k]));
                 }
             }
             costs[i] = cost/(initialCuts[i].count()*(initialCuts[i].size()-initialCuts[i].count()));
@@ -206,15 +218,30 @@ public class CostFunctions {
     public double[] pairwiseClosestCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
 
         dataPoints = Model.tsne(dataPoints, 5);
+        Main.zScoreNorm(dataPoints);
+
+        double threshold = 1.0;
 
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
+            int count = initialCuts[i].count();
+            if (count == dataPoints.length || count == 0) {
+                costs[i] = 1000000;
+                continue;
+            }
             double cost = 0;
+            int size1 = initialCuts[i].count();
+            int size0 = dataPoints.length - size1;
+            int nBad = 0;
+            boolean smallest = false;
+            if (size0 > size1) {
+                smallest = true;
+            }
             for (int j = 0; j < dataPoints.length; j++) {
-                /*if (initialCuts[i].get(j)) {
-                    continue;
-                }*/
+                //if (initialCuts[i].get(j) != smallest) {
+                //    continue;
+                //}
                 double closestDist = Double.MAX_VALUE;
                 for (int k = 0; k < dataPoints.length; k++) {
                     if (initialCuts[i].get(j) == initialCuts[i].get(k)) {
@@ -222,9 +249,17 @@ public class CostFunctions {
                     }
                     closestDist = Math.min(closestDist, getDistance(dataPoints[j], dataPoints[k]));
                 }
-                cost += Math.exp(-5.0*(1.0/maxRange)*closestDist);
+                if (closestDist < threshold) {
+                    cost += Math.exp(-5.0*(1.0/maxRange)*closestDist);
+                    nBad++;
+                }
             }
-            costs[i] = cost;//(initialCuts[i].count()*(initialCuts[i].size()-initialCuts[i].count()));
+            if (nBad == 0) {
+                costs[i] = 0.0;
+            }
+            else {
+                costs[i] = cost;//cost/nBad;// / (smallest ? size1 : size0);//(initialCuts[i].count()*(initialCuts[i].size()-initialCuts[i].count()));
+            }
         }
         //cutCosts = costs;
         return costs;
@@ -232,22 +267,24 @@ public class CostFunctions {
 
     //Distance to mean cost function, which uses the sum of the distance to the opposite side mean for every point (has linear time complexity).
     public double[] distanceToMeanCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
-        long time1 = System.nanoTime();
 
         dataPoints = Model.tsne(dataPoints, 5);
-
-        long expTime = 0;
+        Main.zScoreNorm(dataPoints);
 
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
 
         for (int i = 0; i < initialCuts.length; i++) {
+            int count = initialCuts[i].count();
+            if (count == dataPoints.length || count == 0) {
+                costs[i] = 1000000;
+                continue;
+            }
             int cutCount = initialCuts[i].count();
             double[] mean1 = new double[dataPoints[0].length];
             double[] mean2 = new double[dataPoints[0].length];
             //Calculate means of the two sides of the cut.
 
-            long time2 = System.nanoTime();
             for (int j = 0; j < initialCuts[i].size(); j++) {
                 for (int k = 0; k < dataPoints[0].length; k++) {
                     if (initialCuts[i].get(j)) {
@@ -258,7 +295,6 @@ public class CostFunctions {
                     }
                 }
             }
-            expTime += System.nanoTime() - time2;
             for (int j = 0; j < mean1.length; j++) {
                 mean1[j] /= cutCount;
                 mean2[j] /= initialCuts[i].size() - cutCount;
@@ -270,8 +306,6 @@ public class CostFunctions {
             }
         }
         //cutCosts = costs;
-        System.out.println(expTime/1000000.0);
-        System.out.println((System.nanoTime() - time1)/1000000.0);
         return costs;
     }
 
