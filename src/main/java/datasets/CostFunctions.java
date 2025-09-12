@@ -17,8 +17,12 @@ public class CostFunctions {
         int splitSize = 1000;
 
         double[] costs = new double[initialCuts.length];
-        double[][] currentSplit = new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length)];
+
+        int nSplits = (int)Math.ceil(dataPoints[0].length/(double)splitSize);
+
         List<double[][]> splits = new ArrayList<>();
+        List<List<Double>[]> splitsList = new ArrayList<>();
+        /*double[][] currentSplit = new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length)];
         int index = 0;
 
         for (int i = 0; i < dataPoints[0].length; i++) {
@@ -29,19 +33,33 @@ public class CostFunctions {
             if (index == splitSize && i < dataPoints[0].length-1) {
                 index = 0;
                 splits.add(currentSplit);
-                /*double[] splitCosts = shortestDistanceCostFunction(currentSplit, initialCuts);
-                for (int j = 0; j < costs.length; j++) {
-                    costs[j] += splitCosts[j];
-                }*/
                 currentSplit = new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length - i - 1)];
             }
         }
 
-        splits.add(currentSplit);
-        /*double[] splitCosts = pairwiseDistanceCostFunction(currentSplit, initialCuts);
-        for (int j = 0; j < costs.length; j++) {
-            costs[j] += splitCosts[j];
-        }*/
+        splits.add(currentSplit);*/
+
+        for (int i = 0; i < nSplits; i++) {
+            splitsList.add(new List[dataPoints.length]);
+            for (int j = 0; j < dataPoints.length; j++) {
+                splitsList.get(i)[j] = new ArrayList<>();
+            }
+        }
+
+        for (int i = 0; i < dataPoints.length; i++) {
+            for (int j = 0; j < dataPoints[i].length; j++) {
+                splitsList.get(j%nSplits)[i].add(dataPoints[i][j]);
+            }
+        }
+
+        for (int i = 0; i < splitsList.size(); i++) {
+            splits.add(new double[dataPoints.length][splitsList.get(i)[0].size()]);
+            for (int j = 0; j < splitsList.get(i).length; j++) {
+                for (int k = 0; k < splitsList.get(i)[j].size(); k++) {
+                    splits.get(i)[j][k] = splitsList.get(i)[j].get(k);
+                }
+            }
+        }
 
         AverageParallelRunner[] runnables = new AverageParallelRunner[splits.size()];
         Thread[] threads = new Thread[splits.size()];

@@ -20,8 +20,10 @@ public class CutGenerators {
 
     public BitSet[] splitCutGenerator(double[][] dataPoints, int a) {
         int splitSize = 1000;
+        int nSplits = (int)Math.ceil(dataPoints[0].length/(double)splitSize);
 
         List<double[][]> splits = new ArrayList<>();
+        List<List<Double>[]> splitsList = new ArrayList<>();
 
 
         splits.add(new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length)]);
@@ -37,6 +39,28 @@ public class CutGenerators {
                 splits.add(new double[dataPoints.length][Math.min(splitSize, dataPoints[0].length - i - 1)]);
             }
         }
+
+        /*for (int i = 0; i < nSplits; i++) {
+            splitsList.add(new List[dataPoints.length]);
+            for (int j = 0; j < dataPoints.length; j++) {
+                splitsList.get(i)[j] = new ArrayList<>();
+            }
+        }
+
+        for (int i = 0; i < dataPoints.length; i++) {
+            for (int j = 0; j < dataPoints[i].length; j++) {
+                splitsList.get(j%nSplits)[i].add(dataPoints[i][j]);
+            }
+        }
+
+        for (int i = 0; i < splitsList.size(); i++) {
+            splits.add(new double[dataPoints.length][splitsList.get(i)[0].size()]);
+            for (int j = 0; j < splitsList.get(i).length; j++) {
+                for (int k = 0; k < splitsList.get(i)[j].size(); k++) {
+                    splits.get(i)[j][k] = splitsList.get(i)[j].get(k);
+                }
+            }
+        }*/
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
