@@ -38,7 +38,6 @@ public class TangleSearchTree {
         root = new Node();
         root.intersection = new BitSet(cuts[0].size());
         root.intersection.setAll();
-        root.highestBranchNode = root;
         lowestDepthNodes.add(root);
     }
 
@@ -46,7 +45,6 @@ public class TangleSearchTree {
     protected boolean addOrientation(Node node, int orientationIndex, boolean left, boolean alternateConsistencyCheck) {
         Node newNode = new Node(orientationIndex, left);
         newNode.parent = node;
-        newNode.highestBranchNode = newNode.parent.highestBranchNode;
         if (left) {
             node.leftChild = newNode;
         }
@@ -74,13 +72,11 @@ public class TangleSearchTree {
             if (newNode.parent.intersection != null) {
                 if (newNode.parent.leftChild != null && newNode.parent.rightChild != null) {
                     newNode.intersection.intersectWith(newNode.parent.intersection);
-                    newNode.highestBranchNode = newNode;
 
                     // First child did not know if sibling was going to be added, so compute intersection for first child in this case.
                     newNode.parent.leftChild.intersection = cuts[newNode.parent.leftChild.originalOrientation].clone();
                     newNode.parent.leftChild.intersection.flipALl();
                     newNode.parent.leftChild.intersection.intersectWith(newNode.parent.intersection);
-                    newNode.parent.leftChild.highestBranchNode = newNode.parent.leftChild;
                 }
                 else {
                     newNode.intersection = newNode.parent.intersection;
@@ -143,14 +139,12 @@ public class TangleSearchTree {
 
     private boolean isConsistentOscarWerner(Node newNode) {
         int depth = getDepth(newNode);
-        Node branchingNode = newNode.highestBranchNode;
-        int branchingNodeDepth = getDepth(branchingNode);
-        depth -= branchingNodeDepth;
+
         if (depth < 2) {
-            return BitSet.intersectionEarlyStop(cuts[newNode.originalOrientation], branchingNode.intersection, newNode.side, false, a) >= a;
+            return BitSet.intersectionEarlyStop(cuts[newNode.originalOrientation], newNode.parent.intersection, newNode.side, false, a) >= a;
         }
         if (depth == 2) {
-            int intersection = BitSet.intersectionEarlyStop(cuts[newNode.originalOrientation], cuts[newNode.parent.originalOrientation], branchingNode.intersection, newNode.side, newNode.parent.side, false, a);
+            int intersection = BitSet.intersectionEarlyStop(cuts[newNode.originalOrientation], cuts[newNode.parent.originalOrientation], newNode.parent.intersection, newNode.side, newNode.parent.side, false, a);
             return intersection >= a;
         }
 
@@ -158,7 +152,7 @@ public class TangleSearchTree {
         if (newNode.side) {
             cut.flipALl();
         }
-        cut.intersectWith(branchingNode.intersection);
+        cut.intersectWith(newNode.parent.intersection);
 
         Node[] otherNodes = new Node[depth-1];
         otherNodes[0] = newNode.parent;
@@ -497,7 +491,6 @@ public class TangleSearchTree {
         public Node leftChild;
         public Node rightChild;
         public Node parent;
-        public Node highestBranchNode;
         public boolean side;
         public int originalDepth = 1;
 
