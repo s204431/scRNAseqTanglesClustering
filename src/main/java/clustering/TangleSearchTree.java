@@ -165,7 +165,7 @@ public class TangleSearchTree {
         for (int i = 1; i < depth-1; i++) {
             otherNodes[i] = otherNodes[i-1].parent;
         }
-        for (int i = branchingNodeDepth; i < depth-1; i++) {
+        for (int i = 0; i < depth-1; i++) {
             for (int j = i+1; j < depth-1; j++) {
                 int intersection;
                 intersection = BitSet.intersectionEarlyStop(cut, cuts[otherNodes[i].originalOrientation], cuts[otherNodes[j].originalOrientation], false, otherNodes[i].side, otherNodes[j].side, a);
