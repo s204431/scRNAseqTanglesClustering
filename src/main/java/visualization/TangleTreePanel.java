@@ -31,6 +31,9 @@ public class TangleTreePanel extends JPanel {
     private HashMap<Integer, Integer> originalCutIndexToSortedCutIndex = new HashMap<>();
     private HashMap<Integer, Integer> sortedCutIndexToOriginalCutIndex = new HashMap<>();
 
+    private BitSet[] cuts;
+    private double[] cutCosts;
+
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
 
@@ -147,11 +150,9 @@ public class TangleTreePanel extends JPanel {
             return;
         }
 
-        BitSet cut = sortedCuts[node.originalOrientation].clone();
+        BitSet cut = cuts[node.originalOrientation].clone();
         if (node.side) {
-            for (int j = 0; j < cut.size(); j++) {
-                cut.flip(j);
-            }
+            cut.flipALl();
         }
 
         tree.addChild(parent + "-" + uniqueId, parent, uniqueId);
@@ -170,8 +171,8 @@ public class TangleTreePanel extends JPanel {
     }
 
     private void getSortedCutsAndCosts() {
-        BitSet[] cuts = view.getCuts();
-        double[] cutCosts = view.getCutCosts();
+        cuts = view.getCuts();
+        cutCosts = view.getCutCosts();
         Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
         cuts = result.x;
         cutCosts = result.y;

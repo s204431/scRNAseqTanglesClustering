@@ -1,6 +1,5 @@
 package clustering;
 
-import org.jdesktop.swingx.painter.effects.GlowPathEffect;
 import util.BitSet;
 
 import java.util.ArrayList;
@@ -27,6 +26,8 @@ public class TangleSearchTree {
     private final Hashtable<Long, Integer> hashtable = new Hashtable<>();
     protected double[][] softClustering;
     protected int[] hardClustering;
+
+    protected List<double[]> branchCosts;
 
     //Constructor receiving a, all cuts and the cost for each cut.
     protected TangleSearchTree(int a, BitSet[] cuts, double[] cutCosts) {
@@ -60,14 +61,24 @@ public class TangleSearchTree {
         }
         else {
 
-            // TODO: LOOK AT THIS!!!!
-            newNode.branchIdx = node.branchIdx;
-            newNode.intersection = cuts[newNode.originalOrientation].clone();
+            newNode.branchId = newNode.parent.branchId;
+            newNode.intersection = cuts[orientationIndex].clone();
             if (left) {
                 newNode.intersection.flipALl();
             }
+
             if (newNode.parent.intersection != null) {
-                newNode.intersection.intersectWith(newNode.parent.intersection);
+                if (newNode.parent.leftChild != null && newNode.parent.rightChild != null) {
+                    newNode.intersection.intersectWith(newNode.parent.intersection);
+
+                    // First child did not know if sibling was going to be added, so compute intersection for first child in this case.
+                    newNode.parent.leftChild.intersection = cuts[newNode.parent.leftChild.originalOrientation].clone();
+                    newNode.parent.leftChild.intersection.flipALl();
+                    newNode.parent.leftChild.intersection.intersectWith(newNode.parent.intersection);
+                }
+                else {
+                    newNode.intersection = newNode.parent.intersection;
+                }
             }
 
             if (TangleClusterer.earlyStop) {
@@ -89,7 +100,7 @@ public class TangleSearchTree {
     private boolean isConsistent(Node newNode) {
         int depth = getDepth(newNode);
         if (depth < 2) {
-            return cuts[newNode.originalOrientation].size() >= a;
+            return cuts[newNode.originalOrientation].countFlipped(newNode.side) >= a;
         }
         if (depth == 2) {
             int intersection = BitSet.intersectionEarlyStop(cuts[newNode.originalOrientation], cuts[newNode.parent.originalOrientation], newNode.side, newNode.parent.side, a);
@@ -205,15 +216,31 @@ public class TangleSearchTree {
             double sum2 = 0;
             for (int distinguished : node.distinguishedCuts) {
                 if (node.leftChild.condensedOrientations.get(distinguished)) {
-                    sum2 += getWeight(cutCosts[distinguished]);
-                    if (!cuts[distinguished].get(datapoint)) {
-                        sum1 += getWeight(cutCosts[distinguished]);
+                    if (branchCosts == null) {
+                        sum2 += getWeight(cutCosts[distinguished]);
+                        if (!cuts[distinguished].get(datapoint)) {
+                            sum1 += getWeight(cutCosts[distinguished]);
+                        }
+                    } else {
+                        //Use localized branch costs as weight
+                        sum2 += getWeight(branchCosts.get(node.branchId)[distinguished]);
+                        if (!cuts[distinguished].get(datapoint)) {
+                            sum1 += getWeight(branchCosts.get(node.branchId)[distinguished]);
+                        }
                     }
                 }
                 if (node.leftChild.condensedOrientations.get(distinguished+node.leftChild.condensedOrientations.size()/2)) {
-                    sum2 += getWeight(cutCosts[distinguished]);
-                    if (cuts[distinguished].get(datapoint)) {
-                        sum1 += getWeight(cutCosts[distinguished]);
+                    if (branchCosts == null) {
+                        sum2 += getWeight(cutCosts[distinguished]);
+                        if (cuts[distinguished].get(datapoint)) {
+                            sum1 += getWeight(cutCosts[distinguished]);
+                        }
+                    } else {
+                        //Use localized branch costs as weight
+                        sum2 += getWeight(branchCosts.get(node.branchId)[distinguished]);
+                        if (cuts[distinguished].get(datapoint)) {
+                            sum1 += getWeight(branchCosts.get(node.branchId)[distinguished]);
+                        }
                     }
                 }
             }
@@ -404,6 +431,9 @@ public class TangleSearchTree {
     public Node copyNode(Node oldNode, Node newNode) {
         newNode.originalOrientation = oldNode.originalOrientation;
         newNode.side = oldNode.side;
+        if (oldNode.intersection != null) {
+            newNode.intersection = oldNode.intersection.clone();
+        }
         if (oldNode.leftChild != null) {
             newNode.leftChild = new Node();
             newNode.leftChild = copyNode(oldNode.leftChild, newNode.leftChild);
@@ -429,7 +459,7 @@ public class TangleSearchTree {
         public int originalDepth = 1;
 
         // TODO: LOOK AT THESE!!!!
-        public int branchIdx;
+        public int branchId;
         public BitSet intersection;
 
         //Creates a default node (used to generate the root).

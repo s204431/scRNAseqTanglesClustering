@@ -6,7 +6,7 @@ import util.GlobalConstants;
 import java.util.Arrays;
 
 public class ScRNAseqDataset {
-    private double[][] data;
+    public double[][] data;
     private int a;
 
     private BitSet[] initialCuts;
@@ -74,6 +74,10 @@ public class ScRNAseqDataset {
 
     public void setA(int a) {
         this.a = a;
+    }
+
+    public void setInitialCuts(BitSet[] initialCuts) {
+        this.initialCuts = initialCuts;
     }
 
     public BitSet[] getLastCuts() {
