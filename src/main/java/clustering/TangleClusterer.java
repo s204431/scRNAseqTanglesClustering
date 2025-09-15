@@ -18,6 +18,8 @@ public class TangleClusterer {
     //This class is used to generate a clustering with tangles.
 
     protected static boolean earlyStop = false;
+    protected static boolean useAlternateConsistencyCheck = true;
+    protected static boolean useOscarWerner = true;
 
     private TangleSearchTree tangleSearchTree;
 
@@ -34,8 +36,9 @@ public class TangleClusterer {
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
-        //TangleSearchTree tree = generateTangleSearchTree(initialCuts, costs, a, psi);
-        TangleSearchTree tree = oscarWerner(initialCuts, costs, a, psi, dataset.data, costFunctionName);
+        TangleSearchTree tree = useOscarWerner ?
+                oscarWerner(initialCuts, costs, a, psi, dataset.data, costFunctionName) :
+                generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
         try {
@@ -44,6 +47,7 @@ public class TangleClusterer {
             tree.generateDefaultClustering();
             return;
         }
+        monitor.setCondensedTree(tree.copy());
         tree.contractTree();
         tree.calculateSoftClustering();
         tree.calculateHardClustering();
@@ -59,7 +63,6 @@ public class TangleClusterer {
             tree.generateDefaultClustering();
             return;
         }
-        monitor.setCondensedTree(tree.copy());
         monitor.setCondensedTree(tree.copy());
         tree.contractTree();
         tree.calculateSoftClustering();
@@ -93,8 +96,8 @@ public class TangleClusterer {
             boolean consistent = false;
             List<Node> lowestDepthNodesCopy = new ArrayList<>(tree.lowestDepthNodes);
             for (Node node : lowestDepthNodesCopy) {
-                consistent = tree.addOrientation(node, indices[i], true) || consistent;
-                consistent = tree.addOrientation(node, indices[i], false) || consistent;
+                consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
+                consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
             }
             if (earlyStop && !consistent) { //Stop if no nodes were added to the tree.
                 break;
@@ -170,8 +173,8 @@ public class TangleClusterer {
                         continue;
                     }
 
-                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], true) || consistent;
-                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], false) || consistent;
+                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], true, true) || consistent;
+                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], false, true) || consistent;
                     if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
                         node.leftChild = null;
                     }
