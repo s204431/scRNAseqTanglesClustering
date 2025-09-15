@@ -20,6 +20,7 @@ import smile.math.matrix.Matrix;
 import smile.validation.metric.NormalizedMutualInformation;
 import smile.validation.metric.AdjustedRandIndex;
 import util.BitSet;
+import util.TestSet;
 import util.Tuple;
 
 import java.io.BufferedReader;
@@ -27,6 +28,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
+import static clustering.TangleClusterer.removeRedundantCuts;
 import static main.Main.runPython;
 
 
@@ -56,13 +58,14 @@ public class Model {
     private TangleClusterer tangleClusterer = new TangleClusterer();
 
     public Model() {
-        String observedFilePath = "data/symsim_observed_counts_500genes_500cells_complex.csv";
+
+        String observedFilePath = "data/symsim_observed_counts_5000genes_1000cells_complex.csv";
         String labelFilePath = observedFilePath.replace("observed_counts", "labels");
 
         originalData = loadData(observedFilePath);
         groundTruth = loadGroundTruth(labelFilePath);
         normalizedData = logNormalize(originalData);
-        hvgData = highlyVariableGenes(normalizedData, 500);
+        hvgData = highlyVariableGenes(normalizedData, 5000);
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {
             newHvgData[i][0] = hvgData[i][4];
@@ -88,12 +91,130 @@ public class Model {
 
     }
 
+    public void runTestset() {
+        TestSet testSet = new TestSet(this, "data/testset");
+        testSet.run(10, true);
+    }
+
+    public static double getDistance(double[] point1, double[] point2) {
+        double length = 0;
+        for (int i = 0; i < point1.length; i++) {
+            length += (point1[i]-point2[i])*(point1[i]-point2[i]);
+        }
+        return Math.sqrt(length);
+    }
+
+    public static double silhuetteScore(double[][] data, int[] labels) {
+        int n = data.length;
+        double[] silhouettes = new double[n];
+
+        for (int i = 0; i < n; i++) {
+            double[] point = data[i];
+            int cluster = labels[i];
+
+            double a = 0.0;
+            int sameClusterCount = 0;
+            for (int j = 0; j < n; j++) {
+                if (i != j && labels[j] == cluster) {
+                    a += getDistance(point, data[j]);
+                    sameClusterCount++;
+                }
+            }
+            if (sameClusterCount > 0) {
+                a /= sameClusterCount;
+            }
+
+            double b = Double.MAX_VALUE;
+            Map<Integer, List<Integer>> clusterMembers = new HashMap<>();
+
+            for (int j = 0; j < n; j++) {
+                if (labels[j] != cluster) {
+                    clusterMembers.computeIfAbsent(labels[j], k -> new ArrayList<>()).add(j);
+                }
+            }
+
+            for (int otherCluster : clusterMembers.keySet()) {
+                double distSum = 0.0;
+                List<Integer> members = clusterMembers.get(otherCluster);
+                for (int idx : members) {
+                    distSum += getDistance(point, data[idx]);
+                }
+                double avgDist = distSum / members.size();
+                b = Math.min(b, avgDist);
+            }
+
+            double s;
+            if (sameClusterCount == 0) {
+                s = 0;
+            } else {
+                s = (b - a) / Math.max(a, b);
+            }
+            silhouettes[i] = s;
+        }
+
+        double total = 0.0;
+        for (double s : silhouettes) {
+            total += s;
+        }
+        return total / n;
+    }
+
     public void cluster(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
         monitor.setDataset(dataset);
         tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
         hardClustering = tangleClusterer.getHardClustering();
         double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
         double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+        System.out.println(NMIScore);
+        System.out.println(randIndex);
+    }
+
+    public int[] clusterAndReturn(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
+        monitor.setDataset(dataset);
+        tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
+        hardClustering = tangleClusterer.getHardClustering();
+        return hardClustering;
+    }
+
+    public void clusterAuto(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
+
+        double[][] reducedPoints = tsne(hvgData, 5);
+
+        dataset.setA(a);
+        BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
+        double[] costs = dataset.getCutCosts(costFunctionName);
+        Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
+        initialCuts = redundancyRemoved.x;
+        costs = redundancyRemoved.y;
+        monitor.setDataset(dataset);
+
+        int[] bestHardClustering = null;
+        double bestSilhuetteScore = -1;
+        int bestA = -1;
+
+        for (int a2 = a; a2 < a*20; a2 += a) {
+            tangleClusterer.generateClusters(a2, psi, initialCuts, costs);
+            hardClustering = tangleClusterer.getHardClustering();
+            double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+            double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+
+            System.out.println(NMIScore);
+            System.out.println(randIndex);
+            double silhuetteScore = silhuetteScore(reducedPoints, hardClustering);
+            if (silhuetteScore < 1.0 && silhuetteScore > bestSilhuetteScore) {
+                bestSilhuetteScore = silhuetteScore;
+                bestHardClustering = hardClustering;
+                bestA = a2;
+            }
+            System.out.println(silhuetteScore);
+        }
+
+        hardClustering = bestHardClustering;
+
+        double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+        double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+
+        System.out.println("Best a: " + bestA);
         System.out.println(NMIScore);
         System.out.println(randIndex);
     }
@@ -175,7 +296,7 @@ public class Model {
             output[i] = resultList.get(i);
         }
 
-        System.out.println("TSNE time: " + (System.currentTimeMillis() - time));
+        //System.out.println("TSNE time: " + (System.currentTimeMillis() - time));
 
         return output;
     }
@@ -271,11 +392,11 @@ public class Model {
                 newData[j][i] = data[j][indc[i]];
             }
         }
-        System.out.println("Dimension after HVG: " + newData.length + " " + newData[0].length);
+        //System.out.println("Dimension after HVG: " + newData.length + " " + newData[0].length);
         return newData;
     }
 
-    private double[][] logNormalize(double[][] data) {
+    public double[][] logNormalize(double[][] data) {
         double[][] normalized = new double[data.length][data[0].length];
         int nZeros = 0;
         for (int i = 0; i < data.length; i++) {
@@ -286,8 +407,8 @@ public class Model {
                 }
             }
         }
-        System.out.println("Sparsity: " + ((double)nZeros)/(normalized.length*normalized[0].length));
-        System.out.println("Dimension: " + normalized.length + " " + normalized[0].length);
+        //System.out.println("Sparsity: " + ((double)nZeros)/(normalized.length*normalized[0].length));
+        //System.out.println("Dimension: " + normalized.length + " " + normalized[0].length);
         return normalized;
     }
 

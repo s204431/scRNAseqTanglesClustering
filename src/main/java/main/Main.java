@@ -31,6 +31,8 @@ public class Main {
         model.setMonitor(monitor);
         view.setMonitor(monitor);
 
+        model.runTestset();
+
         /*
         // Read data
         String filePath = "data/symsim_observed_counts_5000genes_1000cells_complex.csv";
