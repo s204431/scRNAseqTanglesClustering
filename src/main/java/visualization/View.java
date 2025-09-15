@@ -2,6 +2,7 @@ package visualization;
 
 import clustering.Model;
 import clustering.TangleSearchTree;
+import main.Main;
 import monitor.Monitor;
 import util.BitSet;
 
@@ -19,6 +20,7 @@ public class View {
         this.model = model;
 
         points = Model.tsne(model.getHvgData(), 2);
+        Main.zScoreNorm(points);
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);

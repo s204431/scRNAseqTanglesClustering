@@ -44,6 +44,22 @@ public class TangleClusterer {
             tree.generateDefaultClustering();
             return;
         }
+        tree.contractTree();
+        tree.calculateSoftClustering();
+        tree.calculateHardClustering();
+    }
+
+    public void generateClusters(int a, double psi, BitSet[] initialCuts, double[] costs) {
+        TangleSearchTree tree = generateTangleSearchTree(initialCuts, costs, a, psi);
+        tangleSearchTree = tree;
+        monitor.setUncondensedTree(tree.copy());
+        try {
+            tree.condenseTree(1);
+        } catch (NullPointerException e) {
+            tree.generateDefaultClustering();
+            return;
+        }
+        monitor.setCondensedTree(tree.copy());
         monitor.setCondensedTree(tree.copy());
         tree.contractTree();
         tree.calculateSoftClustering();
