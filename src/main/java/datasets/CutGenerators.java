@@ -252,7 +252,6 @@ public class CutGenerators {
             }
         }
         cutsAreAxisParallel = true;*/
-        System.out.println(result.length);
         return result;
     }
 

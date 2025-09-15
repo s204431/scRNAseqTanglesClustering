@@ -178,9 +178,9 @@ public class Model {
         return hardClustering;
     }
 
-    public void clusterAuto(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
+    public int[] clusterAuto(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
 
-        double[][] reducedPoints = tsne(hvgData, 5);
+        double[][] reducedPoints = tsne(dataset.data, 5);
 
         dataset.setA(a);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
@@ -197,28 +197,29 @@ public class Model {
         for (int a2 = a; a2 < a*20; a2 += a) {
             tangleClusterer.generateClusters(a2, psi, initialCuts, costs);
             hardClustering = tangleClusterer.getHardClustering();
-            double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-            double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+            //double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+            //double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
 
-            System.out.println(NMIScore);
-            System.out.println(randIndex);
+            //System.out.println(NMIScore);
+            //System.out.println(randIndex);
             double silhuetteScore = silhuetteScore(reducedPoints, hardClustering);
             if (silhuetteScore < 1.0 && silhuetteScore > bestSilhuetteScore) {
                 bestSilhuetteScore = silhuetteScore;
                 bestHardClustering = hardClustering;
                 bestA = a2;
             }
-            System.out.println(silhuetteScore);
+            //System.out.println(silhuetteScore);
         }
 
         hardClustering = bestHardClustering;
 
-        double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-        double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+        //double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+        //double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
 
-        System.out.println("Best a: " + bestA);
-        System.out.println(NMIScore);
-        System.out.println(randIndex);
+        //System.out.println("Best a: " + bestA);
+        //System.out.println(NMIScore);
+        //System.out.println(randIndex);
+        return hardClustering;
     }
 
     public static double[][] pca(double[][] data, int nComponents) {
@@ -374,7 +375,7 @@ public class Model {
             }
             double variance = sqDiff / (nCells - 1);
 
-            dispersions[g] = mean > 0 ? variance / mean : 0.0;
+            dispersions[g] = mean > 0 ? -variance / mean : 0.0;
         }
 
         // Get indices sorted by dispersion (descending)

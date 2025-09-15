@@ -31,7 +31,7 @@ public class Main {
         model.setMonitor(monitor);
         view.setMonitor(monitor);
 
-        model.runTestset();
+        //model.runTestset();
 
         /*
         // Read data
