@@ -19,7 +19,7 @@ public class TangleClusterer {
 
     protected static boolean earlyStop = false;
     protected static boolean useAlternateConsistencyCheck = false;
-    protected static boolean useOscarWerner = false;
+    protected static boolean useOscarWerner = true;
 
     private TangleSearchTree tangleSearchTree;
 
@@ -158,7 +158,7 @@ public class TangleClusterer {
             for (Node node : lowestBranchNodes) {
                 int[] branchIndicesOrdered = indicesOrdered.get(node.branchId);
                 int branchPointer = branchPointers.get(node.branchId);
-                HashSet<Integer> branchCuts = branchCutSets.get(node.branchId);
+                //HashSet<Integer> branchCuts = branchCutSets.get(node.branchId);
 
                 for (int i = branchPointer; i < initialCuts.length; i++) {
                     boolean consistent = false;
@@ -167,11 +167,11 @@ public class TangleClusterer {
                         break;
                     }
 
-                    if (!branchCuts.contains(branchIndicesOrdered[i])) {
+                    /*if (!branchCuts.contains(branchIndicesOrdered[i])) {
                         //System.out.println("Node " + debugIndices[node.originalOrientation]  + (node.side ? "L" : "R") + " in branch: " + node.branchId + " has skipped cut: " + debugIndices[branchIndicesOrdered[i]]);
                         branchPointer++;
                         continue;
-                    }
+                    }*/
 
                     consistent = tree.addOrientation(node, branchIndicesOrdered[i], true, true) || consistent;
                     consistent = tree.addOrientation(node, branchIndicesOrdered[i], false, true) || consistent;
@@ -208,7 +208,7 @@ public class TangleClusterer {
                         quicksort(reorderedCosts, newIndices, i + 1, reorderedCosts.length - 1);
                         indicesOrdered.add(newIndices);
 
-                        BitSet[] reorderedCuts = new BitSet[newCosts.length];
+                        /*BitSet[] reorderedCuts = new BitSet[newCosts.length];
                         for (int j = 0; j < reorderedCosts.length; j++) {
                             reorderedCuts[j] = newCuts[newIndices[j]];
                         }
@@ -221,22 +221,11 @@ public class TangleClusterer {
                         Tuple<BitSet[], double[]> leftRedundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), 0.95);
                         int[] ints = Arrays.stream(leftRedundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
 
-                        /*System.out.println("Node: " + debugIndices[node.leftChild.originalOrientation] + (node.leftChild.side ? "L" : "R"));
-                        for (int j = 0; j < newIndices.length; j++) {
-                            System.out.print(debugIndices[newIndices[j]] + ", ");
-                        }
-                        System.out.println();
-                        System.out.println(Arrays.toString(newIndices));
-                        for (int j = 0; j < ints.length; j++) {
-                            System.out.print(newIndices[ints[j]] + ", ");
-                        }
-                        System.out.println();*/
-
                         HashSet<Integer> leftCuts = new HashSet<>();
                         for (int j = 0; j < ints.length; j++) {
                             leftCuts.add(newIndices[ints[j]]);
                         }
-                        branchCutSets.add(leftCuts);
+                        branchCutSets.add(leftCuts);*/
 
                         newLowestBranchNodes.add(node.leftChild);
 
@@ -271,26 +260,15 @@ public class TangleClusterer {
                             reorderedCuts2[j] = newCuts2[newIndices2[j]];
                         }
 
-                        // Remove redundant cuts
+                        /*// Remove redundant cuts
                         Tuple<BitSet[], double[]> rightRedundantCutsRemoved = removeRedundantCuts(reorderedCuts2, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), 0.95);
                         int[] ints2 = Arrays.stream(rightRedundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
-
-                        /*System.out.println("Node: " + debugIndices[node.rightChild.originalOrientation] + (node.rightChild.side ? "L" : "R"));
-                        for (int j = 0; j < newIndices2.length; j++) {
-                            System.out.print(debugIndices[newIndices2[j]] + ", ");
-                        }
-                        System.out.println();
-                        System.out.println(Arrays.toString(newIndices2));
-                        for (int j = 0; j < ints2.length; j++) {
-                            System.out.print(newIndices2[ints2[j]] + ", ");
-                        }
-                        System.out.println();*/
 
                         HashSet<Integer> rightCuts = new HashSet<>();
                         for (int j = 0; j < ints2.length; j++) {
                             rightCuts.add(newIndices2[ints2[j]]);
                         }
-                        branchCutSets.add(rightCuts);
+                        branchCutSets.add(rightCuts);*/
 
                         newLowestBranchNodes.add(node.rightChild);
 
