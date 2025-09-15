@@ -58,14 +58,16 @@ public class Model {
     private TangleClusterer tangleClusterer = new TangleClusterer();
 
     public Model() {
+        loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
+    }
 
-        String observedFilePath = "data/symsim_observed_counts_5000genes_1000cells_complex.csv";
+    public void loadDataset(String observedFilePath) {
         String labelFilePath = observedFilePath.replace("observed_counts", "labels");
 
         originalData = loadData(observedFilePath);
         groundTruth = loadGroundTruth(labelFilePath);
         normalizedData = logNormalize(originalData);
-        hvgData = highlyVariableGenes(normalizedData, 5000);
+        hvgData = highlyVariableGenes(normalizedData, originalData[0].length);
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {
             newHvgData[i][0] = hvgData[i][4];

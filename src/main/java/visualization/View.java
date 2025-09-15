@@ -5,6 +5,7 @@ import clustering.TangleSearchTree;
 import main.Main;
 import monitor.Monitor;
 import util.BitSet;
+import util.TestSet;
 
 import javax.swing.*;
 
@@ -73,6 +74,17 @@ public class View {
         if (tree != null) {
             window.drawTangleSearchTree(tree);
         }
+    }
+
+    public void loadDataset(String filePath) {
+        model.loadDataset(filePath);
+        points = Model.tsne(model.getHvgData(), 2);
+        Main.zScoreNorm(points);
+        window.drawPoints(points);
+    }
+
+    public void runTestSet(String dirPath) {
+        new TestSet(model, dirPath).run(5, true);
     }
 
     public void setMonitor(Monitor monitor) {
