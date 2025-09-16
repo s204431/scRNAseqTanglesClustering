@@ -18,8 +18,8 @@ public class TangleClusterer {
     //This class is used to generate a clustering with tangles.
 
     protected static boolean earlyStop = false;
-    protected static boolean useAlternateConsistencyCheck = true;
-    protected static boolean useOscarWerner = true;
+    protected boolean useAlternateConsistencyCheck = false;
+    protected boolean useOscarWerner = false;
 
     private TangleSearchTree tangleSearchTree;
 

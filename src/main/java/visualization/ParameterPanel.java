@@ -20,7 +20,7 @@ public class ParameterPanel extends JPanel {
     private static final int TITLE_TEXT_SIZE = 18;
     private static final int DEFAULT_TEXT_SIZE = 14;
     private static final Insets DEFAULT_INSETS = new Insets(5, 5, 5, 5);
-    private static final Insets TITLE_INSETS = new Insets(25, 20, 10, 20);
+    private static final Insets TITLE_INSETS = new Insets(25, 5, 10, 5);
 
     // Layout state
     private final GridBagConstraints gbc = new GridBagConstraints();
@@ -30,14 +30,19 @@ public class ParameterPanel extends JPanel {
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
 
-    // UI components
-    private JTextField aField;
-    private JTextField psiField;
+    // Algorithm section components
+    private JCheckBox consistencyCheckbox;
+    private JCheckBox wernerModificationCheckbox;
     private JComboBox<String> cutGeneratorDropdown;
     private JComboBox<String> costFunctionDropdown;
+
+    // Cluster section components
+    private JTextField aField;
+    private JTextField psiField;
     private JButton clusterButton;
     private JCheckBox groundTruthCheckBox;
 
+    // Cut section components
     private JCheckBox showCutCheckBox;
     private JTextField cutNumberField;
     private JButton minusButton;
@@ -51,19 +56,35 @@ public class ParameterPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 0.0;
 
-        buildDimensionSection();
+        buildAlgorithmSection();
         buildClusteringSection();
         buildCutsSection();
 
         addActions();
     }
 
-    private void buildDimensionSection() {
-        addTitle("Dimensions");
+    private void buildAlgorithmSection() {
+        addTitle("Algorithm Modifications");
+
+        consistencyCheckbox = new JCheckBox("<html>" +
+                        "Consistency Check<br>" +
+                        "Modification" +
+                    "</html>");
+        wernerModificationCheckbox = new JCheckBox("<html>" +
+                    "Werner<br>" +
+                    "Modification" +
+                "</html>");
+        addRow(consistencyCheckbox, wernerModificationCheckbox);
+
+        cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
+        addRow("Cut Generator ", cutGeneratorDropdown);
+
+        costFunctionDropdown = new JComboBox<>(GlobalConstants.COST_FUNCTION_NAMES);
+        addRow("Cost Function ", costFunctionDropdown);
     }
 
     private void buildClusteringSection() {
-        addTitle("Clustering");
+        addTitle("Cluster Parameters");
 
         aField = new JTextField(10);
         addRow("a", aField);
@@ -71,28 +92,15 @@ public class ParameterPanel extends JPanel {
         psiField = new JTextField(10);
         addRow("psi", psiField);
 
-        cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
-        addRow("Cut Generator: ", cutGeneratorDropdown);
-
-        costFunctionDropdown = new JComboBox<>(GlobalConstants.COST_FUNCTION_NAMES);
-        addRow("Cost Function: ", costFunctionDropdown);
-
         clusterButton = new JButton("Cluster");
-        groundTruthCheckBox = new JCheckBox("Show Ground Truth");
+        groundTruthCheckBox = new JCheckBox("<html>Show Ground<br> Truth</html>");
         groundTruthCheckBox.setSelected(false);
 
-        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        actionPanel.add(clusterButton);
-        actionPanel.add(groundTruthCheckBox);
-
-        addFullWidth(actionPanel);
+        addRow(clusterButton, groundTruthCheckBox);
     }
 
     private void buildCutsSection() {
-        addTitle("Cuts");
-
-        showCutCheckBox = new JCheckBox("Show cuts");
-        showCutCheckBox.setSelected(false);
+        addTitle("Cut Visualization");
 
         // A counter for cuts ( - [number] + )
         cutNumberField = new JTextField("0", 3);
@@ -101,22 +109,37 @@ public class ParameterPanel extends JPanel {
 
         // Small panel to hold the three components
         JPanel counterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        counterPanel.add(showCutCheckBox);
         counterPanel.add(minusButton);
         counterPanel.add(cutNumberField);
         counterPanel.add(plusButton);
 
-        addFullWidth(counterPanel);
+        showCutCheckBox = new JCheckBox("Show cuts");
+        showCutCheckBox.setSelected(false);
+
+        addRow(counterPanel, showCutCheckBox);
     }
 
     private void addActions() {
         // ==================== Button Logic ==================== //
         clusterButton.addActionListener(this::clusterAction);
-
         plusButton.addActionListener(e -> stepCutCounter(1));
         minusButton.addActionListener(e -> stepCutCounter(-1));
 
         // ==================== Check Box Logic ==================== //
+        /*consistencyCheckbox.addItemListener(e -> {
+            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+            if (!isChecked) {
+                wernerModificationCheckbox.setSelected(false);
+            }
+        });
+
+        wernerModificationCheckbox.addItemListener(e -> {
+            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+            if (isChecked) {
+                consistencyCheckbox.setSelected(true);
+            }
+        });*/
+
         groundTruthCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
             if (isChecked) {
@@ -179,10 +202,12 @@ public class ParameterPanel extends JPanel {
         }
 
         view.performClustering(
-                a,
-                psi,
+                consistencyCheckbox.isSelected(),
+                wernerModificationCheckbox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
-                (String) costFunctionDropdown.getSelectedItem()
+                (String) costFunctionDropdown.getSelectedItem(),
+                a,
+                psi
         );
         view.drawTangleSearchTree(false);
 
@@ -295,10 +320,13 @@ public class ParameterPanel extends JPanel {
         gbc.gridx = col;
         gbc.gridy = row;
         gbc.gridwidth = spanColumns;
-        gbc.weightx = (spanColumns == 2 || col == 1) ? 1.0 : 0.0;
+        gbc.weightx = (col == 1 || spanColumns == 2) ? 1.0 : 0.0;
         gbc.anchor = (col == 0) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
+
         add(comp, gbc);
-        gbc.gridwidth = 1; // reset
+
+        // Reset
+        gbc.gridwidth = 1;
         gbc.weightx = 0.0;
     }
 }

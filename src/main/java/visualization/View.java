@@ -29,8 +29,13 @@ public class View {
         });
     }
 
-    public void performClustering(int a, double psi, String cutGeneratorName, String costFunctionName) {
-        model.cluster(model.getDataset(), a, psi, cutGeneratorName, costFunctionName);
+    public void performClustering(boolean useAlternateConsistencyCheck,
+                                  boolean useWernerModification,
+                                  String cutGeneratorName,
+                                  String costFunctionName,
+                                  int a,
+                                  double psi) {
+        model.cluster(model.getDataset(), a, psi, cutGeneratorName, costFunctionName, useAlternateConsistencyCheck, useWernerModification);
         showClustering(model.getHardClustering());
     }
 

@@ -161,9 +161,21 @@ public class Model {
         return total / n;
     }
 
-    public void cluster(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
+    public void cluster(ScRNAseqDataset dataset,
+                        int a,
+                        double psi,
+                        String initialCutGenerator,
+                        String costFunctionName,
+                        boolean useAlternateConsistencyCheck,
+                        boolean useWernermodification) {
         monitor.setDataset(dataset);
+
+        tangleClusterer.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
+        tangleClusterer.useOscarWerner = useWernermodification;
         tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
+        tangleClusterer.useAlternateConsistencyCheck = false;
+        tangleClusterer.useOscarWerner = false;
+
         hardClustering = tangleClusterer.getHardClustering();
         double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
         double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
