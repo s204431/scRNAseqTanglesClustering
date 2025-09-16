@@ -7,6 +7,7 @@ import util.Tuple;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -14,22 +15,33 @@ import java.util.Comparator;
 public class ParameterPanel extends JPanel {
     private View view;
 
-    // Font and text size
+    // Constants
     private static final String FONT_NAME = "Arial";
     private static final int TITLE_TEXT_SIZE = 18;
     private static final int DEFAULT_TEXT_SIZE = 14;
-
-    // Insets used for spacing between components
     private static final Insets DEFAULT_INSETS = new Insets(5, 5, 5, 5);
     private static final Insets TITLE_INSETS = new Insets(25, 20, 10, 20);
 
+    // Layout state
     private final GridBagConstraints gbc = new GridBagConstraints();
+    private int row = 0;
 
+    // Data
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
 
-    private JTextField cutNumberField;
+    // UI components
+    private JTextField aField;
+    private JTextField psiField;
+    private JComboBox<String> cutGeneratorDropdown;
+    private JComboBox<String> costFunctionDropdown;
+    private JButton clusterButton;
+    private JCheckBox groundTruthCheckBox;
+
     private JCheckBox showCutCheckBox;
+    private JTextField cutNumberField;
+    private JButton minusButton;
+    private JButton plusButton;
 
     public ParameterPanel(View view) {
         this.view = view;
@@ -37,139 +49,79 @@ public class ParameterPanel extends JPanel {
         setLayout(new GridBagLayout());
         gbc.insets = DEFAULT_INSETS;
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 0.0;
 
-        int x = 0;
+        buildDimensionSection();
+        buildClusteringSection();
+        buildCutsSection();
 
-        gbc.insets = TITLE_INSETS;
-        addToPanel(x, 0, createTitleLabel("Dimension"));
-        gbc.insets = DEFAULT_INSETS;
-        x++;
+        addActions();
+    }
 
-        gbc.insets = TITLE_INSETS;
-        addToPanel(x, 0, createTitleLabel("Clustering"));
-        gbc.insets = DEFAULT_INSETS;
-        x++;
+    private void buildDimensionSection() {
+        addTitle("Dimensions");
+    }
 
-        JTextField aField = new JTextField(10);
-        addToPanel(x, 0, createTextLabel("a"));
-        addToPanel(x, 1, aField);
-        x++;
+    private void buildClusteringSection() {
+        addTitle("Clustering");
 
-        JTextField psiField = new JTextField(10);
-        addToPanel(x, 0, createTextLabel("psi"));
-        addToPanel(x, 1, psiField);
-        x++;
+        aField = new JTextField(10);
+        addRow("a", aField);
 
-        JComboBox<String> cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
-        addToPanel(x, 0, createTextLabel("Cut Generator: "));
-        addToPanel(x, 1, cutGeneratorDropdown);
-        x++;
+        psiField = new JTextField(10);
+        addRow("psi", psiField);
 
-        JComboBox<String> costFunctionDropdown = new JComboBox<>(GlobalConstants.COST_FUNCTION_NAMES);
-        addToPanel(x, 0, createTextLabel("Cost Function: "));
-        addToPanel(x, 1, costFunctionDropdown);
-        x++;
+        cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
+        addRow("Cut Generator: ", cutGeneratorDropdown);
 
-        JButton clusterButton = new JButton("Cluster");
-        JCheckBox groundTruthCheckBox = new JCheckBox("Show Ground Truth");
+        costFunctionDropdown = new JComboBox<>(GlobalConstants.COST_FUNCTION_NAMES);
+        addRow("Cost Function: ", costFunctionDropdown);
+
+        clusterButton = new JButton("Cluster");
+        groundTruthCheckBox = new JCheckBox("Show Ground Truth");
         groundTruthCheckBox.setSelected(false);
-        addToPanel(x, 0, clusterButton);
-        addToPanel(x, 1, groundTruthCheckBox);
-        x++;
-        x++;
 
-        gbc.insets = TITLE_INSETS;
-        addToPanel(x, 0, createTitleLabel("Cuts"));
-        gbc.insets = DEFAULT_INSETS;
-        x++;
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        actionPanel.add(clusterButton);
+        actionPanel.add(groundTruthCheckBox);
+
+        addFullWidth(actionPanel);
+    }
+
+    private void buildCutsSection() {
+        addTitle("Cuts");
 
         showCutCheckBox = new JCheckBox("Show cuts");
         showCutCheckBox.setSelected(false);
-        addToPanel(x, 0, showCutCheckBox);
 
-        // A text field with buttons on each side to increment or decrement the cut number
+        // A counter for cuts ( - [number] + )
         cutNumberField = new JTextField("0", 3);
-        JButton minusButton = new JButton("-");
-        JButton plusButton = new JButton("+");
+        minusButton = new JButton("-");
+        plusButton = new JButton("+");
 
         // Small panel to hold the three components
-        JPanel counterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 1, 0));
+        JPanel counterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        counterPanel.add(showCutCheckBox);
         counterPanel.add(minusButton);
         counterPanel.add(cutNumberField);
         counterPanel.add(plusButton);
-        counterPanel.add(minusButton);
-        counterPanel.add(cutNumberField);
-        counterPanel.add(plusButton);
-        addToPanel(x, 1, counterPanel);
-        x++;
 
+        addFullWidth(counterPanel);
+    }
 
-
+    private void addActions() {
         // ==================== Button Logic ==================== //
-        clusterButton.addActionListener(e -> {
-            try {
-                Integer.parseInt(aField.getText());
-                Double.parseDouble(psiField.getText());
-            } catch (NumberFormatException ignore) {
-                System.out.println("a-value has to be an integer. psi-value has to be a double.");
-                return;
-            }
+        clusterButton.addActionListener(this::clusterAction);
 
-            view.performClustering(
-                    Integer.parseInt(aField.getText()),
-                    Double.parseDouble(psiField.getText()),
-                    (String) cutGeneratorDropdown.getSelectedItem(),
-                    (String) costFunctionDropdown.getSelectedItem()
-            );
-            view.drawTangleSearchTree(false);
-            getAndSortCutsAndCosts();
-            groundTruthCheckBox.setSelected(false);
-            turnOffCuts();
-        });
-
-        plusButton.addActionListener(e -> {
-            try {
-                int value = Integer.parseInt(cutNumberField.getText()) + 1;
-                cutNumberField.setText(String.valueOf(value));
-                if (sortedCuts != null && showCutCheckBox.isSelected()) {
-                    if (value >= sortedCuts.length) {
-                        value = sortedCuts.length - 1;
-                        cutNumberField.setText(String.valueOf(value));
-                    }
-                    int currentCut = Integer.parseInt(cutNumberField.getText());
-                    view.showCut(sortedCuts[currentCut], currentCut);
-                    System.out.println(sortedCutCosts[currentCut]);
-                }
-            } catch (NumberFormatException ex) {
-                cutNumberField.setText("0");
-            }
-        });
-
-        minusButton.addActionListener(e -> {
-            try {
-                int value = Integer.parseInt(cutNumberField.getText()) - 1;
-                if (value < 0) {
-                    value = 0;
-                }
-                cutNumberField.setText(String.valueOf(value));
-                if (sortedCuts != null && showCutCheckBox.isSelected()) {
-                    int currentCut = Integer.parseInt(cutNumberField.getText());
-                    view.showCut(sortedCuts[currentCut], currentCut);
-                    System.out.println(sortedCutCosts[currentCut]);
-                }
-            } catch (NumberFormatException ex) {
-                cutNumberField.setText("0");
-            }
-        });
-
-
+        plusButton.addActionListener(e -> stepCutCounter(1));
+        minusButton.addActionListener(e -> stepCutCounter(-1));
 
         // ==================== Check Box Logic ==================== //
         groundTruthCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
             if (isChecked) {
-                showCutCheckBox.setSelected(false);
                 view.showGroundTruth();
+                turnOffCuts();
             } else {
                 view.showClustering();
             }
@@ -179,12 +131,11 @@ public class ParameterPanel extends JPanel {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
             if (isChecked) {
                 groundTruthCheckBox.setSelected(false);
-                if (sortedCuts == null) {
+                if (sortedCuts == null || sortedCuts.length == 0) {
                     view.showClustering();
                     return;
                 }
-                int currentCut = Integer.parseInt(cutNumberField.getText());
-                view.showCut(sortedCuts[currentCut], currentCut);
+                showCut(restrictCutIndex(parseCutNumberField()));
             } else {
                 view.showClustering();
             }
@@ -201,9 +152,9 @@ public class ParameterPanel extends JPanel {
                         value = sortedCuts.length - 1;
                         cutNumberField.setText(String.valueOf(value));
                     }
-                    int currentCut = Integer.parseInt(cutNumberField.getText());
-                    view.showCut(sortedCuts[currentCut], currentCut);
-                    System.out.println(sortedCutCosts[currentCut]);
+                    int cutIndex = restrictCutIndex(parseCutNumberField());
+                    showCut(cutIndex);
+                    System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
                 } catch (NumberFormatException ex) {
                     cutNumberField.setText("0");
                 }
@@ -211,23 +162,63 @@ public class ParameterPanel extends JPanel {
         });
     }
 
-    private void addToPanel(int x, int y, JComponent component) {
-        gbc.gridy = x;
-        gbc.gridx = y;
-        add(component, gbc);
+    private void clusterAction(ActionEvent e) {
+        int a;
+        double psi;
+        try {
+            a = Integer.parseInt(aField.getText());
+            psi = Double.parseDouble(psiField.getText());
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Parameter \"a\" must be an integer and \"psi\" must be a double",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        view.performClustering(
+                a,
+                psi,
+                (String) cutGeneratorDropdown.getSelectedItem(),
+                (String) costFunctionDropdown.getSelectedItem()
+        );
+        view.drawTangleSearchTree(false);
+
+        getAndSortCutsAndCosts();
+        groundTruthCheckBox.setSelected(false);
+        cutNumberField.setText("0");
+        turnOffCuts();
     }
 
-    private JLabel createTitleLabel(String text) {
-        JLabel titleLabel = new JLabel(text);
-        titleLabel.setFont(new Font(FONT_NAME, Font.BOLD, TITLE_TEXT_SIZE));
-        return titleLabel;
+    private void stepCutCounter(int step) {
+        if (!showCutCheckBox.isSelected() || sortedCuts == null || sortedCuts.length == 0) {
+            return;
+        }
+        int cutIndex = parseCutNumberField() + step;
+        cutIndex = restrictCutIndex(cutIndex);
+        cutNumberField.setText(Integer.toString(cutIndex));
+        showCut(cutIndex);
     }
 
-    private JLabel createTextLabel(String text) {
-        JLabel textLabel = new JLabel(text);
-        textLabel.setFont(new Font(FONT_NAME, Font.PLAIN, DEFAULT_TEXT_SIZE));
-        textLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        return textLabel;
+    private int parseCutNumberField() {
+        try {
+            return Integer.parseInt(cutNumberField.getText());
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
+    }
+
+    private int restrictCutIndex(int cutIndex) {
+        return Math.max(0, Math.min(cutIndex, sortedCuts.length));
+    }
+
+    private void showCut(int cutIndex) {
+        if (sortedCuts == null || cutIndex < 0 || cutIndex >= sortedCuts.length) return;
+        view.showCut(sortedCuts[cutIndex], cutIndex);
+        turnOnCuts(cutIndex);
+        System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
     }
 
     private void getAndSortCutsAndCosts() {
@@ -255,12 +246,59 @@ public class ParameterPanel extends JPanel {
         sortedCutCosts = costsSorted;
     }
 
+    // ================= TOGGLES =================
+
     public void turnOnCuts(int cutIndex) {
-        cutNumberField.setText("" + cutIndex);
+        cutIndex = restrictCutIndex(cutIndex);
+        cutNumberField.setText(Integer.toString(Math.min(cutIndex, sortedCuts.length - 1)));
         showCutCheckBox.setSelected(true);
     }
 
     public void turnOffCuts() {
         showCutCheckBox.setSelected(false);
+    }
+
+    // ================= LAYOUT HELPERS =================
+
+    private void addTitle(String text) {
+        JLabel title = new JLabel(text);
+        title.setFont(new Font(FONT_NAME, Font.BOLD, TITLE_TEXT_SIZE));
+        Insets previousInsets = gbc.insets;
+        gbc.insets = TITLE_INSETS;
+        addAt(title, 0, 2);
+        gbc.insets = previousInsets;
+        row++;
+    }
+
+    // Adds a label and a component on the same row
+    private void addRow(String text, JComponent component) {
+        JLabel textLabel = new JLabel(text);
+        textLabel.setFont(new Font(FONT_NAME, Font.PLAIN, DEFAULT_TEXT_SIZE));
+        addRow(textLabel, component);
+    }
+
+    // Adds two components side by side in a column
+    private void addRow(JComponent left, JComponent right) {
+        addAt(left, 0, 1);
+        addAt(right, 1, 1);
+        row++;
+    }
+
+    // Adds component spanning two columns
+    private void addFullWidth(JComponent component) {
+        addAt(component, 0, 2);
+        row++;
+    }
+
+    // Adds component at given col index spanning spanColumns
+    private void addAt(JComponent comp, int col, int spanColumns) {
+        gbc.gridx = col;
+        gbc.gridy = row;
+        gbc.gridwidth = spanColumns;
+        gbc.weightx = (spanColumns == 2 || col == 1) ? 1.0 : 0.0;
+        gbc.anchor = (col == 0) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
+        add(comp, gbc);
+        gbc.gridwidth = 1; // reset
+        gbc.weightx = 0.0;
     }
 }

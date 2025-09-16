@@ -121,7 +121,7 @@ public class TangleTreePanel extends JPanel {
                 int cutIndex = idToCutIndex.get(uniqueId);
                 view.showCut(cut, cutIndex);
 
-                System.out.println(sortedCutCosts[cutIndex]);
+                System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
             }
         });
 
