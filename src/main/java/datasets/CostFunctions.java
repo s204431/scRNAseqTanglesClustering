@@ -166,6 +166,26 @@ public class CostFunctions {
         }
     }
 
+    public double[] knnCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+        int k = 1;
+
+        dataPoints = Model.tsne(dataPoints, 5);
+        Main.zScoreNorm(dataPoints);
+
+        double maxRange = getMaxRange(dataPoints);
+
+        double[] costs = new double[initialCuts.length];
+        KNNGraph knnGraph = new KNNGraph(dataPoints, k);
+        for (int i = 0; i < initialCuts.length; i++) {
+            List<Double> distances = knnGraph.getDistancesBetween(initialCuts[i]);
+            for (int j = 0; j < distances.size(); j++) {
+                costs[i] += Math.exp(-5.0*(1.0/maxRange)*distances.get(j));
+            }
+            //costs[i] = distances.size();
+        }
+        return costs;
+    }
+
     //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.
     public double[] shortestDistanceCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
 
