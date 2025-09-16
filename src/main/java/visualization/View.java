@@ -8,6 +8,8 @@ import util.BitSet;
 import util.TestSet;
 
 import javax.swing.*;
+import java.io.File;
+import java.util.List;
 
 public class View {
     private Model model;
@@ -37,6 +39,18 @@ public class View {
                                   double psi) {
         model.cluster(model.getDataset(), a, psi, cutGeneratorName, costFunctionName, useAlternateConsistencyCheck, useWernerModification);
         showClustering(model.getHardClustering());
+    }
+
+    public void runTestSet(boolean useAlternateConsistencyCheck,
+                           boolean useWernerModification,
+                           String cutGeneratorName,
+                           String costFunctionName,
+                           int a,
+                           double psi,
+                           int runs,
+                           boolean compareWithStandardPipeline) {
+        File[] selectedFiles = window.getSelectedTestFiles();
+        model.runTestset(selectedFiles, useAlternateConsistencyCheck, useWernerModification, cutGeneratorName, costFunctionName, a, psi, runs, compareWithStandardPipeline);
     }
 
     public void showClustering(int[] clustering) {
@@ -88,11 +102,17 @@ public class View {
         window.drawPoints(points);
     }
 
-    public void runTestSet(String dirPath) {
-        new TestSet(model, dirPath).run(5, true);
+    public void showTestSet(List<File> selectedDirs) {
+        window.showTestSet(selectedDirs);
+    }
+
+
+    public void changeView(String viewName) {
+        window.changeView(viewName);
     }
 
     public void setMonitor(Monitor monitor) {
         this.monitor = monitor;
     }
+
 }

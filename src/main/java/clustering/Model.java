@@ -24,6 +24,7 @@ import util.TestSet;
 import util.Tuple;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
@@ -98,6 +99,19 @@ public class Model {
         testSet.run(10, true);
     }
 
+    public void runTestset(File[] selectedFiles,
+                           boolean useAlternateConsistencyCheck,
+                           boolean useWernerModification,
+                           String cutGeneratorName,
+                           String costFunctionName,
+                           int a,
+                           double psi,
+                           int runs,
+                           boolean compareWithStandardPipeline) {
+        TestSet testSet = new TestSet(this, selectedFiles);
+        testSet.run(useAlternateConsistencyCheck, useWernerModification, cutGeneratorName, costFunctionName, a, psi, runs, compareWithStandardPipeline);
+    }
+
     public static double getDistance(double[] point1, double[] point2) {
         double length = 0;
         for (int i = 0; i < point1.length; i++) {
@@ -167,14 +181,16 @@ public class Model {
                         String initialCutGenerator,
                         String costFunctionName,
                         boolean useAlternateConsistencyCheck,
-                        boolean useWernermodification) {
+                        boolean useWernerModification) {
         monitor.setDataset(dataset);
 
+        boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
+        boolean prev2 = tangleClusterer.useOscarWerner;
         tangleClusterer.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
-        tangleClusterer.useOscarWerner = useWernermodification;
+        tangleClusterer.useOscarWerner = useWernerModification;
         tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
-        tangleClusterer.useAlternateConsistencyCheck = false;
-        tangleClusterer.useOscarWerner = false;
+        tangleClusterer.useAlternateConsistencyCheck = prev1;
+        tangleClusterer.useOscarWerner = prev2;
 
         hardClustering = tangleClusterer.getHardClustering();
         double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
@@ -183,9 +199,17 @@ public class Model {
         System.out.println(randIndex);
     }
 
-    public int[] clusterAndReturn(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
+    public int[] clusterAndReturn(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName, boolean useAlternateConsistencyCheck, boolean useWernerModification) {
         monitor.setDataset(dataset);
+
+        boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
+        boolean prev2 = tangleClusterer.useOscarWerner;
+        tangleClusterer.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
+        tangleClusterer.useOscarWerner = useWernerModification;
         tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
+        tangleClusterer.useAlternateConsistencyCheck = prev1;
+        tangleClusterer.useOscarWerner = prev2;
+
         hardClustering = tangleClusterer.getHardClustering();
         return hardClustering;
     }

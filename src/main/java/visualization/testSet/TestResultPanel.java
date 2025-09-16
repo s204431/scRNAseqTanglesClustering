@@ -1,4 +1,13 @@
-package visualization;
+package visualization.testSet;
 
-public class TestResultPanel {
+import visualization.View;
+
+import javax.swing.*;
+
+public class TestResultPanel extends JPanel {
+    private View view;
+
+    public TestResultPanel(View view) {
+        this.view = view;
+    }
 }

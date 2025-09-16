@@ -1,4 +1,4 @@
-package visualization;
+package visualization.data;
 
 import clustering.TangleClusterer;
 import clustering.TangleSearchTree;
@@ -10,6 +10,7 @@ import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import util.BitSet;
 import util.Tuple;
+import visualization.View;
 
 import javax.swing.*;
 import java.awt.*;

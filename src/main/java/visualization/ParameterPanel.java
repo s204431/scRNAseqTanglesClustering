@@ -48,8 +48,16 @@ public class ParameterPanel extends JPanel {
     private JButton minusButton;
     private JButton plusButton;
 
-    public ParameterPanel(View view) {
+    // Test section components
+    private JTextField runNumberField;
+    private JCheckBox pythonCheckBox;
+    private JButton testButton;
+
+    private boolean dataPanel;
+
+    public ParameterPanel(View view, boolean dataPanel) {
         this.view = view;
+        this.dataPanel = dataPanel;
 
         setLayout(new GridBagLayout());
         gbc.insets = DEFAULT_INSETS;
@@ -58,22 +66,26 @@ public class ParameterPanel extends JPanel {
 
         buildAlgorithmSection();
         buildClusteringSection();
-        buildCutsSection();
-
-        addActions();
+        if (dataPanel) {
+            buildCutsSection();
+            addActions();
+        } else {
+            buildTestSection();
+        }
     }
 
     private void buildAlgorithmSection() {
         addTitle("Algorithm Modifications");
 
         consistencyCheckbox = new JCheckBox("<html>" +
-                        "Consistency Check<br>" +
-                        "Modification" +
-                    "</html>");
+                "Consistency<br>" +
+                " Check<br>" +
+                "Modification" +
+            "</html>");
         wernerModificationCheckbox = new JCheckBox("<html>" +
-                    "Werner<br>" +
-                    "Modification" +
-                "</html>");
+                "Werner<br>" +
+                "Modification" +
+            "</html>");
         addRow(consistencyCheckbox, wernerModificationCheckbox);
 
         cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
@@ -86,17 +98,18 @@ public class ParameterPanel extends JPanel {
     private void buildClusteringSection() {
         addTitle("Cluster Parameters");
 
-        aField = new JTextField(10);
+        aField = new JTextField(5);
         addRow("a", aField);
 
-        psiField = new JTextField(10);
+        psiField = new JTextField(5);
         addRow("psi", psiField);
 
-        clusterButton = new JButton("Cluster");
-        groundTruthCheckBox = new JCheckBox("<html>Show Ground<br> Truth</html>");
-        groundTruthCheckBox.setSelected(false);
-
-        addRow(clusterButton, groundTruthCheckBox);
+        if (dataPanel) {
+            clusterButton = new JButton("Cluster");
+            groundTruthCheckBox = new JCheckBox("<html>Show Ground<br>Truth</html>");
+            groundTruthCheckBox.setSelected(false);
+            addRow(clusterButton, groundTruthCheckBox);
+        }
     }
 
     private void buildCutsSection() {
@@ -104,11 +117,11 @@ public class ParameterPanel extends JPanel {
 
         // A counter for cuts ( - [number] + )
         cutNumberField = new JTextField("0", 3);
-        minusButton = new JButton("-");
-        plusButton = new JButton("+");
+        minusButton = createStepButton("-");
+        plusButton = createStepButton("+");
 
         // Small panel to hold the three components
-        JPanel counterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        JPanel counterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         counterPanel.add(minusButton);
         counterPanel.add(cutNumberField);
         counterPanel.add(plusButton);
@@ -119,27 +132,26 @@ public class ParameterPanel extends JPanel {
         addRow(counterPanel, showCutCheckBox);
     }
 
+    private void buildTestSection() {
+        addTitle("Test Parameters");
+
+        runNumberField = new JTextField(3);
+        addRow("<html>Number of runs<br>on each test</html>", runNumberField);
+
+        pythonCheckBox = new JCheckBox("<html>Compare With<br>Standard<br>Pipeline</html>");
+        testButton = new JButton("Run Tests");
+        testButton.addActionListener(this::testAction);
+        addRow(testButton, pythonCheckBox);
+    }
+
     private void addActions() {
         // ==================== Button Logic ==================== //
         clusterButton.addActionListener(this::clusterAction);
         plusButton.addActionListener(e -> stepCutCounter(1));
         minusButton.addActionListener(e -> stepCutCounter(-1));
 
+
         // ==================== Check Box Logic ==================== //
-        /*consistencyCheckbox.addItemListener(e -> {
-            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            if (!isChecked) {
-                wernerModificationCheckbox.setSelected(false);
-            }
-        });
-
-        wernerModificationCheckbox.addItemListener(e -> {
-            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            if (isChecked) {
-                consistencyCheckbox.setSelected(true);
-            }
-        });*/
-
         groundTruthCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
             if (isChecked) {
@@ -217,6 +229,47 @@ public class ParameterPanel extends JPanel {
         turnOffCuts();
     }
 
+    private void testAction(ActionEvent e) {
+        int a;
+        double psi;
+        try {
+            a = Integer.parseInt(aField.getText());
+            psi = Double.parseDouble(psiField.getText());
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Parameter \"a\" must be an integer and \"psi\" must be a double",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        int runs;
+        try {
+            runs = Integer.parseInt(runNumberField.getText());
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Number of runs must be an integer.",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        view.runTestSet(
+                consistencyCheckbox.isSelected(),
+                wernerModificationCheckbox.isSelected(),
+                (String) cutGeneratorDropdown.getSelectedItem(),
+                (String) costFunctionDropdown.getSelectedItem(),
+                a,
+                psi,
+                runs,
+                pythonCheckBox.isSelected()
+        );
+    }
+
     private void stepCutCounter(int step) {
         if (!showCutCheckBox.isSelected() || sortedCuts == null || sortedCuts.length == 0) {
             return;
@@ -236,7 +289,7 @@ public class ParameterPanel extends JPanel {
     }
 
     private int restrictCutIndex(int cutIndex) {
-        return Math.max(0, Math.min(cutIndex, sortedCuts.length));
+        return Math.max(0, Math.min(cutIndex, sortedCuts.length - 1));
     }
 
     private void showCut(int cutIndex) {
@@ -269,6 +322,20 @@ public class ParameterPanel extends JPanel {
 
         sortedCuts = cutsSorted;
         sortedCutCosts = costsSorted;
+    }
+
+    private JButton createStepButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(b.getFont().deriveFont(Font.BOLD, 12f));
+        b.setMargin(new Insets(0, 0, 0, 0));
+        b.setFocusable(false);
+
+        FontMetrics fm = b.getFontMetrics(b.getFont());
+        Dimension d = new Dimension(20, 20);
+        b.setPreferredSize(d);
+        //b.setMaximumSize(d);
+        //b.setMinimumSize(d);
+        return b;
     }
 
     // ================= TOGGLES =================

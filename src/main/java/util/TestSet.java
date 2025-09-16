@@ -58,6 +58,30 @@ public class TestSet {
         labelsPaths = newLabelsPaths;
     }
 
+    public TestSet(Model model, File[] files) {
+        this.model = model;
+        dirPath = files[0].getParent();
+
+        observedPaths = new String[files.length];
+        labelsPaths = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            observedPaths[i] = files[i].getAbsolutePath().replace(dirPath + "\\", "");
+            labelsPaths[i] = observedPaths[i].replace("observed_counts", "labels");
+        }
+
+        //Match observed and labels
+        String[] newLabelsPaths = new String[labelsPaths.length];
+        for (int i = 0; i < observedPaths.length; i++) {
+            for (int j = 0; j < labelsPaths.length; j++) {
+                if (observedPaths[i].replace("observed_counts", "").equals(labelsPaths[j].replace("labels", ""))) {
+                    newLabelsPaths[i] = labelsPaths[j];
+                    break;
+                }
+            }
+        }
+        labelsPaths = newLabelsPaths;
+    }
+
     public void run(int nRunsPerDataset, boolean runPython) {
 
         System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
@@ -82,7 +106,93 @@ public class TestSet {
                 ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
                 int a = (int)(((double)dataset.data.length/nClusters)*0.667);
-                int[] hardClustering = model.clusterAndReturn(dataset, a, 0, "Default", "Default");
+                int[] hardClustering = model.clusterAndReturn(dataset, a, 0, "Default", "Default", false, false);
+                double NMI = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+                double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+                averageNMIScores[i] += NMI;
+                averageRandIndexScores[i] += randIndex;
+            }
+            averageNMIScores[i] /= nRunsPerDataset;
+            averageRandIndexScores[i] /= nRunsPerDataset;
+            System.out.println("Average results for dataset " + observedPaths[i].replace("observed_counts_", ""));
+            System.out.println("NMI score: " + averageNMIScores[i]);
+            System.out.println("Rand Index score: " + averageRandIndexScores[i]);
+            System.out.println();
+
+            if (runPython) {
+                Tuple<int[], Integer> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
+                double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
+                double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
+                NMIPythonResults[i] = NMIPython;
+                randIndexPythonResults[i] = randIndexPython;
+                System.out.println("NMI python: " + NMIPython);
+                System.out.println("Rand index python: " + randIndexPython);
+                System.out.println();
+            }
+        }
+
+        double overallAverageNMI = 0.0;
+        double overallAverageRandIndex = 0.0;
+
+        double pythonAverageNMI = 0.0;
+        double pythonAverageRandIndex = 0.0;
+
+        for (int i = 0; i < averageNMIScores.length; i++) {
+            overallAverageNMI += averageNMIScores[i];
+            overallAverageRandIndex += averageRandIndexScores[i];
+            if (runPython) {
+                pythonAverageNMI += NMIPythonResults[i];
+                pythonAverageRandIndex += randIndexPythonResults[i];
+            }
+        }
+        overallAverageNMI /= averageNMIScores.length;
+        overallAverageRandIndex /= averageRandIndexScores.length;
+
+        System.out.println("Overall average:");
+        System.out.println("NMI score: " + overallAverageNMI);
+        System.out.println("Rand Index score: " + overallAverageRandIndex);
+
+        if (runPython) {
+            pythonAverageNMI /= NMIPythonResults.length;
+            pythonAverageRandIndex /= randIndexPythonResults.length;
+            System.out.println("Python NMI score: " + pythonAverageNMI);
+            System.out.println("Python Rand Index score: " + pythonAverageRandIndex);
+        }
+
+    }
+
+    public void run(boolean useAlternateConsistencyCheck,
+                    boolean useWernerModification,
+                    String cutGeneratorName,
+                    String costFunctionName,
+                    int a,
+                    double psi,
+                    int nRunsPerDataset,
+                    boolean runPython) {
+
+        System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
+
+        averageNMIScores = new double[observedPaths.length];
+        averageRandIndexScores = new double[observedPaths.length];
+        if (runPython) {
+            NMIPythonResults = new double[observedPaths.length];
+            randIndexPythonResults = new double[observedPaths.length];
+        }
+
+        for (int i = 0; i < observedPaths.length; i++) {
+            String observedFilePath = observedPaths[i];
+            String labelFilePath = labelsPaths[i];
+            double[][] originalData = model.loadData(dirPath + "/" +  observedFilePath);
+            int[] groundTruth = model.loadGroundTruth(dirPath + "/" + labelFilePath);
+            double[][] normalizedData = model.logNormalize(originalData);
+            double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
+            int nClusters = getNumberOfClusters(groundTruth);
+            for (int j = 0; j < nRunsPerDataset; j++) {
+
+                ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
+
+                a = (int)(((double)dataset.data.length/nClusters)*0.667);
+                int[] hardClustering = model.clusterAndReturn(dataset, a, psi, cutGeneratorName, costFunctionName, useAlternateConsistencyCheck, useWernerModification);
                 double NMI = NormalizedMutualInformation.joint(hardClustering, groundTruth);
                 double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
                 averageNMIScores[i] += NMI;

@@ -1,10 +1,11 @@
-package visualization;
+package visualization.data;
 
 import smile.data.DataFrame;
 import smile.data.vector.DoubleVector;
 import smile.data.vector.IntVector;
 import smile.plot.swing.Canvas;
 import smile.plot.swing.ScatterPlot;
+import visualization.View;
 
 
 import javax.swing.*;

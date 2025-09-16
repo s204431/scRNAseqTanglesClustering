@@ -1,7 +1,8 @@
-package visualization;
+package visualization.data;
+
+import visualization.View;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class StatisticsPanel extends JScrollPane {
     private View view;
