@@ -173,8 +173,8 @@ public class TangleClusterer {
                         continue;
                     }*/
 
-                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], true, true) || consistent;
-                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], false, true) || consistent;
+                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], true, useAlternateConsistencyCheck) || consistent;
+                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], false, useAlternateConsistencyCheck) || consistent;
                     if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
                         node.leftChild = null;
                     }
