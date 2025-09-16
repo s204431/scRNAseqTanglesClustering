@@ -4,10 +4,7 @@ import clustering.Model;
 import main.Main;
 import util.BitSet;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class CutGenerators {
 
@@ -112,19 +109,22 @@ public class CutGenerators {
         List<BitSet[]> bitSets = new ArrayList<>();
 
         try {
-            bitSets.add(getInitialCutsLocalMeans(Model.pca(dataPoints, nComponents), a));
+            double[][] reducedPoints = Model.pca(dataPoints, nComponents);
+            bitSets.add(getInitialCutsLocalMeans(reducedPoints, a));
         }
         catch (Exception e) {
 
         }
-        bitSets.add(getInitialCutsLocalMeans(Model.tsne(dataPoints, nComponents), a));
+        double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
+        bitSets.add(getInitialCutsLocalMeans(reducedPoints, a));
         /*try {
             bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
         }
         catch (Exception e) {
 
         }*/
-        bitSets.add(getInitialCutsLocalMeans(Model.svd(dataPoints, nComponents), a));
+        reducedPoints = Model.svd(dataPoints, nComponents);
+        bitSets.add(getInitialCutsLocalMeans(reducedPoints, a));
 
         return mergeCuts(bitSets);
     }
@@ -143,6 +143,55 @@ public class CutGenerators {
             }
         }
         return merged;
+    }
+
+    public double[][] moveTowardsNearestNeighbours(double[][] dataPoints) {
+        int iterations = 1;
+        int k = 5;
+
+        //KNNGraph knnGraph = new KNNGraph(dataPoints, k);
+        /*List<List<Integer>> connectedComponents = knnGraph.getConnectedComponents();
+        double[][] componentCenters = new double[connectedComponents.size()][dataPoints[0].length];
+        for (int i = 0; i < connectedComponents.size(); i++) {
+            for (int j = 0; j < connectedComponents.get(i).size(); j++) {
+                double[] point = dataPoints[connectedComponents.get(i).get(j)];
+                for (int l = 0; l < point.length; l++) {
+                    componentCenters[i][l] += point[l];
+                }
+            }
+        }
+        for (int i = 0; i < componentCenters.length; i++) {
+            for (int j = 0; j < componentCenters[i].length; j++) {
+                componentCenters[i][j] /= connectedComponents.get(i).size();
+            }
+        }
+        int[] componentIDs = new int[dataPoints.length];
+        for (int i = 0; i < connectedComponents.size(); i++) {
+            for (int j = 0; j < connectedComponents.get(i).size(); j++) {
+                componentIDs[connectedComponents.get(i).get(j)] = i;
+            }
+        }
+        return componentCenters;*/
+
+        for (int iteration = 0; iteration < iterations; iteration++) {
+            KNNGraph knnGraph = new KNNGraph(dataPoints, k);
+            double[][] newPoints = new double[dataPoints.length][];
+            for (int i = 0; i < newPoints.length; i++) {
+                List<Integer> neighbors = knnGraph.graph.get(i);
+                double[] average = Arrays.copyOf(dataPoints[i], dataPoints[i].length);
+                for (int n : neighbors) {
+                    for (int j = 0; j < dataPoints[0].length; j++) {
+                        average[j] += dataPoints[n][j];
+                    }
+                }
+                for (int j = 0; j < average.length; j++) {
+                    average[j] /= (k+1);
+                }
+                newPoints[i] = average;
+            }
+            dataPoints = newPoints;
+        }
+        return dataPoints;
     }
 
     //Original initial cut generator using simple axis parallel cuts with specific amount of points between them.
