@@ -3,9 +3,10 @@ package visualization;
 import clustering.Model;
 import clustering.TangleSearchTree;
 import main.Main;
-import monitor.Monitor;
+import util.Monitor;
 import util.BitSet;
-import util.TestSet;
+import util.Config;
+import visualization.testSet.TestEditPanel;
 
 import javax.swing.*;
 import java.io.File;
@@ -31,26 +32,22 @@ public class View {
         });
     }
 
-    public void performClustering(boolean useAlternateConsistencyCheck,
-                                  boolean useWernerModification,
-                                  String cutGeneratorName,
-                                  String costFunctionName,
-                                  int a,
-                                  double psi) {
-        model.cluster(model.getDataset(), a, psi, cutGeneratorName, costFunctionName, useAlternateConsistencyCheck, useWernerModification);
+    public void performClustering(Config config) {
+        model.cluster(model.getDataset(), config);
         showClustering(model.getHardClustering());
     }
 
-    public void runTestSet(boolean useAlternateConsistencyCheck,
-                           boolean useWernerModification,
-                           String cutGeneratorName,
-                           String costFunctionName,
-                           int a,
-                           double psi,
-                           int runs,
-                           boolean compareWithStandardPipeline) {
+    public void runTestSetWithUI(Config config, int runs, boolean compareWithStandardPipeline) {
+        if (window.testIsRunning()) {
+            return;
+        }
+        TestEditPanel.TestProgressManager progressManager = window.prepareUIForTesting();
         File[] selectedFiles = window.getSelectedTestFiles();
-        model.runTestset(selectedFiles, useAlternateConsistencyCheck, useWernerModification, cutGeneratorName, costFunctionName, a, psi, runs, compareWithStandardPipeline);
+        if (selectedFiles == null || selectedFiles.length == 0) {
+            System.out.println("No test files were selected.");
+            return;
+        }
+        model.runTestset(selectedFiles, config, runs, compareWithStandardPipeline, progressManager);
     }
 
     public void showClustering(int[] clustering) {

@@ -3,12 +3,15 @@ package util;
 import clustering.Model;
 import datasets.ScRNAseqDataset;
 import main.Main;
+import org.nd4j.common.primitives.Atomic;
 import smile.validation.metric.AdjustedRandIndex;
 import smile.validation.metric.NormalizedMutualInformation;
+import visualization.testSet.TestEditPanel;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestSet {
 
@@ -16,7 +19,6 @@ public class TestSet {
     public String[] observedPaths;
     public String[] labelsPaths;
     private Model model;
-
 
     public double[] averageNMIScores;
     public double[] averageRandIndexScores;
@@ -106,7 +108,8 @@ public class TestSet {
                 ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
                 int a = (int)(((double)dataset.data.length/nClusters)*0.667);
-                int[] hardClustering = model.clusterAndReturn(dataset, a, 0, "Default", "Default", false, false);
+                Config config = new Config(false, false, "Default", "Default", a, 0.0, 0);
+                int[] hardClustering = model.clusterAndReturn(dataset, config);
                 double NMI = NormalizedMutualInformation.joint(hardClustering, groundTruth);
                 double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
                 averageNMIScores[i] += NMI;
@@ -161,16 +164,18 @@ public class TestSet {
 
     }
 
-    public void run(boolean useAlternateConsistencyCheck,
-                    boolean useWernerModification,
-                    String cutGeneratorName,
-                    String costFunctionName,
-                    int a,
-                    double psi,
-                    int nRunsPerDataset,
-                    boolean runPython) {
+    public void runWIthUI(Config config,
+                          int nRunsPerDataset,
+                          boolean runPython,
+                          TestEditPanel.TestProgressManager progressManager) {
 
         System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
+
+        if (!runPython) {
+            for (int i = 0; i < progressManager.getSize(); i++) {
+                progressManager.markFinished(i, false);
+            }
+        }
 
         averageNMIScores = new double[observedPaths.length];
         averageRandIndexScores = new double[observedPaths.length];
@@ -191,8 +196,9 @@ public class TestSet {
 
                 ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
-                a = (int)(((double)dataset.data.length/nClusters)*0.667);
-                int[] hardClustering = model.clusterAndReturn(dataset, a, psi, cutGeneratorName, costFunctionName, useAlternateConsistencyCheck, useWernerModification);
+                int a = (int)(((double)dataset.data.length/nClusters)*config.getaFactor());
+                Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.getCutGeneratorName(), config.getCostFunctionName(), a, config.getaFactor(), config.getPsi());
+                int[] hardClustering = model.clusterAndReturn(dataset, newConfig);
                 double NMI = NormalizedMutualInformation.joint(hardClustering, groundTruth);
                 double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
                 averageNMIScores[i] += NMI;
@@ -200,6 +206,7 @@ public class TestSet {
             }
             averageNMIScores[i] /= nRunsPerDataset;
             averageRandIndexScores[i] /= nRunsPerDataset;
+            progressManager.markFinished(i, true);
             System.out.println("Average results for dataset " + observedPaths[i].replace("observed_counts_", ""));
             System.out.println("NMI score: " + averageNMIScores[i]);
             System.out.println("Rand Index score: " + averageRandIndexScores[i]);
@@ -211,6 +218,7 @@ public class TestSet {
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
                 NMIPythonResults[i] = NMIPython;
                 randIndexPythonResults[i] = randIndexPython;
+                progressManager.markFinished(i, false);
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);
                 System.out.println();

@@ -13,13 +13,14 @@ import elki.projection.BarnesHutTSNE;
 import elki.projection.PerplexityAffinityMatrixBuilder;
 import elki.utilities.random.RandomFactory;
 import elki.distance.minkowski.EuclideanDistance;
-import monitor.Monitor;
+import util.Monitor;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
 import smile.math.matrix.Matrix;
 import smile.validation.metric.NormalizedMutualInformation;
 import smile.validation.metric.AdjustedRandIndex;
 import util.BitSet;
+import util.Config;
 import util.TestSet;
 import util.Tuple;
 
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static clustering.TangleClusterer.removeRedundantCuts;
-import static main.Main.runPython;
 
 
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -43,6 +43,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import visualization.testSet.TestEditPanel;
 
 
 public class Model {
@@ -77,10 +78,8 @@ public class Model {
         hvgData = newHvgData;*/
 
 
-        long time = System.currentTimeMillis();
         //projectedData = tsne(hvgData, 2);
         projectedData = hvgData;
-        System.out.println(System.currentTimeMillis() - time);
 
         dataset = new ScRNAseqDataset(projectedData);
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
@@ -100,16 +99,14 @@ public class Model {
     }
 
     public void runTestset(File[] selectedFiles,
-                           boolean useAlternateConsistencyCheck,
-                           boolean useWernerModification,
-                           String cutGeneratorName,
-                           String costFunctionName,
-                           int a,
-                           double psi,
+                           Config config,
                            int runs,
-                           boolean compareWithStandardPipeline) {
+                           boolean compareWithStandardPipeline,
+                           TestEditPanel.TestProgressManager progressManager) {
         TestSet testSet = new TestSet(this, selectedFiles);
-        testSet.run(useAlternateConsistencyCheck, useWernerModification, cutGeneratorName, costFunctionName, a, psi, runs, compareWithStandardPipeline);
+        new Thread(() -> {
+            testSet.runWIthUI(config, runs, compareWithStandardPipeline, progressManager);
+        }).start();
     }
 
     public static double getDistance(double[] point1, double[] point2) {
@@ -175,20 +172,14 @@ public class Model {
         return total / n;
     }
 
-    public void cluster(ScRNAseqDataset dataset,
-                        int a,
-                        double psi,
-                        String initialCutGenerator,
-                        String costFunctionName,
-                        boolean useAlternateConsistencyCheck,
-                        boolean useWernerModification) {
+    public void cluster(ScRNAseqDataset dataset, Config config) {
         monitor.setDataset(dataset);
 
         boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
         boolean prev2 = tangleClusterer.useOscarWerner;
-        tangleClusterer.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
-        tangleClusterer.useOscarWerner = useWernerModification;
-        tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
+        tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
+        tangleClusterer.useOscarWerner = config.isUseWernerModification();
+        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getCostFunctionName());
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
 
@@ -199,14 +190,14 @@ public class Model {
         System.out.println(randIndex);
     }
 
-    public int[] clusterAndReturn(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName, boolean useAlternateConsistencyCheck, boolean useWernerModification) {
+    public int[] clusterAndReturn(ScRNAseqDataset dataset, Config config) {
         monitor.setDataset(dataset);
 
         boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
         boolean prev2 = tangleClusterer.useOscarWerner;
-        tangleClusterer.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
-        tangleClusterer.useOscarWerner = useWernerModification;
-        tangleClusterer.generateClusters(dataset, a, psi, initialCutGenerator, costFunctionName);
+        tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
+        tangleClusterer.useOscarWerner = config.isUseWernerModification();
+        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getCostFunctionName());
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
 
@@ -214,13 +205,15 @@ public class Model {
         return hardClustering;
     }
 
-    public int[] clusterAuto(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
+    public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
+        int a = config.getA();
+        double psi = config.getPsi();
 
         double[][] reducedPoints = tsne(dataset.data, 5);
 
         dataset.setA(a);
-        BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
-        double[] costs = dataset.getCutCosts(costFunctionName);
+        BitSet[] initialCuts = dataset.getInitialCuts(config.getCutGeneratorName());
+        double[] costs = dataset.getCutCosts(config.getCostFunctionName());
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;

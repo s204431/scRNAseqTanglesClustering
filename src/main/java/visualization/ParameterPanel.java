@@ -2,6 +2,7 @@ package visualization;
 
 import clustering.TangleClusterer;
 import util.BitSet;
+import util.Config;
 import util.GlobalConstants;
 import util.Tuple;
 
@@ -99,9 +100,15 @@ public class ParameterPanel extends JPanel {
         addTitle("Cluster Parameters");
 
         aField = new JTextField(5);
-        addRow("a", aField);
+        String aFieldText = "a";
+        if (!dataPanel) {
+            aField.setText("0.667");
+            aFieldText += "-factor (0-1)";
+        }
+        addRow(aFieldText, aField);
 
         psiField = new JTextField(5);
+        if (!dataPanel) psiField.setText("0");
         addRow("psi", psiField);
 
         if (dataPanel) {
@@ -136,6 +143,7 @@ public class ParameterPanel extends JPanel {
         addTitle("Test Parameters");
 
         runNumberField = new JTextField(3);
+        runNumberField.setText("1");
         addRow("<html>Number of runs<br>on each test</html>", runNumberField);
 
         pythonCheckBox = new JCheckBox("<html>Compare With<br>Standard<br>Pipeline</html>");
@@ -213,14 +221,14 @@ public class ParameterPanel extends JPanel {
             return;
         }
 
-        view.performClustering(
-                consistencyCheckbox.isSelected(),
+        Config config = new Config(consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
                 (String) costFunctionDropdown.getSelectedItem(),
                 a,
-                psi
-        );
+                0.0,
+                psi);
+        view.performClustering(config);
         view.drawTangleSearchTree(false);
 
         getAndSortCutsAndCosts();
@@ -230,15 +238,15 @@ public class ParameterPanel extends JPanel {
     }
 
     private void testAction(ActionEvent e) {
-        int a;
+        double aFactor;
         double psi;
         try {
-            a = Integer.parseInt(aField.getText());
+            aFactor = Double.parseDouble(aField.getText());
             psi = Double.parseDouble(psiField.getText());
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Parameter \"a\" must be an integer and \"psi\" must be a double",
+                    "Parameter \"a\" must be a double between 0 and 1, and \"psi\" must be a double",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -258,16 +266,14 @@ public class ParameterPanel extends JPanel {
             return;
         }
 
-        view.runTestSet(
-                consistencyCheckbox.isSelected(),
+        Config config = new Config(consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
                 (String) costFunctionDropdown.getSelectedItem(),
-                a,
-                psi,
-                runs,
-                pythonCheckBox.isSelected()
-        );
+                0,
+                aFactor,
+                psi);
+        view.runTestSetWithUI(config, runs, pythonCheckBox.isSelected());
     }
 
     private void stepCutCounter(int step) {

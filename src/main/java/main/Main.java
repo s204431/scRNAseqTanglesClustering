@@ -6,7 +6,7 @@ import com.jujutsu.tsne.barneshut.BHTSne;
 import com.jujutsu.tsne.barneshut.BarnesHutTSne;
 import com.jujutsu.utils.TSneUtils;
 
-import monitor.Monitor;
+import util.Monitor;
 import smile.feature.extraction.PCA;
 import smile.math.matrix.Matrix;
 import util.Tuple;

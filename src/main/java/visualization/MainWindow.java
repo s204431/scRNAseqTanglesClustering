@@ -1,6 +1,7 @@
 package visualization;
 
 import clustering.TangleSearchTree;
+import util.Tuple;
 import visualization.data.ScatterPlotPanel;
 import visualization.data.StatisticsPanel;
 import visualization.data.TangleTreePanel;
@@ -12,6 +13,7 @@ import javax.swing.*;
 import java.util.List;
 import java.awt.*;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainWindow extends JFrame {
     private View view;
@@ -83,10 +85,10 @@ public class MainWindow extends JFrame {
     private JComponent createTestView() {
         JPanel testPanel = new JPanel(new BorderLayout());
 
-        JSplitPane split1 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, testEditPanel, testResultPanel);
+        JSplitPane split1 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, testProgressPanel, testResultPanel);
         split1.setResizeWeight(0.7); // % space the scatter panel takes initially
 
-        JSplitPane split2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, testProgressPanel, split1);
+        JSplitPane split2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, testEditPanel, split1);
         split2.setResizeWeight(0.2);
 
         testPanel.add(split2, BorderLayout.CENTER);
@@ -121,5 +123,15 @@ public class MainWindow extends JFrame {
 
     public File[] getSelectedTestFiles() {
         return testEditPanel.getSelectedTests();
+    }
+
+    public TestEditPanel.TestProgressManager prepareUIForTesting() {
+        TestEditPanel.TestProgressManager out = testEditPanel.getTestProgressManager();
+        testEditPanel.startTimer();
+        return out;
+    }
+
+    public boolean testIsRunning() {
+        return testEditPanel.isRunning();
     }
 }

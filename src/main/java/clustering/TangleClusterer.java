@@ -1,13 +1,12 @@
 package clustering;
 
 import clustering.TangleSearchTree.Node;
-import monitor.Monitor;
+import util.Monitor;
 import util.BitSet;
 import util.Tuple;
 import datasets.ScRNAseqDataset;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 

@@ -21,10 +21,10 @@ public class TopPanel extends JPanel {
 
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        JButton openButton = new JButton("Open");
+        JButton openButton = new JButton("Open Data Set");
         openButton.addActionListener(this::openAction);
 
-        JButton testSetButton = new JButton("Run test set");
+        JButton testSetButton = new JButton("Open Test Set");
         testSetButton.addActionListener(this::testSetAction);
 
         add(openButton);
