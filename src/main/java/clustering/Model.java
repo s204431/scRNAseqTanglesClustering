@@ -226,28 +226,28 @@ public class Model {
         for (int a2 = a; a2 < a*20; a2 += a) {
             tangleClusterer.generateClusters(a2, psi, initialCuts, costs);
             hardClustering = tangleClusterer.getHardClustering();
-            //double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-            //double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+            double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+            double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
 
-            //System.out.println(NMIScore);
-            //System.out.println(randIndex);
+            System.out.println(NMIScore);
+            System.out.println(randIndex);
             double silhuetteScore = silhuetteScore(reducedPoints, hardClustering);
             if (silhuetteScore < 1.0 && silhuetteScore > bestSilhuetteScore) {
                 bestSilhuetteScore = silhuetteScore;
                 bestHardClustering = hardClustering;
                 bestA = a2;
             }
-            //System.out.println(silhuetteScore);
+            System.out.println(silhuetteScore);
         }
 
         hardClustering = bestHardClustering;
 
-        //double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-        //double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+        double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
+        double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
 
-        //System.out.println("Best a: " + bestA);
-        //System.out.println(NMIScore);
-        //System.out.println(randIndex);
+        System.out.println("Best a: " + bestA);
+        System.out.println(NMIScore);
+        System.out.println(randIndex);
         return hardClustering;
     }
 

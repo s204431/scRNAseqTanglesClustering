@@ -3,6 +3,7 @@ package datasets;
 import clustering.Model;
 import main.Main;
 import util.BitSet;
+import util.Distance;
 
 import java.util.*;
 
@@ -473,10 +474,11 @@ public class CutGenerators {
 
     //Returns the euclidean distance between two points.
     private double getDistance(double[] point1, double[] point2) {
-        double length = 0;
+        /*double length = 0;
         for (int i = 0; i < point1.length; i++) {
             length += (point1[i]-point2[i])*(point1[i]-point2[i]);
         }
-        return Math.sqrt(length);
+        return Math.sqrt(length);*/
+        return Distance.euclidean().distance(point1, point2);
     }
 }

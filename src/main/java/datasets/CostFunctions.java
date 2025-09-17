@@ -3,6 +3,7 @@ package datasets;
 import clustering.Model;
 import main.Main;
 import util.BitSet;
+import util.Distance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -162,7 +163,7 @@ public class CostFunctions {
         public BitSet[] initialCuts;
         @Override
         public void run() {
-            result = shortestDistanceCostFunction(data, initialCuts);
+            result = distanceToMeanCostFunction(data, initialCuts);
         }
     }
 
@@ -421,10 +422,11 @@ public class CostFunctions {
 
     //Returns the euclidean distance between two points.
     private double getDistance(double[] point1, double[] point2) {
-        double length = 0;
+        /*double length = 0;
         for (int i = 0; i < point1.length; i++) {
             length += (point1[i]-point2[i])*(point1[i]-point2[i]);
         }
-        return Math.sqrt(length);
+        return Math.sqrt(length);*/
+        return Distance.euclidean().distance(point1, point2);
     }
 }
