@@ -70,6 +70,7 @@ public class Model {
         groundTruth = loadGroundTruth(labelFilePath);
         normalizedData = logNormalize(originalData);
         hvgData = highlyVariableGenes(normalizedData, originalData[0].length);
+        System.out.println("Finished loading data");
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {
             newHvgData[i][0] = hvgData[i][4];
@@ -425,6 +426,90 @@ public class Model {
             }
         }
         //System.out.println("Dimension after HVG: " + newData.length + " " + newData[0].length);
+        return newData;
+    }
+
+    public double[][] highlyVariableGenes2(double[][] data, int nTopGenes) {
+        double[] dispersions = new double[data[0].length];
+        double[] means = new double[data[0].length];
+        Integer[] indices = new Integer[data[0].length];
+        for (int i = 0; i < data[0].length; i++) {
+            double sum = 0.0;
+            for (int j = 0; j < data.length; j++) {
+                sum += data[j][i];
+            }
+            double mean = sum/data.length;
+            if (mean == 0) {
+                mean = 0.000000001;
+            }
+            double varSum = 0.0;
+            for (int j = 0; j < data.length; j++) {
+                varSum += (data[j][i] - mean)*(data[j][i] - mean);
+            }
+            double variance = varSum/(data.length - 1);
+            dispersions[i] = Math.log(variance/mean);
+            means[i] = Math.log(1+mean);
+            indices[i] = i;
+        }
+
+        Arrays.sort(indices, Comparator.comparingDouble(a -> means[a]));
+
+        int nBins = 20;
+        int currentBin = 0;
+        int currentBinSize = 0;
+        int[] binIndices = new int[indices.length];
+
+        int binSize = data[0].length/nBins;
+        int leftOver = data[0].length%nBins;
+
+        for (int i = 0; i < indices.length; i++) {
+            if (currentBinSize >= (binSize + (leftOver > 0 ? 1 : 0))) {
+                currentBinSize = 0;
+                currentBin++;
+                leftOver--;
+            }
+            binIndices[i] = currentBin;
+            currentBinSize++;
+        }
+
+        leftOver = data[0].length%nBins;
+
+        double[] binMeanDispersions = new double[nBins];
+        for (int i = 0; i < indices.length; i++) {
+            binMeanDispersions[binIndices[i]] += dispersions[indices[i]];
+        }
+
+        for (int i = 0; i < binMeanDispersions.length; i++) {
+            binMeanDispersions[i] /= binSize + (i < leftOver ? 1 : 0);
+        }
+
+        double[] binStdDispersions = new double[nBins];
+        for (int i = 0; i < indices.length; i++) {
+            int index = indices[i];
+            int binIndex = binIndices[i];
+            binStdDispersions[binIndex] += (dispersions[index] - binMeanDispersions[binIndex])*(dispersions[index] - binMeanDispersions[binIndex]);
+        }
+
+        for (int i = 0; i < binStdDispersions.length; i++) {
+            binStdDispersions[i] /= (binSize + (i < leftOver ? 1 : 0) - 1);
+            binStdDispersions[i] = Math.sqrt(binStdDispersions[i]);
+        }
+
+        double[] zScores = new double[data[0].length];
+
+        for (int i = 0; i < data[0].length; i++) {
+            zScores[i] = (dispersions[i] - binMeanDispersions[binIndices[indices[i]]])/binStdDispersions[binIndices[indices[i]]];
+        }
+
+        indices = new Integer[data[0].length];
+        for (int i = 0; i < data[0].length; i++) indices[i] = i;
+        Arrays.sort(indices, Comparator.comparingDouble(a -> -zScores[a]));
+        double[][] newData = new double[data.length][nTopGenes];
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < nTopGenes; j++) {
+                newData[i][j] = data[i][indices[j]];
+            }
+        }
         return newData;
     }
 
