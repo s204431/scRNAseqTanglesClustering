@@ -43,7 +43,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import visualization.testSet.TestEditPanel;
+import visualization.test.TestEditPanel;
 
 
 public class Model {

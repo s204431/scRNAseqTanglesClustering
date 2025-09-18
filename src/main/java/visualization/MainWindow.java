@@ -4,9 +4,9 @@ import clustering.TangleSearchTree;
 import visualization.data.ScatterPlotPanel;
 import visualization.data.StatisticsPanel;
 import visualization.data.TangleTreePanel;
-import visualization.testSet.TestEditPanel;
-import visualization.testSet.TestGraphPanel;
-import visualization.testSet.TestResultPanel;
+import visualization.test.TestEditPanel;
+import visualization.test.TestGraphPanel;
+import visualization.test.TestResultPanel;
 
 import javax.swing.*;
 import java.util.List;

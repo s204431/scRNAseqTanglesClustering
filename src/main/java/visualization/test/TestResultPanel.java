@@ -1,4 +1,4 @@
-package visualization.testSet;
+package visualization.test;
 
 import visualization.View;
 

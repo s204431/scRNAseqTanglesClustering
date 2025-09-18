@@ -3,15 +3,12 @@ package util;
 import clustering.Model;
 import datasets.ScRNAseqDataset;
 import main.Main;
-import org.nd4j.common.primitives.Atomic;
 import smile.validation.metric.AdjustedRandIndex;
 import smile.validation.metric.NormalizedMutualInformation;
-import visualization.testSet.TestEditPanel;
+import visualization.test.TestEditPanel;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestSet {
 
@@ -171,7 +168,7 @@ public class TestSet {
 
         System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
 
-        
+
         averageNMIScores = new double[observedPaths.length];
         averageRandIndexScores = new double[observedPaths.length];
         if (runPython) {

@@ -1,4 +1,4 @@
-package visualization.testSet;
+package visualization.test;
 
 import org.nd4j.common.primitives.AtomicDouble;
 import visualization.View;

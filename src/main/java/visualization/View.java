@@ -6,7 +6,7 @@ import main.Main;
 import util.Monitor;
 import util.BitSet;
 import util.Config;
-import visualization.testSet.TestEditPanel;
+import visualization.test.TestEditPanel;
 
 import javax.swing.*;
 import java.io.File;
