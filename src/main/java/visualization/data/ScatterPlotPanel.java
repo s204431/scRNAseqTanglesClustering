@@ -4,6 +4,7 @@ import smile.data.DataFrame;
 import smile.data.vector.DoubleVector;
 import smile.data.vector.IntVector;
 import smile.plot.swing.Canvas;
+import smile.plot.swing.Figure;
 import smile.plot.swing.ScatterPlot;
 import visualization.View;
 
@@ -25,8 +26,13 @@ public class ScatterPlotPanel extends JPanel {
 
     public void drawScatterPlot(double[][] points) {
         removeAll();
-        Canvas scatterPlot = new Canvas(ScatterPlot.of(points, 'o').figure());
-        add(scatterPlot, BorderLayout.CENTER);
+        ScatterPlot plot = ScatterPlot.of(points, 'o');
+        Figure figure = plot.figure();
+
+        figure.setAxisLabels("", "");
+
+        Canvas canvas = new Canvas(figure);
+        add(canvas, BorderLayout.CENTER);
         revalidate();
         repaint();
     }

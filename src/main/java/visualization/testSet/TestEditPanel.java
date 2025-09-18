@@ -1,5 +1,6 @@
 package visualization.testSet;
 
+import org.nd4j.common.primitives.AtomicDouble;
 import visualization.View;
 
 import javax.swing.*;
@@ -10,20 +11,18 @@ import java.util.List;
 import java.awt.*;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class TestEditPanel extends JPanel {
     private View view;
 
     private javax.swing.Timer timer;
-    private TestProgressManager testProgressManager;
+    private final TestProgressManager testProgressManager = new TestProgressManager();
     private int[] rowsPending;
 
     private final JButton selectButton = new JButton("Select");
     private final JButton unselectButton = new JButton("Unselect");
     private final JButton selectAllButton = new JButton("Select All");
-    private final JButton selectNoneButton = new JButton("Select None");
-    private final JButton invertButton = new JButton("Invert All");
+    private final JButton selectNoneButton = new JButton("Unselect all");
 
     private final TestSetTable testSetTable = new TestSetTable();
     private final JTable table = new JTable(testSetTable) {
@@ -31,11 +30,9 @@ public class TestEditPanel extends JPanel {
         public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
             Component c = super.prepareRenderer(renderer, row, column);
 
-            // Convert view row to model row (sorting is enabled)
             int modelRow = convertRowIndexToModel(row);
             TestStatus status = testSetTable.getStatus(modelRow);
 
-            // Don't override selection highlight
             if (!isRowSelected(row)) {
                 switch (status) {
                     case FINISHED:
@@ -94,7 +91,7 @@ public class TestEditPanel extends JPanel {
     public void loadTestSet(List<File> selectedDirs) {
         List<TestRow> rows = new ArrayList<>();
         for (File f : selectedDirs) {
-            rows.add(new TestRow(false, f));
+            rows.add(new TestRow(true, f));
         }
         testSetTable.setRows(rows);
         resizeTableViewportToRows();
@@ -117,40 +114,44 @@ public class TestEditPanel extends JPanel {
     }
 
     public boolean isRunning() {
-        return testProgressManager != null;
+        return timer != null;
     }
 
     public File[] getSelectedTests() {
         return testSetTable.getSelectedFiles();
     }
 
-    public void refreshTable() {
+    public void updateResults() {
         boolean testingFinished = true;
 
-        for (int i = 0; i < testProgressManager.getSize(); i++) {
-            int row = rowsPending[i];
-            TestStatus status = testSetTable.getStatus(row);
-            if (!testProgressManager.getStatus(i, true) || !testProgressManager.getStatus(i, false)) {
-                testingFinished = false;
-                if (status != TestStatus.PENDING) {
-                    testSetTable.setStatus(row, TestStatus.PENDING);
-                }
-            } else {
-                if (status != TestStatus.FINISHED) {
-                    testSetTable.setStatus(row, TestStatus.FINISHED);
+        for (int j = 0; j < 2; j++) {
+            boolean isTangle = j == 0;
+
+            for (int i = 0; i < testProgressManager.getSize(); i++) {
+                int row = rowsPending[i];
+                TestStatus status = testSetTable.getStatus(row);
+
+                if (!testProgressManager.getStatus(i, isTangle)) {
+                    testingFinished = false;
+                    if (status != TestStatus.PENDING) testSetTable.setStatus(row, TestStatus.PENDING);
+                } else {
+                    if (status != TestStatus.FINISHED) {
+                        // New test has finished
+                        if (!isTangle) testSetTable.setStatus(row, TestStatus.FINISHED);
+                        view.visualizeTestResults(0, i);
+                    }
                 }
             }
         }
 
         if (testingFinished) {
             stopTimer();
-            testProgressManager = null;
             testSetTable.resetRowStatus();
         }
     }
 
     public void startTimer() {
-        timer = new Timer(500, e -> refreshTable());
+        timer = new Timer(500, e -> updateResults());
         timer.setInitialDelay(0);
         timer.setCoalesce(true);
         timer.start();
@@ -161,32 +162,49 @@ public class TestEditPanel extends JPanel {
         timer = null;
     }
 
-    public TestEditPanel.TestProgressManager getTestProgressManager() {
+    public TestEditPanel.TestProgressManager initializeTestProgressManager() {
         rowsPending = testSetTable.getSelectedRows();
-        testProgressManager = new TestProgressManager(rowsPending.length);
+        testProgressManager.reset(rowsPending.length);
         return testProgressManager;
     }
 
+    public TestProgressManager getTestProgressManager() {
+        return testProgressManager;
+    }
+
+
+
     public static class TestProgressManager {
-        private final int size;
+        private int size;
 
-        private final AtomicBoolean[] tangleFinished;
-        private final AtomicBoolean[] pythonFinished;
+        private AtomicBoolean[] tangleFinished;
+        private AtomicBoolean[] pythonFinished;
 
-        public TestProgressManager(int size) {
-            this.size = size;
+        private AtomicDouble[] tangleTimes;
+        private AtomicDouble[] pythonTimes;
 
-            tangleFinished = new AtomicBoolean[size];
-            pythonFinished = new AtomicBoolean[size];
-            for (int i = 0; i < size; i++) {
-                tangleFinished[i] = new AtomicBoolean(false);
-                pythonFinished[i] = new AtomicBoolean(false);
-            }
+        private AtomicDouble[] tangleNMI;
+        private AtomicDouble[] pythonNMI;
+
+        private AtomicDouble[] tangleRandIndex;
+        private AtomicDouble[] pythonRandIndex;
+
+        public TestProgressManager() {
+            reset(0);
         }
 
-        public void markFinished(int i, boolean tangle) {
-            AtomicBoolean[] array = tangle ? tangleFinished : pythonFinished;
-            array[i].set(true);
+        public void markFinished(int i, boolean tangle, double time, double NMI, double randIndex) {
+            if (tangle) {
+                tangleFinished[i].set(true);
+                tangleTimes[i].set(time);
+                tangleNMI[i].set(NMI);
+                tangleRandIndex[i].set(randIndex);
+            } else {
+                pythonFinished[i].set(true);
+                pythonTimes[i].set(time);
+                pythonNMI[i].set(NMI);
+                pythonRandIndex[i].set(randIndex);
+            }
         }
 
         public boolean getStatus(int i, boolean tangle) {
@@ -194,10 +212,51 @@ public class TestEditPanel extends JPanel {
             return array[i].get();
         }
 
+        public double getTime(int i, boolean tangle) {
+            AtomicDouble[] array = tangle ? tangleTimes : pythonTimes;
+            return array[i].get();
+        }
+
+        public double getNMI(int i, boolean tangle) {
+            AtomicDouble[] array = tangle ? tangleNMI : pythonNMI;
+            return array[i].get();
+        }
+
+        public double getRandIdx(int i, boolean tangle) {
+            AtomicDouble[] array = tangle ? tangleRandIndex : pythonRandIndex;
+            return array[i].get();
+        }
+
         public int getSize() {
             return size;
         }
+
+        public void reset(int size) {
+            this.size = size;
+
+            tangleFinished = new AtomicBoolean[size];
+            pythonFinished = new AtomicBoolean[size];
+            tangleTimes = new AtomicDouble[size];
+            pythonTimes = new AtomicDouble[size];
+            tangleNMI = new AtomicDouble[size];
+            pythonNMI = new AtomicDouble[size];
+            tangleRandIndex = new AtomicDouble[size];
+            pythonRandIndex = new AtomicDouble[size];
+
+            for (int i = 0; i < size; i++) {
+                tangleFinished[i] = new AtomicBoolean(false);
+                pythonFinished[i] = new AtomicBoolean(false);
+                tangleTimes[i] = new AtomicDouble();
+                pythonTimes[i] = new AtomicDouble();
+                tangleNMI[i] = new AtomicDouble();
+                pythonNMI[i] = new AtomicDouble();
+                tangleRandIndex[i] = new AtomicDouble();
+                pythonRandIndex[i] = new AtomicDouble();
+            }
+        }
     }
+
+
 
     private enum TestStatus { DEFAULT, PENDING, FINISHED };
 

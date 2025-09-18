@@ -103,6 +103,10 @@ public class View {
         window.showTestSet(selectedDirs);
     }
 
+    public void visualizeTestResults(int i, int j) {
+        window.visualizeTestResults(i, j);
+    }
+
 
     public void changeView(String viewName) {
         window.changeView(viewName);
@@ -111,5 +115,4 @@ public class View {
     public void setMonitor(Monitor monitor) {
         this.monitor = monitor;
     }
-
 }

@@ -171,12 +171,7 @@ public class TestSet {
 
         System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
 
-        if (!runPython) {
-            for (int i = 0; i < progressManager.getSize(); i++) {
-                progressManager.markFinished(i, false);
-            }
-        }
-
+        
         averageNMIScores = new double[observedPaths.length];
         averageRandIndexScores = new double[observedPaths.length];
         if (runPython) {
@@ -206,7 +201,8 @@ public class TestSet {
             }
             averageNMIScores[i] /= nRunsPerDataset;
             averageRandIndexScores[i] /= nRunsPerDataset;
-            progressManager.markFinished(i, true);
+            progressManager.markFinished(i, true, 0, averageNMIScores[i], averageRandIndexScores[i]);
+            if (!runPython) progressManager.markFinished(i, false, 0, 0, 0);
             System.out.println("Average results for dataset " + observedPaths[i].replace("observed_counts_", ""));
             System.out.println("NMI score: " + averageNMIScores[i]);
             System.out.println("Rand Index score: " + averageRandIndexScores[i]);
@@ -218,7 +214,7 @@ public class TestSet {
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
                 NMIPythonResults[i] = NMIPython;
                 randIndexPythonResults[i] = randIndexPython;
-                progressManager.markFinished(i, false);
+                progressManager.markFinished(i, false, 0, NMIPythonResults[i], randIndexPythonResults[i]);
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);
                 System.out.println();

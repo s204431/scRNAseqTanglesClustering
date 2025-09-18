@@ -1,19 +1,17 @@
 package visualization;
 
 import clustering.TangleSearchTree;
-import util.Tuple;
 import visualization.data.ScatterPlotPanel;
 import visualization.data.StatisticsPanel;
 import visualization.data.TangleTreePanel;
 import visualization.testSet.TestEditPanel;
-import visualization.testSet.TestProgressPanel;
+import visualization.testSet.TestGraphPanel;
 import visualization.testSet.TestResultPanel;
 
 import javax.swing.*;
 import java.util.List;
 import java.awt.*;
 import java.io.File;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainWindow extends JFrame {
     private View view;
@@ -30,7 +28,7 @@ public class MainWindow extends JFrame {
     private final ParameterPanel dataParameterPanel;
     private final ParameterPanel testParameterPanel;
     private final TestEditPanel testEditPanel;
-    private final TestProgressPanel testProgressPanel;
+    private final TestGraphPanel testGraphPanel;
     private final TestResultPanel testResultPanel;
     private final TopPanel topPanel;
 
@@ -44,8 +42,8 @@ public class MainWindow extends JFrame {
         this.dataParameterPanel = new ParameterPanel(view, true);
         this.testParameterPanel = new ParameterPanel(view, false);
         this.testEditPanel = new TestEditPanel(view);
-        this.testResultPanel = new TestResultPanel(view);
-        this.testProgressPanel = new TestProgressPanel(view);
+        this.testResultPanel = new TestResultPanel(view, testEditPanel.getTestProgressManager());
+        this.testGraphPanel = new TestGraphPanel(view, testEditPanel.getTestProgressManager());
 
         setSize(new Dimension(1200, 800));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -85,7 +83,7 @@ public class MainWindow extends JFrame {
     private JComponent createTestView() {
         JPanel testPanel = new JPanel(new BorderLayout());
 
-        JSplitPane split1 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, testProgressPanel, testResultPanel);
+        JSplitPane split1 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, testGraphPanel, testResultPanel);
         split1.setResizeWeight(0.7); // % space the scatter panel takes initially
 
         JSplitPane split2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, testEditPanel, split1);
@@ -126,12 +124,18 @@ public class MainWindow extends JFrame {
     }
 
     public TestEditPanel.TestProgressManager prepareUIForTesting() {
-        TestEditPanel.TestProgressManager out = testEditPanel.getTestProgressManager();
+        TestEditPanel.TestProgressManager out = testEditPanel.initializeTestProgressManager();
         testEditPanel.startTimer();
+        testResultPanel.initializeResultsTable();
         return out;
     }
 
     public boolean testIsRunning() {
         return testEditPanel.isRunning();
+    }
+
+    public void visualizeTestResults(int i, int j) {
+        testGraphPanel.drawHistogram(i, j);
+        testResultPanel.drawResultsTable(i, j);
     }
 }
