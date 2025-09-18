@@ -134,8 +134,8 @@ public class MainWindow extends JFrame {
         return testEditPanel.isRunning();
     }
 
-    public void visualizeTestResults(int i, int j) {
+    public void visualizeTestResults(int i, int j, boolean isTangle) {
         testGraphPanel.drawHistogram(i, j);
-        testResultPanel.drawResultsTable(i, j);
+        testResultPanel.drawResultsTable(i, j, isTangle);
     }
 }

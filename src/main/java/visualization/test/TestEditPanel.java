@@ -138,7 +138,7 @@ public class TestEditPanel extends JPanel {
                     if (status != TestStatus.FINISHED) {
                         // New test has finished
                         if (!isTangle) testSetTable.setStatus(row, TestStatus.FINISHED);
-                        view.visualizeTestResults(0, i);
+                        view.visualizeTestResults(0, i, isTangle);
                     }
                 }
             }

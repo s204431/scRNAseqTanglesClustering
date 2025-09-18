@@ -103,8 +103,8 @@ public class View {
         window.showTestSet(selectedDirs);
     }
 
-    public void visualizeTestResults(int i, int j) {
-        window.visualizeTestResults(i, j);
+    public void visualizeTestResults(int i, int j, boolean isTangle) {
+        window.visualizeTestResults(i, j, isTangle);
     }
 
 

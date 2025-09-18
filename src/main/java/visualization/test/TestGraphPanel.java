@@ -85,16 +85,27 @@ public class TestGraphPanel extends JPanel {
     public void drawEmptyHistogram() {
         removeAll();
 
-        BarPlot plot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
-        Figure fig = plot.figure();
+        BarPlot nmiPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
+        BarPlot randPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
+        Figure nmiFig = nmiPlot.figure();
+        Figure randFig = randPlot.figure();
 
         // Make room for second tick or everything blows up
-        fig.setBound(new double[]{-0.5, 0.5}, new double[]{1.5, 1.0});
-        fig.setAxisLabels("Test", "NMI Score");
-        fig.getAxis(0).setTicks(new String[]{"", ""}, new double[]{0.375, 1.375});
+        nmiFig.setBound(new double[]{-0.5, 0.5}, new double[]{1.5, 1.0});
+        nmiFig.setAxisLabels("Test", "NMI Score");
+        nmiFig.getAxis(0).setTicks(new String[]{"", ""}, new double[]{0.375, 1.375});
 
-        Canvas canvas = new Canvas(fig);
-        add(canvas, BorderLayout.CENTER);
+        randFig.setBound(new double[]{-0.5, 0.5}, new double[]{1.5, 1.0});
+        randFig.setAxisLabels("Test", "Rand Index Score");
+        nmiFig.getAxis(0).setTicks(new String[]{"", ""}, new double[]{0.375, 1.375});
+
+
+        Canvas nmiCanvas = new Canvas(nmiFig);
+        add(nmiCanvas);
+
+        Canvas randCanvas = new Canvas(randFig);
+        add(randCanvas);
+
         revalidate();
         repaint();
     }

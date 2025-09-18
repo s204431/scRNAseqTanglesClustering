@@ -27,7 +27,7 @@ public class TestResultPanel extends JPanel {
         resizeViewportToRows(3);
     }
 
-    public void drawResultsTable(int low, int high) {
+    public void drawResultsTable(int low, int high, boolean isTangle) {
         // Fill rows
         int n = high - low + 1;
 
@@ -39,7 +39,6 @@ public class TestResultPanel extends JPanel {
         double pythonAvgRandIdx = 0;
 
         for (int i = 0; i < n; i++) {
-            int test = low + i + 1;
             int baseRow = i * ResultsTable.ROW_OFFSET + ResultsTable.HEADER_ROWS;
 
             double tangleTime = testProgressManager.getTime(i, true);
@@ -62,11 +61,11 @@ public class TestResultPanel extends JPanel {
         }
 
         tangleAvgTime /= n;
-        pythonAvgTime /= n;
+        pythonAvgTime /= isTangle ? n-1 : n;
         tangleAvgNmi /= n;
-        pythonAvgNmi /= n;
+        pythonAvgNmi /= isTangle ? n-1 : n;
         tangleAvgRandIdx /= n;
-        pythonAvgRandIdx /= n;
+        pythonAvgRandIdx /= isTangle ? n-1 : n;
         resultsTable.setRowValues(0, tangleAvgTime, pythonAvgTime);
         resultsTable.setRowValues(1, tangleAvgNmi, pythonAvgNmi);
         resultsTable.setRowValues(2, tangleAvgRandIdx, pythonAvgRandIdx);
