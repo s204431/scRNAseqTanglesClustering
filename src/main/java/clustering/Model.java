@@ -210,9 +210,14 @@ public class Model {
         int a = config.getA();
         double psi = config.getPsi();
 
+        int maxClusters = 10;
+
+        int minA = Math.max((dataset.data.length/maxClusters)/2, 1);
+        int maxA = dataset.data.length/2;
+
         double[][] reducedPoints = tsne(dataset.data, 5);
 
-        dataset.setA(a);
+        dataset.setA(minA);
         BitSet[] initialCuts = dataset.getInitialCuts(config.getCutGeneratorName());
         double[] costs = dataset.getCutCosts(config.getCostFunctionName());
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
@@ -224,7 +229,7 @@ public class Model {
         double bestSilhuetteScore = -1;
         int bestA = -1;
 
-        for (int a2 = a; a2 < a*20; a2 += a) {
+        for (int a2 = minA; a2 < maxA; a2 += 5) {
             tangleClusterer.generateClusters(a2, psi, initialCuts, costs);
             hardClustering = tangleClusterer.getHardClustering();
             double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
