@@ -13,7 +13,9 @@ df = pd.read_csv(input_str, index_col=0)
 adata = ad.AnnData(df)
 
 #sc.pp.filter_cells(adata, min_genes=100)
-#sc.pp.filter_genes(adata, min_cells=3)
+sc.pp.filter_genes(adata, min_cells=3)
+
+#sc.pp.scrublet(adata)
 
 # Saving count data
 adata.layers["counts"] = adata.X.copy()
