@@ -69,7 +69,7 @@ public class Model {
         originalData = loadData(observedFilePath);
         groundTruth = loadGroundTruth(labelFilePath);
         normalizedData = logNormalize(originalData);
-        hvgData = highlyVariableGenes(normalizedData, originalData[0].length);
+        hvgData = highlyVariableGenes(normalizedData, normalizedData[0].length);
         System.out.println("Finished loading data");
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {

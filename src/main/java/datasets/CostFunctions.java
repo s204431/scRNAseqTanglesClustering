@@ -343,6 +343,7 @@ public class CostFunctions {
                 double[] mean = initialCuts[i].get(j) ? mean2 : mean1;
                 costs[i] += Math.exp(-(1.0/maxRange)*getDistance(dataPoints[j], mean));
             }
+            costs[i] /= initialCuts[i].size();
         }
         //cutCosts = costs;
         return costs;
