@@ -22,6 +22,8 @@ public class TangleClusterer {
     protected boolean useOscarWerner = false;
     protected boolean removeRedundantCuts = true;
 
+    public static final int MAX_REDUNDANT_CUTS = 2;
+
     private TangleSearchTree tangleSearchTree;
 
     private Monitor monitor;
@@ -155,6 +157,8 @@ public class TangleClusterer {
             List<Node> newLowestBranchNodes = new ArrayList<>();
 
             for (Node node : lowestBranchNodes) {
+                int redundantCutCounter = 0;
+
                 int[] branchIndicesOrdered = indicesOrdered.get(node.branchId);
                 int branchPointer = branchPointers.get(node.branchId);
                 HashSet<Integer> branchCuts = null;
@@ -282,6 +286,11 @@ public class TangleClusterer {
 
                     if (consistent) {
                         //A single child was added to the branch
+                        redundantCutCounter++;
+                        if (redundantCutCounter >= MAX_REDUNDANT_CUTS) {
+                            break;
+                        }
+
                         branchPointers.set(node.branchId, branchPointer);
                         if (node.leftChild != null) {
                             node = node.leftChild;
