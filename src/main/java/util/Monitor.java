@@ -3,10 +3,13 @@ package util;
 import clustering.TangleSearchTree;
 import datasets.ScRNAseqDataset;
 
+import java.util.List;
+
 public class Monitor {
     private ScRNAseqDataset dataset;
     private TangleSearchTree uncondensedTree;
     private TangleSearchTree condensedTree;
+    private List<double[]> branchCosts;
 
     public void setDataset(ScRNAseqDataset dataset) {
         this.dataset = dataset;
@@ -20,6 +23,10 @@ public class Monitor {
         this.condensedTree = condensedTree;
     }
 
+    public void setBranchCosts(List<double[]> branchCosts) {
+        this.branchCosts = branchCosts;
+    }
+
     public ScRNAseqDataset getDataset() {
         return dataset;
     }
@@ -30,5 +37,9 @@ public class Monitor {
 
     public TangleSearchTree getCondensedTree() {
         return condensedTree;
+    }
+
+    public List<double[]> getBranchCosts() {
+        return branchCosts;
     }
 }

@@ -115,4 +115,8 @@ public class View {
     public void setMonitor(Monitor monitor) {
         this.monitor = monitor;
     }
+
+    public List<double[]> getBranchCosts() {
+        return monitor.getBranchCosts();
+    }
 }

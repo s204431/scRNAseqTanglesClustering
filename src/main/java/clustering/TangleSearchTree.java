@@ -467,6 +467,7 @@ public class TangleSearchTree {
     public Node copyNode(Node oldNode, Node newNode) {
         newNode.originalOrientation = oldNode.originalOrientation;
         newNode.side = oldNode.side;
+        newNode.branchId = oldNode.branchId;
         if (oldNode.intersection != null) {
             newNode.intersection = oldNode.intersection.clone();
         }

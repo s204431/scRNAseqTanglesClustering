@@ -18,6 +18,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.util.*;
+import java.util.List;
 
 public class TangleTreePanel extends JPanel {
     private View view;
@@ -25,6 +26,7 @@ public class TangleTreePanel extends JPanel {
     private JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     private JPanel treePanel = new JPanel(new BorderLayout());
 
+    private HashMap<String, TangleSearchTree.Node> idToNode = new HashMap<>();
     private HashMap<String, String> idToNodeName = new HashMap<>();
     private HashMap<String, String> idToEdgeName = new HashMap<>();
     private HashMap<String, BitSet> idToCut = new HashMap<>();
@@ -37,6 +39,8 @@ public class TangleTreePanel extends JPanel {
 
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
+
+    private List<double[]> branchCosts;
 
     private boolean showCondensedTree = false;
     private boolean useIntersections = false;
@@ -69,7 +73,6 @@ public class TangleTreePanel extends JPanel {
 
     public void drawTree(TangleSearchTree tst) {
         getSortedCutsAndCosts();
-
         resetHistoryVariables();
 
         TangleSearchTree.Node root = tst.getRoot();
@@ -122,7 +125,9 @@ public class TangleTreePanel extends JPanel {
                 int cutIndex = idToCutIndex.get(uniqueId);
                 view.showCut(cut, cutIndex);
 
-                System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
+                TangleSearchTree.Node node = idToNode.get(uniqueId);
+                double cost = branchCosts == null ? sortedCutCosts[cutIndex] : branchCosts.get(node.branchId)[node.originalOrientation];
+                System.out.println("Cut: " + cutIndex + (branchCosts == null ? "" : " Branch") + " Cost: " + cost);
             }
         });
 
@@ -145,6 +150,7 @@ public class TangleTreePanel extends JPanel {
 
         if (parent.equals("None")) {    // Root
             tree.setRoot(uniqueId);
+            idToNode.put(uniqueId, node);
             idToNodeName.put(uniqueId, "Root");
             addNode(tree, node.leftChild, uniqueId);
             addNode(tree, node.rightChild, uniqueId);
@@ -157,6 +163,7 @@ public class TangleTreePanel extends JPanel {
         }
 
         tree.addChild(parent + "-" + uniqueId, parent, uniqueId);
+        idToNode.put(uniqueId, node);
         idToNodeName.put(uniqueId, nodeName);
         idToEdgeName.put(uniqueId, "");
         idToCutIndex.put(uniqueId, cutIndex);
@@ -172,6 +179,8 @@ public class TangleTreePanel extends JPanel {
     }
 
     private void getSortedCutsAndCosts() {
+        branchCosts = view.getBranchCosts();
+
         cuts = view.getCuts();
         cutCosts = view.getCutCosts();
         Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
