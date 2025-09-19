@@ -474,10 +474,12 @@ public class TangleSearchTree {
         if (oldNode.leftChild != null) {
             newNode.leftChild = new Node();
             newNode.leftChild = copyNode(oldNode.leftChild, newNode.leftChild);
+            newNode.leftChild.parent = newNode;
         }
         if (oldNode.rightChild != null) {
             newNode.rightChild = new Node();
             newNode.rightChild = copyNode(oldNode.rightChild, newNode.rightChild);
+            newNode.rightChild.parent = newNode;
         }
         return newNode;
     }

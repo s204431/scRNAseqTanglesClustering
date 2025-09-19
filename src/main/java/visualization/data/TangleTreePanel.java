@@ -126,8 +126,8 @@ public class TangleTreePanel extends JPanel {
                 view.showCut(cut, cutIndex);
 
                 TangleSearchTree.Node node = idToNode.get(uniqueId);
-                double cost = branchCosts == null ? sortedCutCosts[cutIndex] : branchCosts.get(node.branchId)[node.originalOrientation];
-                System.out.println("Cut: " + cutIndex + (branchCosts == null ? "" : " Branch") + " Cost: " + cost);
+                double cost = sortedCutCosts[cutIndex];
+                System.out.println("Cut: " + cutIndex + " Cost: " + cost +  (branchCosts == null ? "" : " Branch cost: " + branchCosts.get(node.parent.branchId)[node.originalOrientation]));
             }
         });
 

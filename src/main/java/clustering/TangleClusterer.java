@@ -20,7 +20,7 @@ public class TangleClusterer {
     protected static boolean earlyStop = false;
     protected boolean useAlternateConsistencyCheck = false;
     protected boolean useOscarWerner = false;
-    protected boolean removeRedundantCuts = true;
+    protected boolean removeRedundantCuts = false;
 
     private TangleSearchTree tangleSearchTree;
 
@@ -114,7 +114,7 @@ public class TangleClusterer {
         List<double[]> branchCosts = new ArrayList<>();
         double[] initialCosts = new double[n];
         System.arraycopy(costs, 0, initialCosts, 0, n);
-        branchCosts.add(initialCosts);
+        branchCosts.add(initialCosts.clone());
 
         //Indices for ordered cost for each branch ID.
         List<int[]> indicesOrdered = new ArrayList<>();
@@ -138,7 +138,7 @@ public class TangleClusterer {
 
         for (int i = 0; i < n; i++) indicesOrdered.getFirst()[i] = i;
         System.arraycopy(costs, 0, branchCosts.getFirst(), 0, n);
-        quicksort(branchCosts.getFirst(), indicesOrdered.getFirst(), 0, n - 1);
+        quicksort(initialCosts, indicesOrdered.getFirst(), 0, n - 1);
 
         int[] debugIndices = new int[n];
         for (int i = 0; i < n; i++) {
@@ -198,7 +198,6 @@ public class TangleClusterer {
                         newDataset.setInitialCuts(newCuts);
                         double[] newCosts = newDataset.getCutCosts(costFunctionName);
                         branchCosts.add(newCosts);
-                        System.out.println("Branch " + node.leftChild.branchId + " Costs " + Arrays.toString(newCosts));
 
                         //Reorder cuts and costs based on the cost order for the parent branch
                         int[] newIndices = branchIndicesOrdered.clone();
