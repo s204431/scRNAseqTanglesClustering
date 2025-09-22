@@ -214,7 +214,8 @@ public class Main {
         return null;
     }
 
-    public static void zScoreNorm(double[][] doubleData) {
+    public static double[][] zScoreNorm(double[][] doubleData) {
+        double[][] newData = new double[doubleData.length][doubleData[0].length];
         //Normalization
         double[] mean = new double[doubleData[0].length];
         double[] std = new double[doubleData[0].length];
@@ -240,9 +241,10 @@ public class Main {
 
         for (int i = 0; i < doubleData.length; i++) {
             for (int j = 0; j < doubleData[i].length; j++) {
-                doubleData[i][j] = (doubleData[i][j] - mean[j])/std[j];
+                newData[i][j] = (doubleData[i][j] - mean[j])/std[j];
             }
         }
+        return newData;
     }
 
     public static double[][] highlyVariableGenes(double[][] data, int nTopGenes) {

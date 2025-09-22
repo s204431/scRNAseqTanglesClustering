@@ -98,7 +98,7 @@ public class View {
 
     public void loadDataset() {
         points = Model.tsne(model.getHvgData(), 2);
-        Main.zScoreNorm(points);
+        points = Main.zScoreNorm(points);
         window.drawPoints(points);
         window.showInformation(model.getDataset());
     }

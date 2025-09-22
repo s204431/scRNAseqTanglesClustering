@@ -180,7 +180,7 @@ public class Model {
         boolean prev2 = tangleClusterer.useOscarWerner;
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
-        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getCostFunctionName());
+        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getCostFunctionName(), "Default", true);
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
 
@@ -198,7 +198,7 @@ public class Model {
         boolean prev2 = tangleClusterer.useOscarWerner;
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
-        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getCostFunctionName());
+        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getCostFunctionName(), "Default", true);
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
 
@@ -219,7 +219,7 @@ public class Model {
 
         dataset.setA(minA);
         BitSet[] initialCuts = dataset.getInitialCuts(config.getCutGeneratorName());
-        double[] costs = dataset.getCutCosts(config.getCostFunctionName());
+        double[] costs = dataset.getCutCosts(config.getCostFunctionName(), "Default", true);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;

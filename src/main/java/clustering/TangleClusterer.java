@@ -1,6 +1,7 @@
 package clustering;
 
 import clustering.TangleSearchTree.Node;
+import datasets.CostFunctions;
 import util.Monitor;
 import util.BitSet;
 import util.Tuple;
@@ -24,21 +25,25 @@ public class TangleClusterer {
 
     private TangleSearchTree tangleSearchTree;
 
+    private CostFunctions costFunctions;
+
     private Monitor monitor;
 
     //Ensure that it can only be created within this package.
     public TangleClusterer() {}
 
     //Generates a soft- and hard clustering for the provided dataset with a specific value of a and psi, and a specific initial cut generator and cost function.
-    public void generateClusters(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String costFunctionName) {
+    public void generateClusters(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String highLevelCostFunctionName, String lowLevelCostFunctionName, boolean useCache) {
+        costFunctions = new CostFunctions();
+        dataset.setCostFunctions(costFunctions);
         dataset.setA(a);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
-        double[] costs = dataset.getCutCosts(costFunctionName);
+        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
         TangleSearchTree tree = useOscarWerner ?
-                oscarWerner(initialCuts, costs, a, psi, dataset.data, costFunctionName) :
+                oscarWerner(initialCuts, costs, a, psi, dataset.data, highLevelCostFunctionName, lowLevelCostFunctionName, useCache) :
                 generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
@@ -107,7 +112,7 @@ public class TangleClusterer {
         return tree;
     }
 
-    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, int a, double psi, double[][] data, String costFunctionName) {
+    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, int a, double psi, double[][] data, String highLevelCostFunctionName, String lowLevelCostFunctionName, boolean useCache) {
         int n = costs.length;
 
         //Costs for each branch ID (in order of initial cuts).
@@ -195,8 +200,10 @@ public class TangleClusterer {
                         double[][] newData = leftRedundantPointsRemoved.x;
                         BitSet[] newCuts = leftRedundantPointsRemoved.y;
                         ScRNAseqDataset newDataset = new ScRNAseqDataset(newData);
+                        newDataset.setCostFunctions(costFunctions);
+                        costFunctions.setMask(node.leftChild.intersection);
                         newDataset.setInitialCuts(newCuts);
-                        double[] newCosts = newDataset.getCutCosts(costFunctionName);
+                        double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache);
                         branchCosts.add(newCosts);
 
                         //Reorder cuts and costs based on the cost order for the parent branch
@@ -243,8 +250,10 @@ public class TangleClusterer {
                         double[][] newData2 = rightRedundancyRemoved.x;
                         BitSet[] newCuts2 = rightRedundancyRemoved.y;
                         ScRNAseqDataset newDataset2 = new ScRNAseqDataset(newData2);
+                        newDataset2.setCostFunctions(costFunctions);
+                        costFunctions.setMask(node.rightChild.intersection);
                         newDataset2.setInitialCuts(newCuts2);
-                        double[] newCosts2 = newDataset2.getCutCosts(costFunctionName);
+                        double[] newCosts2 = newDataset2.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache);
                         branchCosts.add(newCosts2);
 
                         // Reorder cuts and costs based on the cost order for the parent branch

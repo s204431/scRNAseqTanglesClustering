@@ -1,5 +1,6 @@
 package datasets;
 
+import smile.base.mlp.Cost;
 import util.BitSet;
 import util.GlobalConstants;
 
@@ -21,6 +22,10 @@ public class ScRNAseqDataset {
         this.data = data;
         this.cutGenerators = new CutGenerators();
         this.costFunctions = new CostFunctions();
+    }
+
+    public void setCostFunctions(CostFunctions costFunctions) {
+        this.costFunctions = costFunctions;
     }
 
     public BitSet[] getInitialCuts(String initialCutGenerator) {
@@ -50,22 +55,10 @@ public class ScRNAseqDataset {
         return initialCuts;
     }
 
-    public double[] getCutCosts(String costFunctionName) {
-        switch (costFunctionName) {
-            case GlobalConstants.COST_FUNCTION_DISTANCE_TO_MEAN:
-                cutCosts = costFunctions.distanceToMeanCostFunction(data, initialCuts);
-                break;
-
-            case GlobalConstants.COST_FUNCTION_PAIRWISE:
-                cutCosts = costFunctions.pairwiseDistanceCostFunction(data, initialCuts);
-                break;
-
-            case GlobalConstants.COST_FUNCTION_SHORTEST:
-                cutCosts = costFunctions.shortestDistanceCostFunction(data, initialCuts);
-
+    public double[] getCutCosts(String highLevelCostFunction, String lowLevelCostFunction, boolean useCache) {
+        switch (highLevelCostFunction) {
             default:
-                cutCosts = costFunctions.averageCostFunction(data, initialCuts);
-                //cutCosts = cutGenerators.cutCosts;
+                cutCosts = costFunctions.averageCostFunction(data, initialCuts, lowLevelCostFunction, useCache);
                 break;
         }
 
