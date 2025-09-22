@@ -104,13 +104,10 @@ public class MainWindow extends JFrame {
 
     private JComponent createLoadingView() {
         JPanel loadingPanel = new JPanel(new GridBagLayout());
-
         JLabel textLabel = new JLabel("Loading Data Set…");
         textLabel.setHorizontalAlignment(SwingConstants.CENTER);
         textLabel.setVerticalAlignment(SwingConstants.CENTER);
-
         textLabel.setFont(textLabel.getFont().deriveFont(Font.BOLD, 28f));
-
         loadingPanel.add(textLabel, new GridBagConstraints());
         return loadingPanel;
     }
