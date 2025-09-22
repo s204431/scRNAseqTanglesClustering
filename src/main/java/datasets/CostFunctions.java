@@ -249,12 +249,20 @@ public class CostFunctions {
         double[] cutCosts;
         switch (costFunctionName) {
 
-            case GlobalConstants.COST_FUNCTION_PAIRWISE:
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE:
                 cutCosts = pairwiseDistanceCostFunction(dataPoints, initialCuts);
                 break;
 
-            case GlobalConstants.COST_FUNCTION_SHORTEST:
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_SHORTEST:
                 cutCosts = shortestDistanceCostFunction(dataPoints, initialCuts);
+                break;
+
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST:
+                cutCosts = pairwiseClosestCostFunction(dataPoints, initialCuts);
+                break;
+
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN:
+                cutCosts = knnCostFunction(dataPoints, initialCuts);
                 break;
 
             default:

@@ -4,7 +4,8 @@ public final class Config {
     private final boolean useAlternateConsistencyCheck;
     private final boolean useWernerModification;
     private final String cutGeneratorName;
-    private final String costFunctionName;
+    private final String highLevelCostFunctionName;
+    private final String lowLevelCostFunctionName;
     private final int a;
     private final double aFactor;
     private final double psi;
@@ -14,7 +15,8 @@ public final class Config {
     public Config(boolean useAlternateConsistencyCheck,
                   boolean useWernerModification,
                   String cutGeneratorName,
-                  String costFunctionName,
+                  String highLevelCostFunctionName,
+                  String lowLevelCostFunctionName,
                   int a,
                   double aFactor,
                   double psi,
@@ -23,7 +25,8 @@ public final class Config {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         this.useWernerModification = useWernerModification;
         this.cutGeneratorName = cutGeneratorName;
-        this.costFunctionName = costFunctionName;
+        this.highLevelCostFunctionName = highLevelCostFunctionName;
+        this.lowLevelCostFunctionName = lowLevelCostFunctionName;
         this.a = a;
         this.aFactor = aFactor;
         this.psi = psi;
@@ -43,8 +46,12 @@ public final class Config {
         return cutGeneratorName;
     }
 
-    public String getCostFunctionName() {
-        return costFunctionName;
+    public String getHighLevelCostFunctionName() {
+        return highLevelCostFunctionName;
+    }
+
+    public String getLowLevelCostFunctionName() {
+        return lowLevelCostFunctionName;
     }
 
     public int getA() {

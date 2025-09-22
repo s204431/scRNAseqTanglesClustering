@@ -57,8 +57,16 @@ public class ScRNAseqDataset {
 
     public double[] getCutCosts(String highLevelCostFunction, String lowLevelCostFunction, boolean useCache) {
         switch (highLevelCostFunction) {
-            default:
+            case GlobalConstants.HIGH_LEVEL_COST_FUNCTION_BEST_SPLIT:
+                cutCosts = costFunctions.bestFirstCostFunction(data, initialCuts, lowLevelCostFunction, useCache);
+                break;
+
+            case GlobalConstants.HIGH_LEVEL_COST_FUNCTION_AVERAGE:
                 cutCosts = costFunctions.averageCostFunction(data, initialCuts, lowLevelCostFunction, useCache);
+                break;
+
+            default:
+                cutCosts = costFunctions.singleCostFunction(data, initialCuts, lowLevelCostFunction, useCache);
                 break;
         }
 

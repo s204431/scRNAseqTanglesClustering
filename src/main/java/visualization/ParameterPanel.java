@@ -35,7 +35,8 @@ public class ParameterPanel extends JPanel {
     private JCheckBox consistencyCheckbox;
     private JCheckBox wernerModificationCheckbox;
     private JComboBox<String> cutGeneratorDropdown;
-    private JComboBox<String> costFunctionDropdown;
+    private JComboBox<String> highLevelCostFunctionDropdown;
+    private JComboBox<String> lowLevelCostFunctionDropdown;
 
     // Cluster section components
     private JCheckBox autoComputeACheckBox;
@@ -96,25 +97,30 @@ public class ParameterPanel extends JPanel {
                 "Werner<br>" +
                 "Modification" +
             "</html>");
+        consistencyCheckbox.setSelected(true);
+        wernerModificationCheckbox.setSelected(true);
         addRow(consistencyCheckbox, wernerModificationCheckbox);
 
         cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
         addRow("Cut Generator ", cutGeneratorDropdown);
 
-        costFunctionDropdown = new JComboBox<>(GlobalConstants.COST_FUNCTION_NAMES);
-        addRow("Cost Function ", costFunctionDropdown);
+        highLevelCostFunctionDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_COST_FUNCTION_NAMES);
+        addRow("<html>High Level<br> Cost Function</html>", highLevelCostFunctionDropdown);
+
+        lowLevelCostFunctionDropdown = new JComboBox<>(GlobalConstants.LOW_LEVEL_COST_FUNCTION_NAMES);
+        addRow("<html>Low Level<br> Cost Function</html>", lowLevelCostFunctionDropdown);
     }
 
     private void buildClusteringSection() {
         addTitle("Cluster Parameters");
 
         aField = new JTextField(6);
-        String aFieldText = " α ";
+        String aFieldText = " a ";
         if (!dataPanel) {
             aField.setText("0.667");
             //aFieldText += "(0-1) ";
         }
-        autoComputeACheckBox = new JCheckBox("<html>Automatically<br> Compute α</html>");
+        autoComputeACheckBox = new JCheckBox("<html>Automatically<br> Compute a</html>");
         autoComputeACheckBox.setSelected(false);
         JPanel aComponent = new JPanel(new BorderLayout());
         aComponent.add(new JLabel(aFieldText), BorderLayout.WEST);
@@ -122,7 +128,7 @@ public class ParameterPanel extends JPanel {
         addRow(aComponent, autoComputeACheckBox);
 
         psiField = new JTextField(6);
-        if (!dataPanel) psiField.setText("0");
+        psiField.setText("0");
         autoComputePsiCheckBox = new JCheckBox("<html>Automatically<br> Compute ψ</html>");
         autoComputePsiCheckBox.setSelected(false);
         JPanel psiComponent = new JPanel(new BorderLayout());
@@ -254,7 +260,7 @@ public class ParameterPanel extends JPanel {
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Parameter α must be an integer and ψ must be a double",
+                    "Parameter a must be an integer and ψ must be a double",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -264,7 +270,8 @@ public class ParameterPanel extends JPanel {
         Config config = new Config(consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
-                (String) costFunctionDropdown.getSelectedItem(),
+                (String) highLevelCostFunctionDropdown.getSelectedItem(),
+                (String) lowLevelCostFunctionDropdown.getSelectedItem(),
                 a,
                 0.0,
                 psi,
@@ -284,12 +291,12 @@ public class ParameterPanel extends JPanel {
         double psi;
         try {
             aFactor = Double.parseDouble(aField.getText());
-            if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("α should be a factor between 0 and 1");
+            if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("a should be a factor between 0 and 1");
             psi = Double.parseDouble(psiField.getText());
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Parameter α must be a double between 0 and 1, and ψ must be a double",
+                    "Parameter a must be a double between 0 and 1, and ψ must be a double",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -312,7 +319,8 @@ public class ParameterPanel extends JPanel {
         Config config = new Config(consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
-                (String) costFunctionDropdown.getSelectedItem(),
+                (String) highLevelCostFunctionDropdown.getSelectedItem(),
+                (String) lowLevelCostFunctionDropdown.getSelectedItem(),
                 0,
                 aFactor,
                 psi,
