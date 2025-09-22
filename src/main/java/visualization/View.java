@@ -26,7 +26,7 @@ public class View {
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
-            loadDataset();
+            loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
         });
     }
 
@@ -92,15 +92,23 @@ public class View {
     }
 
     public void loadDataset(String filePath) {
-        model.loadDataset(filePath);
-        loadDataset();
+        SwingUtilities.invokeLater(() -> window.changeView(MainWindow.LOADING_VIEW));
+
+        new Thread(() -> {
+            model.loadDataset(filePath);
+            loadDataset();
+        }).start();
     }
 
     public void loadDataset() {
         points = Model.tsne(model.getHvgData(), 2);
         points = Main.zScoreNorm(points);
-        window.drawPoints(points);
-        window.showInformation(model.getDataset());
+
+        SwingUtilities.invokeLater(() -> {
+            window.drawPoints(points);
+            window.showInformation(model.getDataset());
+            window.changeView(MainWindow.DATA_VIEW);
+        });
     }
 
     public void showTestSet(List<File> selectedDirs) {

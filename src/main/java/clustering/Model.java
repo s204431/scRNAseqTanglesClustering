@@ -60,7 +60,7 @@ public class Model {
     private TangleClusterer tangleClusterer = new TangleClusterer();
 
     public Model() {
-        loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
+        //loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
     }
 
     public void loadDataset(String observedFilePath) {
