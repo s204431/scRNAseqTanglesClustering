@@ -34,6 +34,7 @@ public class ParameterPanel extends JPanel {
     // Algorithm section components
     private JCheckBox consistencyCheckbox;
     private JCheckBox wernerModificationCheckbox;
+    private JCheckBox useCacheCheckBox;
     private JComboBox<String> cutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
     private JComboBox<String> lowLevelCostFunctionDropdown;
@@ -100,6 +101,10 @@ public class ParameterPanel extends JPanel {
         consistencyCheckbox.setSelected(true);
         wernerModificationCheckbox.setSelected(true);
         addRow(consistencyCheckbox, wernerModificationCheckbox);
+
+        useCacheCheckBox = new JCheckBox("Use Cache");
+        useCacheCheckBox.setSelected(true);
+        addFullWidth(useCacheCheckBox);
 
         cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
         addRow("Cut Generator ", cutGeneratorDropdown);
@@ -269,6 +274,7 @@ public class ParameterPanel extends JPanel {
 
         Config config = new Config(consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
+                useCacheCheckBox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
                 (String) highLevelCostFunctionDropdown.getSelectedItem(),
                 (String) lowLevelCostFunctionDropdown.getSelectedItem(),
@@ -318,6 +324,7 @@ public class ParameterPanel extends JPanel {
 
         Config config = new Config(consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
+                useCacheCheckBox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
                 (String) highLevelCostFunctionDropdown.getSelectedItem(),
                 (String) lowLevelCostFunctionDropdown.getSelectedItem(),

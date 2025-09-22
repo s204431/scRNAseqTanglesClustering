@@ -3,6 +3,7 @@ package util;
 public final class Config {
     private final boolean useAlternateConsistencyCheck;
     private final boolean useWernerModification;
+    private final boolean useCache;
     private final String cutGeneratorName;
     private final String highLevelCostFunctionName;
     private final String lowLevelCostFunctionName;
@@ -14,6 +15,7 @@ public final class Config {
 
     public Config(boolean useAlternateConsistencyCheck,
                   boolean useWernerModification,
+                  boolean useCache,
                   String cutGeneratorName,
                   String highLevelCostFunctionName,
                   String lowLevelCostFunctionName,
@@ -24,6 +26,7 @@ public final class Config {
                   boolean autoComputePsi) {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         this.useWernerModification = useWernerModification;
+        this.useCache = useCache;
         this.cutGeneratorName = cutGeneratorName;
         this.highLevelCostFunctionName = highLevelCostFunctionName;
         this.lowLevelCostFunctionName = lowLevelCostFunctionName;
@@ -40,6 +43,10 @@ public final class Config {
 
     public boolean isUseWernerModification() {
         return useWernerModification;
+    }
+
+    public boolean isUseCache() {
+        return useCache;
     }
 
     public String getCutGeneratorName() {

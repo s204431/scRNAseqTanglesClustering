@@ -106,7 +106,7 @@ public class TestSet {
                 ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
                 int a = (int)(((double)dataset.data.length/nClusters)*0.667);
-                Config config = new Config(false, false, "Default", "Default", "Default", a, 0.0, 0, false, false);
+                Config config = new Config(false, false, false, "Default", "Default", "Default", a, 0.0, 0, false, false);
                 int[] hardClustering = model.clusterAndReturn(dataset, config);
                 double NMI = NormalizedMutualInformation.joint(hardClustering, groundTruth);
                 double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
@@ -195,7 +195,7 @@ public class TestSet {
                 ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
                 int a = (int)(((double)dataset.data.length/nClusters)*config.getaFactor());
-                Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), a, config.getaFactor(), config.getPsi(), false, false);
+                Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.isUseCache(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), a, config.getaFactor(), config.getPsi(), false, false);
 
                 int[] hardClustering = model.clusterAndReturn(dataset, newConfig);
                 averageTimes[i] += (preTime + (System.currentTimeMillis() - time1))/1000.0;
