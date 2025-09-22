@@ -1,6 +1,7 @@
 package visualization;
 
 import clustering.TangleSearchTree;
+import datasets.ScRNAseqDataset;
 import visualization.data.ScatterPlotPanel;
 import visualization.data.StatisticsPanel;
 import visualization.data.TangleTreePanel;
@@ -33,6 +34,8 @@ public class MainWindow extends JFrame {
     private final TopPanel topPanel;
 
     public MainWindow(View view) {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
         this.view = view;
 
         this.topPanel = new TopPanel(view);
@@ -45,8 +48,10 @@ public class MainWindow extends JFrame {
         this.testResultPanel = new TestResultPanel(view, testEditPanel.getTestProgressManager());
         this.testGraphPanel = new TestGraphPanel(view, testEditPanel.getTestProgressManager());
 
-        setSize(new Dimension(1200, 800));
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int width = (int) (screenSize.width * 0.7);
+        int height = (int) (screenSize.height * 0.8);
+        setSize(width, height);
         setLocationRelativeTo(null);
 
         cards.add(createDataView(), DATA_VIEW);
@@ -137,5 +142,9 @@ public class MainWindow extends JFrame {
     public void visualizeTestResults(int i, int j, boolean isTangle) {
         testGraphPanel.drawHistogram(i, j);
         testResultPanel.drawResultsTable(i, j, isTangle);
+    }
+
+    public void showInformation(ScRNAseqDataset dataSet) {
+        statsPanel.showInformation(dataSet);
     }
 }

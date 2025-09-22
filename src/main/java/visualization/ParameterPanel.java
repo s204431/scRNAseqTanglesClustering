@@ -14,14 +14,14 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 public class ParameterPanel extends JPanel {
-    private View view;
+    private final View view;
 
     // Constants
     private static final String FONT_NAME = "Arial";
     private static final int TITLE_TEXT_SIZE = 18;
     private static final int DEFAULT_TEXT_SIZE = 14;
     private static final Insets DEFAULT_INSETS = new Insets(5, 5, 5, 5);
-    private static final Insets TITLE_INSETS = new Insets(25, 5, 10, 5);
+    private static final Insets TITLE_INSETS = new Insets(50, 5, 10, 5);
 
     // Layout state
     private final GridBagConstraints gbc = new GridBagConstraints();
@@ -38,6 +38,8 @@ public class ParameterPanel extends JPanel {
     private JComboBox<String> costFunctionDropdown;
 
     // Cluster section components
+    private JCheckBox autoComputeACheckBox;
+    private JCheckBox autoComputePsiCheckBox;
     private JTextField aField;
     private JTextField psiField;
     private JButton clusterButton;
@@ -54,25 +56,32 @@ public class ParameterPanel extends JPanel {
     private JCheckBox pythonCheckBox;
     private JButton testButton;
 
-    private boolean dataPanel;
+    private final boolean dataPanel;
 
     public ParameterPanel(View view, boolean dataPanel) {
         this.view = view;
         this.dataPanel = dataPanel;
 
         setLayout(new GridBagLayout());
-        gbc.insets = DEFAULT_INSETS;
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = DEFAULT_INSETS;
         gbc.weightx = 0.0;
 
         buildAlgorithmSection();
         buildClusteringSection();
         if (dataPanel) {
             buildCutsSection();
-            addActions();
         } else {
             buildTestSection();
         }
+        addActions();
+
+        // Glue components to the top of the panel
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        add(Box.createGlue(), gbc);
     }
 
     private void buildAlgorithmSection() {
@@ -99,23 +108,33 @@ public class ParameterPanel extends JPanel {
     private void buildClusteringSection() {
         addTitle("Cluster Parameters");
 
-        aField = new JTextField(5);
-        String aFieldText = "a";
+        aField = new JTextField(6);
+        String aFieldText = " α ";
         if (!dataPanel) {
             aField.setText("0.667");
-            aFieldText += "-factor (0-1)";
+            //aFieldText += "(0-1) ";
         }
-        addRow(aFieldText, aField);
+        autoComputeACheckBox = new JCheckBox("<html>Automatically<br> Compute α</html>");
+        autoComputeACheckBox.setSelected(false);
+        JPanel aComponent = new JPanel(new BorderLayout());
+        aComponent.add(new JLabel(aFieldText), BorderLayout.WEST);
+        aComponent.add(aField, BorderLayout.EAST);
+        addRow(aComponent, autoComputeACheckBox);
 
-        psiField = new JTextField(5);
+        psiField = new JTextField(6);
         if (!dataPanel) psiField.setText("0");
-        addRow("psi", psiField);
+        autoComputePsiCheckBox = new JCheckBox("<html>Automatically<br> Compute ψ</html>");
+        autoComputePsiCheckBox.setSelected(false);
+        JPanel psiComponent = new JPanel(new BorderLayout());
+        psiComponent.add(new JLabel(" ψ "), BorderLayout.WEST);
+        psiComponent.add(psiField, BorderLayout.EAST);
+        addRow(psiComponent, autoComputePsiCheckBox);
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster");
             groundTruthCheckBox = new JCheckBox("<html>Show Ground<br>Truth</html>");
             groundTruthCheckBox.setSelected(false);
-            addRow(clusterButton, groundTruthCheckBox);
+            addRow(groundTruthCheckBox, clusterButton);
         }
     }
 
@@ -136,7 +155,7 @@ public class ParameterPanel extends JPanel {
         showCutCheckBox = new JCheckBox("Show cuts");
         showCutCheckBox.setSelected(false);
 
-        addRow(counterPanel, showCutCheckBox);
+        addRow(showCutCheckBox, counterPanel);
     }
 
     private void buildTestSection() {
@@ -148,61 +167,82 @@ public class ParameterPanel extends JPanel {
 
         pythonCheckBox = new JCheckBox("<html>Compare With<br>Standard<br>Pipeline</html>");
         testButton = new JButton("Run Tests");
-        testButton.addActionListener(this::testAction);
         addRow(testButton, pythonCheckBox);
     }
 
     private void addActions() {
         // ==================== Button Logic ==================== //
-        clusterButton.addActionListener(this::clusterAction);
-        plusButton.addActionListener(e -> stepCutCounter(1));
-        minusButton.addActionListener(e -> stepCutCounter(-1));
+        if (dataPanel) {
+            clusterButton.addActionListener(this::clusterAction);
+            plusButton.addActionListener(e -> stepCutCounter(1));
+            minusButton.addActionListener(e -> stepCutCounter(-1));
+        } else {
+            testButton.addActionListener(this::testAction);
+        }
 
 
         // ==================== Check Box Logic ==================== //
-        groundTruthCheckBox.addItemListener(e -> {
+        if (dataPanel) {
+            groundTruthCheckBox.addItemListener(e -> {
+                boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+                if (isChecked) {
+                    view.showGroundTruth();
+                    turnOffCuts();
+                } else {
+                    view.showClustering();
+                }
+            });
+        }
+
+        autoComputeACheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            if (isChecked) {
-                view.showGroundTruth();
-                turnOffCuts();
-            } else {
-                view.showClustering();
-            }
+            aField.setEditable(!isChecked);
+            aField.setEnabled(!isChecked);
         });
 
-        showCutCheckBox.addItemListener(e -> {
+        autoComputePsiCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            if (isChecked) {
-                groundTruthCheckBox.setSelected(false);
-                if (sortedCuts == null || sortedCuts.length == 0) {
-                    view.showClustering();
-                    return;
-                }
-                showCut(restrictCutIndex(parseCutNumberField()));
-            } else {
-                view.showClustering();
-            }
+            psiField.setEditable(!isChecked);
+            psiField.setEnabled(!isChecked);
         });
+
+        if (dataPanel) {
+            showCutCheckBox.addItemListener(e -> {
+                boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+                if (isChecked) {
+                    groundTruthCheckBox.setSelected(false);
+                    if (sortedCuts == null || sortedCuts.length == 0) {
+                        view.showClustering();
+                        return;
+                    }
+                    showCut(restrictCutIndex(parseCutNumberField()));
+                } else {
+                    view.showClustering();
+                }
+            });
+        }
 
 
 
         // ==================== Text Field Logic ==================== //
-        cutNumberField.addActionListener(e -> {
-            if (showCutCheckBox.isSelected()) {
-                try {
-                    int value = Integer.parseInt(cutNumberField.getText());
-                    if (value >= sortedCuts.length) {
-                        value = sortedCuts.length - 1;
-                        cutNumberField.setText(String.valueOf(value));
+        if (dataPanel) {
+            cutNumberField.addActionListener(e -> {
+                if (showCutCheckBox.isSelected()) {
+                    try {
+                        int value = Integer.parseInt(cutNumberField.getText());
+                        if (value >= sortedCuts.length) {
+                            value = sortedCuts.length - 1;
+                            cutNumberField.setText(String.valueOf(value));
+                        }
+                        int cutIndex = restrictCutIndex(parseCutNumberField());
+                        showCut(cutIndex);
+                        System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
+                    } catch (NumberFormatException ex) {
+                        cutNumberField.setText("0");
                     }
-                    int cutIndex = restrictCutIndex(parseCutNumberField());
-                    showCut(cutIndex);
-                    System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
-                } catch (NumberFormatException ex) {
-                    cutNumberField.setText("0");
                 }
-            }
-        });
+            });
+        }
     }
 
     private void clusterAction(ActionEvent e) {
@@ -214,7 +254,7 @@ public class ParameterPanel extends JPanel {
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Parameter \"a\" must be an integer and \"psi\" must be a double",
+                    "Parameter α must be an integer and ψ must be a double",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -227,7 +267,9 @@ public class ParameterPanel extends JPanel {
                 (String) costFunctionDropdown.getSelectedItem(),
                 a,
                 0.0,
-                psi);
+                psi,
+                autoComputeACheckBox.isSelected(),
+                autoComputePsiCheckBox.isSelected());
         view.performClustering(config);
         view.drawTangleSearchTree(false);
 
@@ -242,11 +284,12 @@ public class ParameterPanel extends JPanel {
         double psi;
         try {
             aFactor = Double.parseDouble(aField.getText());
+            if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("α should be a factor between 0 and 1");
             psi = Double.parseDouble(psiField.getText());
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Parameter \"a\" must be a double between 0 and 1, and \"psi\" must be a double",
+                    "Parameter α must be a double between 0 and 1, and ψ must be a double",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -272,7 +315,9 @@ public class ParameterPanel extends JPanel {
                 (String) costFunctionDropdown.getSelectedItem(),
                 0,
                 aFactor,
-                psi);
+                psi,
+                autoComputeACheckBox.isSelected(),
+                autoComputePsiCheckBox.isSelected());
         view.runTestSetWithUI(config, runs, pythonCheckBox.isSelected());
     }
 
@@ -336,7 +381,7 @@ public class ParameterPanel extends JPanel {
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setFocusable(false);
 
-        FontMetrics fm = b.getFontMetrics(b.getFont());
+        //FontMetrics fm = b.getFontMetrics(b.getFont());
         Dimension d = new Dimension(20, 20);
         b.setPreferredSize(d);
         //b.setMaximumSize(d);
@@ -363,9 +408,8 @@ public class ParameterPanel extends JPanel {
         title.setFont(new Font(FONT_NAME, Font.BOLD, TITLE_TEXT_SIZE));
         Insets previousInsets = gbc.insets;
         gbc.insets = TITLE_INSETS;
-        addAt(title, 0, 2);
+        addFullWidth(title);
         gbc.insets = previousInsets;
-        row++;
     }
 
     // Adds a label and a component on the same row

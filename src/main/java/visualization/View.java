@@ -2,6 +2,7 @@ package visualization;
 
 import clustering.Model;
 import clustering.TangleSearchTree;
+import datasets.ScRNAseqDataset;
 import main.Main;
 import util.Monitor;
 import util.BitSet;
@@ -23,17 +24,15 @@ public class View {
     public View(Model model) {
         this.model = model;
 
-        points = Model.tsne(model.getHvgData(), 2);
-        Main.zScoreNorm(points);
-
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
-            window.drawPoints(points);
+            loadDataset();
         });
     }
 
     public void performClustering(Config config) {
-        model.cluster(model.getDataset(), config);
+        ScRNAseqDataset dataSet = model.getDataset();
+        model.cluster(dataSet, config);
         showClustering(model.getHardClustering());
     }
 
@@ -94,9 +93,14 @@ public class View {
 
     public void loadDataset(String filePath) {
         model.loadDataset(filePath);
+        loadDataset();
+    }
+
+    public void loadDataset() {
         points = Model.tsne(model.getHvgData(), 2);
         Main.zScoreNorm(points);
         window.drawPoints(points);
+        window.showInformation(model.getDataset());
     }
 
     public void showTestSet(List<File> selectedDirs) {

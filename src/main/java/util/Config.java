@@ -8,8 +8,18 @@ public final class Config {
     private final int a;
     private final double aFactor;
     private final double psi;
+    private boolean autoComputeA;
+    private boolean autoComputePsi;
 
-    public Config(boolean useAlternateConsistencyCheck, boolean useWernerModification, String cutGeneratorName, String costFunctionName, int a, double aFactor, double psi) {
+    public Config(boolean useAlternateConsistencyCheck,
+                  boolean useWernerModification,
+                  String cutGeneratorName,
+                  String costFunctionName,
+                  int a,
+                  double aFactor,
+                  double psi,
+                  boolean autoComputeA,
+                  boolean autoComputePsi) {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         this.useWernerModification = useWernerModification;
         this.cutGeneratorName = cutGeneratorName;
@@ -17,6 +27,8 @@ public final class Config {
         this.a = a;
         this.aFactor = aFactor;
         this.psi = psi;
+        this.autoComputeA = autoComputeA;
+        this.autoComputePsi = autoComputePsi;
     }
 
     public boolean isUseAlternateConsistencyCheck() {

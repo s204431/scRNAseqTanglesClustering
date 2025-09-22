@@ -57,8 +57,14 @@ public class ScatterPlotPanel extends JPanel {
         );
 
         removeAll();
-        Canvas scatterPlot = new Canvas(ScatterPlot.of(data, "X", "Y", "cluster", 'o').figure());
-        add(scatterPlot, BorderLayout.CENTER);
+
+        ScatterPlot plot = ScatterPlot.of(data, "X", "Y", "cluster", 'o');
+        Figure fig = plot.figure();
+
+        fig.setAxisLabels("", "");
+
+        Canvas canvas = new Canvas(fig);
+        add(canvas, BorderLayout.CENTER);
         revalidate();
         repaint();
     }
