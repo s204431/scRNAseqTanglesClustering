@@ -404,6 +404,10 @@ public class CostFunctions {
 
         for (int i = 0; i < initialCuts.length; i++) {
             int cutCount = initialCuts[i].count();
+            if (cutCount == 0 || cutCount == initialCuts[i].size()) {
+                costs[i] = 0;
+                continue;
+            }
             double[] mean1 = new double[dataPoints[0].length];
             double[] mean2 = new double[dataPoints[0].length];
             //Calculate means of the two sides of the cut.
@@ -425,7 +429,9 @@ public class CostFunctions {
             //Sum up distances from the means.
             for (int j = 0; j < initialCuts[i].size(); j++) {
                 double[] mean = initialCuts[i].get(j) ? mean2 : mean1;
-                costs[i] += Math.exp(-(1.0/maxRange)*getDistance(dataPoints[j], mean));
+                double[] meanOther = initialCuts[i].get(j) ? mean1 : mean2;
+                costs[i] += Math.exp(-(1.0/maxRange)*(getDistance(dataPoints[j], mean) - getDistance(dataPoints[j], meanOther)));
+                //costs[i] += Math.exp(-(1.0/maxRange)*getDistance(dataPoints[j], mean));
             }
             costs[i] /= initialCuts[i].size();
         }
