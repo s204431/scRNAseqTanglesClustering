@@ -2,6 +2,7 @@ package clustering;
 
 import clustering.TangleSearchTree.Node;
 import datasets.CostFunctions;
+import util.Config;
 import util.Monitor;
 import util.BitSet;
 import util.Tuple;
@@ -33,17 +34,26 @@ public class TangleClusterer {
     public TangleClusterer() {}
 
     //Generates a soft- and hard clustering for the provided dataset with a specific value of a and psi, and a specific initial cut generator and cost function.
-    public void generateClusters(ScRNAseqDataset dataset, int a, double psi, String initialCutGenerator, String highLevelCostFunctionName, String lowLevelCostFunctionName, boolean useCache) {
+    public void generateClusters(ScRNAseqDataset dataset, Config config) {
+        int a = config.getA();
+        double psi = config.getPsi();
+        String initialCutGenerator = config.getCutGeneratorName();
+        String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
+        String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
+        boolean useCache = config.isUseCache();
+        int splitSize = config.getSplitSize();
+        int tsneComponents = config.getTsneComponents();
+
         costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
         dataset.setA(a);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
-        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache);
+        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
         TangleSearchTree tree = useOscarWerner ?
-                oscarWerner(initialCuts, costs, a, psi, dataset.data, highLevelCostFunctionName, lowLevelCostFunctionName, useCache) :
+                oscarWerner(initialCuts, costs, dataset.data, config) :
                 generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
@@ -112,8 +122,15 @@ public class TangleClusterer {
         return tree;
     }
 
-    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, int a, double psi, double[][] data, String highLevelCostFunctionName, String lowLevelCostFunctionName, boolean useCache) {
+    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
         int n = costs.length;
+        int a = config.getA();
+        double psi = config.getPsi();
+        String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
+        String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
+        boolean useCache = config.isUseCache();
+        int splitSize = config.getSplitSize();
+        int tsneComponents = config.getTsneComponents();
 
         //Costs for each branch ID (in order of initial cuts).
         List<double[]> branchCosts = new ArrayList<>();
@@ -203,7 +220,7 @@ public class TangleClusterer {
                         newDataset.setCostFunctions(costFunctions);
                         costFunctions.setMask(node.leftChild.intersection);
                         newDataset.setInitialCuts(newCuts);
-                        double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache);
+                        double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
                         branchCosts.add(newCosts);
 
                         //Reorder cuts and costs based on the cost order for the parent branch
@@ -253,7 +270,7 @@ public class TangleClusterer {
                         newDataset2.setCostFunctions(costFunctions);
                         costFunctions.setMask(node.rightChild.intersection);
                         newDataset2.setInitialCuts(newCuts2);
-                        double[] newCosts2 = newDataset2.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache);
+                        double[] newCosts2 = newDataset2.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
                         branchCosts.add(newCosts2);
 
                         // Reorder cuts and costs based on the cost order for the parent branch

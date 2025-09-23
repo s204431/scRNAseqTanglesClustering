@@ -180,7 +180,7 @@ public class Model {
         boolean prev2 = tangleClusterer.useOscarWerner;
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
-        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), config.isUseCache());
+        tangleClusterer.generateClusters(dataset, config);
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
 
@@ -198,7 +198,7 @@ public class Model {
         boolean prev2 = tangleClusterer.useOscarWerner;
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
-        tangleClusterer.generateClusters(dataset, config.getA(), config.getPsi(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), config.isUseCache());
+        tangleClusterer.generateClusters(dataset, config);
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
 
@@ -209,17 +209,23 @@ public class Model {
     public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
         int a = config.getA();
         double psi = config.getPsi();
+        String initialCutsGenerator = config.getCutGeneratorName();
+        String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
+        String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
+        boolean useCache = config.isUseCache();
+        int splitSize = config.getSplitSize();
+        int tsneComponents = config.getTsneComponents();
 
         int maxClusters = 10;
 
         int minA = Math.max((dataset.data.length/maxClusters)/2, 1);
         int maxA = dataset.data.length/2;
 
-        double[][] reducedPoints = tsne(dataset.data, 5);
+        double[][] reducedPoints = tsne(dataset.data, tsneComponents);
 
         dataset.setA(minA);
-        BitSet[] initialCuts = dataset.getInitialCuts(config.getCutGeneratorName());
-        double[] costs = dataset.getCutCosts(config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), config.isUseCache());
+        BitSet[] initialCuts = dataset.getInitialCuts(initialCutsGenerator);
+        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;

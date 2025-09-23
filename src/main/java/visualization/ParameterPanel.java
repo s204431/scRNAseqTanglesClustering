@@ -21,7 +21,7 @@ public class ParameterPanel extends JPanel {
     private static final int TITLE_TEXT_SIZE = 18;
     private static final int DEFAULT_TEXT_SIZE = 14;
     private static final Insets DEFAULT_INSETS = new Insets(5, 5, 5, 5);
-    private static final Insets TITLE_INSETS = new Insets(50, 5, 10, 5);
+    private static final Insets TITLE_INSETS = new Insets(25, 5, 5, 5);
 
     // Layout state
     private final GridBagConstraints gbc = new GridBagConstraints();
@@ -30,6 +30,10 @@ public class ParameterPanel extends JPanel {
     // Data
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
+
+    // Dimension reduction components
+    private JTextField splitSizeField;
+    private JTextField tsneComponentsField;
 
     // Algorithm section components
     private JCheckBox consistencyCheckbox;
@@ -69,6 +73,7 @@ public class ParameterPanel extends JPanel {
         gbc.insets = DEFAULT_INSETS;
         gbc.weightx = 0.0;
 
+        buildDimensionSection();
         buildAlgorithmSection();
         buildClusteringSection();
         if (dataPanel) {
@@ -84,6 +89,18 @@ public class ParameterPanel extends JPanel {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         add(Box.createGlue(), gbc);
+    }
+
+    private void buildDimensionSection() {
+        addTitle("Dimension Reduction");
+
+        splitSizeField = new JTextField(5);
+        splitSizeField.setText("1000");
+        addRow("Split size", splitSizeField);
+
+        tsneComponentsField = new JTextField(5);
+        tsneComponentsField.setText("5");
+        addRow("TSNE components", tsneComponentsField);
     }
 
     private void buildAlgorithmSection() {
@@ -272,17 +289,24 @@ public class ParameterPanel extends JPanel {
             return;
         }
 
-        Config config = new Config(consistencyCheckbox.isSelected(),
-                wernerModificationCheckbox.isSelected(),
-                useCacheCheckBox.isSelected(),
-                (String) cutGeneratorDropdown.getSelectedItem(),
-                (String) highLevelCostFunctionDropdown.getSelectedItem(),
-                (String) lowLevelCostFunctionDropdown.getSelectedItem(),
-                a,
-                0.0,
-                psi,
-                autoComputeACheckBox.isSelected(),
-                autoComputePsiCheckBox.isSelected());
+        int hvg;
+        int splitSize;
+        int tsneComponents;
+        try {
+            splitSize = Integer.parseInt(splitSizeField.getText());
+            tsneComponents = Integer.parseInt(tsneComponentsField.getText());
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Highly variable genes, split size and TSNE components must be integers.",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        Config config = getConfig(a, 0.0, psi, splitSize, tsneComponents);
+
         view.performClustering(config);
         view.drawTangleSearchTree(false);
 
@@ -290,6 +314,21 @@ public class ParameterPanel extends JPanel {
         groundTruthCheckBox.setSelected(false);
         cutNumberField.setText("0");
         turnOffCuts();
+    }
+
+    private Config getConfig(int a, double aFactor, double psi, int splitSize, int tsneComponents) {
+        Config config = new Config(consistencyCheckbox.isSelected(),
+                wernerModificationCheckbox.isSelected(),
+                useCacheCheckBox.isSelected(),
+                (String) cutGeneratorDropdown.getSelectedItem(),
+                (String) highLevelCostFunctionDropdown.getSelectedItem(),
+                (String) lowLevelCostFunctionDropdown.getSelectedItem(),
+                a,
+                aFactor,
+                psi);
+        config.setAutoCompute(autoComputeACheckBox.isSelected(), autoComputePsiCheckBox.isSelected());
+        config.setDimensionReductionParameters(splitSize, tsneComponents);
+        return config;
     }
 
     private void testAction(ActionEvent e) {
@@ -309,6 +348,22 @@ public class ParameterPanel extends JPanel {
             return;
         }
 
+        int hvg;
+        int splitSize;
+        int tsneComponents;
+        try {
+            splitSize = Integer.parseInt(splitSizeField.getText());
+            tsneComponents = Integer.parseInt(tsneComponentsField.getText());
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Highly variable genes, split size and TSNE components must be integers.",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         int runs;
         try {
             runs = Integer.parseInt(runNumberField.getText());
@@ -322,17 +377,8 @@ public class ParameterPanel extends JPanel {
             return;
         }
 
-        Config config = new Config(consistencyCheckbox.isSelected(),
-                wernerModificationCheckbox.isSelected(),
-                useCacheCheckBox.isSelected(),
-                (String) cutGeneratorDropdown.getSelectedItem(),
-                (String) highLevelCostFunctionDropdown.getSelectedItem(),
-                (String) lowLevelCostFunctionDropdown.getSelectedItem(),
-                0,
-                aFactor,
-                psi,
-                autoComputeACheckBox.isSelected(),
-                autoComputePsiCheckBox.isSelected());
+        Config config = getConfig(0, aFactor, psi, splitSize, tsneComponents);
+
         view.runTestSetWithUI(config, runs, pythonCheckBox.isSelected());
     }
 

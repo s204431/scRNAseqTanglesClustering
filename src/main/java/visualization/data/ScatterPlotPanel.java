@@ -17,6 +17,8 @@ public class ScatterPlotPanel extends JPanel {
 
     private static Color[] COLORS = {Color.RED, Color.BLUE, Color.GREEN, Color.ORANGE, Color.MAGENTA};
 
+    private static final boolean SHOW_GRID = false;
+
     public ScatterPlotPanel(View view) {
         this.view = view;
 
@@ -30,6 +32,8 @@ public class ScatterPlotPanel extends JPanel {
         Figure figure = plot.figure();
 
         figure.setAxisLabels("", "");
+        figure.getAxis(0).setGridVisible(SHOW_GRID);
+        figure.getAxis(1).setGridVisible(SHOW_GRID);
 
         Canvas canvas = new Canvas(figure);
         add(canvas, BorderLayout.CENTER);
@@ -62,6 +66,8 @@ public class ScatterPlotPanel extends JPanel {
         Figure fig = plot.figure();
 
         fig.setAxisLabels("", "");
+        fig.getAxis(0).setGridVisible(SHOW_GRID);
+        fig.getAxis(1).setGridVisible(SHOW_GRID);
 
         Canvas canvas = new Canvas(fig);
         add(canvas, BorderLayout.CENTER);

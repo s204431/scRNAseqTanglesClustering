@@ -82,10 +82,7 @@ public class View {
     }
 
     public void drawTangleSearchTree(boolean condensed) {
-        TangleSearchTree tree = monitor.getUncondensedTree();
-        if (condensed) {
-            tree = monitor.getCondensedTree();
-        }
+        TangleSearchTree tree = condensed ? monitor.getCondensedTree() : monitor.getUncondensedTree();
         if (tree != null) {
             window.drawTangleSearchTree(tree);
         }

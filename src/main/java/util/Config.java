@@ -10,8 +10,24 @@ public final class Config {
     private final int a;
     private final double aFactor;
     private final double psi;
-    private boolean autoComputeA;
-    private boolean autoComputePsi;
+
+    private boolean autoComputeA = false;
+    private boolean autoComputePsi = false;
+
+    private int splitSize = 1000;
+    private int tsneComponents = 5;
+
+    public Config(int a) {
+        this.useAlternateConsistencyCheck = true;
+        this.useWernerModification = true;
+        this.useCache = true;
+        this.cutGeneratorName = "Default";
+        this.highLevelCostFunctionName = "Default";
+        this.lowLevelCostFunctionName = "Default";
+        this.a = a;
+        this.aFactor = 0.667;
+        this.psi = 0;
+    }
 
     public Config(boolean useAlternateConsistencyCheck,
                   boolean useWernerModification,
@@ -21,9 +37,7 @@ public final class Config {
                   String lowLevelCostFunctionName,
                   int a,
                   double aFactor,
-                  double psi,
-                  boolean autoComputeA,
-                  boolean autoComputePsi) {
+                  double psi) {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         this.useWernerModification = useWernerModification;
         this.useCache = useCache;
@@ -33,8 +47,16 @@ public final class Config {
         this.a = a;
         this.aFactor = aFactor;
         this.psi = psi;
-        this.autoComputeA = autoComputeA;
-        this.autoComputePsi = autoComputePsi;
+    }
+
+    public void setAutoCompute(boolean a, boolean psi) {
+        this.autoComputeA = a;
+        this.autoComputePsi = psi;
+    }
+
+    public void setDimensionReductionParameters(int splitSize, int tsneComponents) {
+        this.splitSize = splitSize;
+        this.tsneComponents = tsneComponents;
     }
 
     public boolean isUseAlternateConsistencyCheck() {
@@ -71,5 +93,21 @@ public final class Config {
 
     public double getPsi() {
         return psi;
+    }
+
+    public boolean isAutoComputeA() {
+        return autoComputeA;
+    }
+
+    public boolean isAutoComputePsi() {
+        return autoComputePsi;
+    }
+
+    public int getSplitSize() {
+        return splitSize;
+    }
+
+    public int getTsneComponents() {
+        return tsneComponents;
     }
 }
