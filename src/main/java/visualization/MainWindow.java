@@ -19,6 +19,7 @@ public class MainWindow extends JFrame {
 
     public static final String DATA_VIEW = "data";
     public static final String TEST_VIEW = "test";
+    public static final String LOADING_VIEW = "loading";
 
     private final JPanel root = new JPanel(new BorderLayout());
     private final JPanel cards = new JPanel(new CardLayout());
@@ -56,6 +57,7 @@ public class MainWindow extends JFrame {
 
         cards.add(createDataView(), DATA_VIEW);
         cards.add(createTestView(), TEST_VIEW);
+        cards.add(createLoadingView(), LOADING_VIEW);
 
         root.add(topPanel, BorderLayout.NORTH);
         root.add(cards, BorderLayout.CENTER);
@@ -98,6 +100,16 @@ public class MainWindow extends JFrame {
         testPanel.add(testParameterPanel, BorderLayout.EAST);
 
         return testPanel;
+    }
+
+    private JComponent createLoadingView() {
+        JPanel loadingPanel = new JPanel(new GridBagLayout());
+        JLabel textLabel = new JLabel("Loading Data Set…");
+        textLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        textLabel.setVerticalAlignment(SwingConstants.CENTER);
+        textLabel.setFont(textLabel.getFont().deriveFont(Font.BOLD, 28f));
+        loadingPanel.add(textLabel, new GridBagConstraints());
+        return loadingPanel;
     }
 
     public void drawPoints(double[][] points) {
