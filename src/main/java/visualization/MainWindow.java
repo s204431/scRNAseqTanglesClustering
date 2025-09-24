@@ -159,4 +159,8 @@ public class MainWindow extends JFrame {
     public void showInformation(ScRNAseqDataset dataSet) {
         statsPanel.showInformation(dataSet);
     }
+
+    public void stopTesting() {
+        testEditPanel.stopTimer();
+    }
 }

@@ -2,7 +2,11 @@ package visualization;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.text.NumberFormatter;
 import java.io.IOException;
+import java.text.FieldPosition;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.*;
@@ -60,8 +64,23 @@ public class TopPanel extends JPanel {
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selected = fileChooser.getSelectedFile();
-            view.loadDataset(selected.getAbsolutePath());
-            view.changeView(MainWindow.DATA_VIEW);
+
+            // Ask user for number of highly variable genes
+            JFormattedTextField input = new JFormattedTextField(new NumberFormatter(NumberFormat.getIntegerInstance()));
+            int option = JOptionPane.showConfirmDialog(
+                    this,
+                    input,
+                    "Enter number of highly variable genes:",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (option == JOptionPane.OK_OPTION) {
+                Number v = (Number) input.getValue();
+                int hvg = v == null ? 0 : v.intValue();
+                view.loadDataset(selected.getAbsolutePath(), hvg);
+                view.changeView(MainWindow.DATA_VIEW);
+            }
         }
     }
 

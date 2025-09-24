@@ -145,7 +145,6 @@ public class TestEditPanel extends JPanel {
         }
 
         if (testingFinished) {
-            stopTimer();
             testSetTable.resetRowStatus();
         }
     }
@@ -158,6 +157,12 @@ public class TestEditPanel extends JPanel {
     }
 
     public void stopTimer() {
+        updateResults();
+
+        if (timer == null) {
+            return;
+        }
+
         timer.stop();
         timer = null;
     }
@@ -171,8 +176,6 @@ public class TestEditPanel extends JPanel {
     public TestProgressManager getTestProgressManager() {
         return testProgressManager;
     }
-
-
 
     public static class TestProgressManager {
         private int size;

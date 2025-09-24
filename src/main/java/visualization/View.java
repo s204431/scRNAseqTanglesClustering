@@ -21,12 +21,15 @@ public class View {
 
     private Monitor monitor;
 
+    private Thread loaderThread;
+    private Thread testThread;
+
     public View(Model model) {
         this.model = model;
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
-            loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
+            loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv", 0);
         });
     }
 
@@ -37,16 +40,28 @@ public class View {
     }
 
     public void runTestSetWithUI(Config config, int runs, boolean compareWithStandardPipeline) {
-        if (window.testIsRunning()) {
+        if (window.testIsRunning() || testThread != null) {
             return;
         }
+
         TestEditPanel.TestProgressManager progressManager = window.prepareUIForTesting();
         File[] selectedFiles = window.getSelectedTestFiles();
         if (selectedFiles == null || selectedFiles.length == 0) {
             System.out.println("No test files were selected.");
             return;
         }
-        model.runTestset(selectedFiles, config, runs, compareWithStandardPipeline, progressManager);
+
+        testThread = new Thread(() -> {
+            try {
+                model.runTestset(selectedFiles, config, runs, compareWithStandardPipeline, progressManager);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            } finally {
+                stopTesting();
+                testThread = null;
+            }
+        });
+        testThread.start();
     }
 
     public void showClustering(int[] clustering) {
@@ -88,13 +103,24 @@ public class View {
         }
     }
 
-    public void loadDataset(String filePath) {
+    public void loadDataset(String filePath, int hvg) {
+        if (loaderThread != null) {
+            return;
+        }
+
         SwingUtilities.invokeLater(() -> window.changeView(MainWindow.LOADING_VIEW));
 
-        new Thread(() -> {
-            model.loadDataset(filePath);
-            loadDataset();
-        }).start();
+        loaderThread = new Thread(() -> {
+            try {
+                model.loadDataset(filePath, hvg);
+                loadDataset();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            } finally {
+                loaderThread = null;
+            }
+        });
+        loaderThread.start();
     }
 
     public void loadDataset() {
@@ -127,5 +153,13 @@ public class View {
 
     public List<double[]> getBranchCosts() {
         return monitor.getBranchCosts();
+    }
+
+    public void stopTesting() {
+        if (testThread != null && testThread.isAlive()) {
+            testThread.interrupt();
+        }
+
+        SwingUtilities.invokeLater(window::stopTesting);
     }
 }

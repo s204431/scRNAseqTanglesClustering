@@ -378,7 +378,6 @@ public class ParameterPanel extends JPanel {
         }
 
         Config config = getConfig(0, aFactor, psi, splitSize, tsneComponents);
-
         view.runTestSetWithUI(config, runs, pythonCheckBox.isSelected());
     }
 

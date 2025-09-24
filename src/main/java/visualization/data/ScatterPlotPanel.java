@@ -17,7 +17,7 @@ public class ScatterPlotPanel extends JPanel {
 
     private static Color[] COLORS = {Color.RED, Color.BLUE, Color.GREEN, Color.ORANGE, Color.MAGENTA};
 
-    private static final boolean SHOW_GRID = false;
+    private static final boolean SHOW_GRID = true;
 
     public ScatterPlotPanel(View view) {
         this.view = view;
