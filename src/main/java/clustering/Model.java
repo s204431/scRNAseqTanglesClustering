@@ -63,13 +63,16 @@ public class Model {
         //loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
     }
 
-    public void loadDataset(String observedFilePath) {
+    public void loadDataset(String observedFilePath, int hvg) {
         String labelFilePath = observedFilePath.replace("observed_counts", "labels");
 
         originalData = loadData(observedFilePath);
         groundTruth = loadGroundTruth(labelFilePath);
         normalizedData = logNormalize(originalData);
-        hvgData = highlyVariableGenes(normalizedData, normalizedData[0].length);
+
+        int maxGenes = normalizedData[0].length;
+        hvg = (hvg <= 0 || hvg >= maxGenes) ? maxGenes : hvg;
+        hvgData = highlyVariableGenes(normalizedData, hvg);
         System.out.println("Finished loading data");
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {
@@ -105,9 +108,7 @@ public class Model {
                            boolean compareWithStandardPipeline,
                            TestEditPanel.TestProgressManager progressManager) {
         TestSet testSet = new TestSet(this, selectedFiles);
-        new Thread(() -> {
-            testSet.runWIthUI(config, runs, compareWithStandardPipeline, progressManager);
-        }).start();
+        testSet.runWIthUI(config, runs, compareWithStandardPipeline, progressManager);
     }
 
     public static double getDistance(double[] point1, double[] point2) {
