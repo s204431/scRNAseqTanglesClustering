@@ -23,12 +23,15 @@ public class TangleClusterer {
     protected boolean useAlternateConsistencyCheck = false;
     protected boolean useOscarWerner = false;
     protected boolean removeRedundantCuts = false;
+    protected boolean autoLimitSplitCosts = false;
 
     private TangleSearchTree tangleSearchTree;
 
     private CostFunctions costFunctions;
 
     private Monitor monitor;
+
+    private List<Double> splitCosts; //The cost for each splitting cut in the tree.
 
     //Ensure that it can only be created within this package.
     public TangleClusterer() {}
@@ -44,6 +47,7 @@ public class TangleClusterer {
         int splitSize = config.getSplitSize();
         int tsneComponents = config.getTsneComponents();
 
+        splitCosts = new ArrayList<>();
         costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
         dataset.setA(a);
@@ -57,6 +61,9 @@ public class TangleClusterer {
                 generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
+        if (autoLimitSplitCosts) {
+            tree.limitSplitCosts(tree.root, calculateMaxSplitCost());
+        }
         try {
             tree.condenseTree(1);
         } catch (NullPointerException e) {
@@ -73,6 +80,10 @@ public class TangleClusterer {
         TangleSearchTree tree = generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
+        splitCosts = new ArrayList<>();
+        if (autoLimitSplitCosts) {
+            tree.limitSplitCosts(tree.root, calculateMaxSplitCost());
+        }
         try {
             tree.condenseTree(1);
         } catch (NullPointerException e) {
@@ -114,6 +125,9 @@ public class TangleClusterer {
             for (Node node : lowestDepthNodesCopy) {
                 consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
                 consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
+                if (node.leftChild != null && node.rightChild != null) {
+                    splitCosts.add(costs[indices[i]]);
+                }
             }
             if (earlyStop && !consistent) { //Stop if no nodes were added to the tree.
                 break;
@@ -205,6 +219,8 @@ public class TangleClusterer {
                     }
 
                     if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
+
+                        splitCosts.add(branchCosts.get(node.branchId)[branchIndicesOrdered[i]]);
 
                         // ========== LEFT SIDE ========== //
                         branchId++;
@@ -413,6 +429,51 @@ public class TangleClusterer {
         indices[i] = indices[h];
         indices[h] = temp2;
         return i;
+    }
+
+    //Calculates the maximum split cost to keep based on the mean cost in a window of a certain size.
+    private double calculateMaxSplitCost() {
+        int windowSize = 4;
+
+        //Remove all costs below the first cost.
+        List<Double> newSplitCosts = new ArrayList<>();
+        for (int i = 0; i < this.splitCosts.size(); i++) {
+            if (this.splitCosts.get(i) >= this.splitCosts.getFirst()) {
+                newSplitCosts.add(this.splitCosts.get(i));
+            }
+        }
+
+        if (newSplitCosts.size() < 2) { //If there is only 0 or 1 split do not limit the cost.
+            return Double.MAX_VALUE;
+        }
+
+        double[] splitCosts = new double[newSplitCosts.size()];
+        for (int i = 0; i < splitCosts.length; i++) {
+            splitCosts[i] = newSplitCosts.get(i);
+        }
+
+        Arrays.sort(splitCosts);
+        double[] sumArray = new double[splitCosts.length]; //Sum of costs in window ending on a given index.
+        sumArray[0] = splitCosts[0];
+        for (int i = 1; i < sumArray.length; i++) {
+            sumArray[i] = sumArray[i-1] + splitCosts[i] - (i-windowSize < 0 ? 0 : splitCosts[i-windowSize]);
+        }
+
+        //Find maximum difference from the mean in a window.
+        double maxDifference = -1;
+        int maxDifferenceIndex = -1;
+        for (int i = 1; i < sumArray.length; i++) {
+            double mean = sumArray[i-1] / Math.min(i, windowSize);
+            double difference = splitCosts[i] - mean;
+            if (difference > maxDifference) {
+                maxDifference = difference;
+                maxDifferenceIndex = i;
+            }
+        }
+
+        //Return split cost for cut before the max difference;
+        System.out.println("Found max split cost: " + splitCosts[maxDifferenceIndex-1]);
+        return splitCosts[maxDifferenceIndex-1];
     }
 
     public void setMonitor(Monitor monitor) {

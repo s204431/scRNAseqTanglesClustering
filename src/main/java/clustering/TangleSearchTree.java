@@ -321,6 +321,22 @@ public class TangleSearchTree {
         }
     }
 
+    protected void limitSplitCosts(Node node, double maxCost) {
+        if (node.leftChild != null && node.rightChild != null) {
+            if ((branchCosts != null && branchCosts.get(node.branchId)[node.leftChild.originalOrientation] > maxCost) || (branchCosts == null && cutCosts[node.originalOrientation] > maxCost)) { //Local cost
+                //Remove child nodes since
+                node.leftChild = null;
+                node.rightChild = null;
+            }
+        }
+        if (node.leftChild != null) {
+            limitSplitCosts(node.leftChild, maxCost);
+        }
+        if (node.rightChild != null) {
+            limitSplitCosts(node.rightChild, maxCost);
+        }
+    }
+
     //Removes internal nodes with exactly one child and removes branches of length "pruneDepth" or lower from the tree.
     protected void condenseTree(int pruneDepth) {
         removeInternalNodes(root);
