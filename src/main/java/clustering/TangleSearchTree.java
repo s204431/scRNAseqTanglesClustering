@@ -13,7 +13,7 @@ public class TangleSearchTree {
     //This class represents a tangle search tree.
 
     private static final boolean USE_HASHING = false; //Determines if hashing of intersections is used.
-    private final int a;
+    protected int a;
     protected Node root;
     protected List<Node> lowestDepthNodes = new ArrayList<>();
     private int currentDepth = -1;
@@ -323,7 +323,7 @@ public class TangleSearchTree {
 
     protected void limitSplitCosts(Node node, double maxCost) {
         if (node.leftChild != null && node.rightChild != null) {
-            if ((branchCosts != null && branchCosts.get(node.branchId)[node.leftChild.originalOrientation] > maxCost) || (branchCosts == null && cutCosts[node.originalOrientation] > maxCost)) { //Local cost
+            if ((branchCosts != null && branchCosts.get(node.branchId)[node.leftChild.originalOrientation] > maxCost) || (branchCosts == null && cutCosts[node.leftChild.originalOrientation] > maxCost)) { //Local cost
                 //Remove child nodes since
                 node.leftChild = null;
                 node.rightChild = null;

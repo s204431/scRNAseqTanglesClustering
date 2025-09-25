@@ -65,7 +65,7 @@ public class TangleClusterer {
             tree.limitSplitCosts(tree.root, calculateMaxSplitCost());
         }
         try {
-            tree.condenseTree(1);
+            tree.condenseTree(autoLimitSplitCosts ? 0 : 1);
         } catch (NullPointerException e) {
             tree.generateDefaultClustering();
             return;
@@ -127,6 +127,18 @@ public class TangleClusterer {
                 consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
                 if (node.leftChild != null && node.rightChild != null) {
                     splitCosts.add(costs[indices[i]]);
+                }
+                else if (autoLimitSplitCosts && node.leftChild != null) {
+                    tree.a = (int) (node.intersection.count()*0.667);
+                    node.leftChild = null;
+                    consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
+                    tree.a = a;
+                }
+                else if (autoLimitSplitCosts && node.rightChild != null) {
+                    tree.a = (int) (node.intersection.count()*0.667);
+                    node.rightChild = null;
+                    consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
+                    tree.a = a;
                 }
             }
             if (earlyStop && !consistent) { //Stop if no nodes were added to the tree.
@@ -317,6 +329,18 @@ public class TangleClusterer {
                         }
 
                         break;
+                    }
+                    else if (autoLimitSplitCosts && node.leftChild != null) {
+                        tree.a = (int) (node.intersection.count()*0.667);
+                        node.leftChild = null;
+                        consistent = tree.addOrientation(node, branchIndicesOrdered[i], true, useAlternateConsistencyCheck) || consistent;
+                        tree.a = a;
+                    }
+                    else if (autoLimitSplitCosts && node.rightChild != null) {
+                        tree.a = (int) (node.intersection.count()*0.667);
+                        node.rightChild = null;
+                        consistent = tree.addOrientation(node, branchIndicesOrdered[i], false, useAlternateConsistencyCheck) || consistent;
+                        tree.a = a;
                     }
 
                     branchPointer++;
