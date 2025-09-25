@@ -22,6 +22,7 @@ public class TestSet {
     public double[] averageTimes;
     public double[] NMIPythonResults;
     public double[] randIndexPythonResults;
+    public double[] pythonTimes;
 
     public TestSet(Model model, String directoryPath) {
         this.model = model;
@@ -121,11 +122,12 @@ public class TestSet {
             System.out.println();
 
             if (runPython) {
-                Tuple<int[], Integer> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
+                Tuple<int[], Double> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
                 double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
                 NMIPythonResults[i] = NMIPython;
                 randIndexPythonResults[i] = randIndexPython;
+                pythonTimes[i] = pythonResult.y;
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);
                 System.out.println();
@@ -176,6 +178,7 @@ public class TestSet {
         if (runPython) {
             NMIPythonResults = new double[observedPaths.length];
             randIndexPythonResults = new double[observedPaths.length];
+            pythonTimes = new double[observedPaths.length];
         }
 
         for (int i = 0; i < observedPaths.length; i++) {
@@ -219,14 +222,16 @@ public class TestSet {
             System.out.println();
 
             if (runPython) {
-                Tuple<int[], Integer> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
+                Tuple<int[], Double> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
                 double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
                 NMIPythonResults[i] = NMIPython;
                 randIndexPythonResults[i] = randIndexPython;
-                progressManager.markFinished(i, false, 0, NMIPythonResults[i], randIndexPythonResults[i]);
+                pythonTimes[i] = pythonResult.y;
+                progressManager.markFinished(i, false, pythonTimes[i], NMIPythonResults[i], randIndexPythonResults[i]);
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);
+                System.out.println("Python time: " + pythonResult.y);
                 System.out.println();
             }
         }
@@ -237,6 +242,7 @@ public class TestSet {
 
         double pythonAverageNMI = 0.0;
         double pythonAverageRandIndex = 0.0;
+        double pythonAverageTime = 0.0;
 
         for (int i = 0; i < averageNMIScores.length; i++) {
             overallAverageNMI += averageNMIScores[i];
@@ -245,6 +251,7 @@ public class TestSet {
             if (runPython) {
                 pythonAverageNMI += NMIPythonResults[i];
                 pythonAverageRandIndex += randIndexPythonResults[i];
+                pythonAverageTime += pythonTimes[i];
             }
         }
         overallAverageNMI /= averageNMIScores.length;
@@ -259,8 +266,10 @@ public class TestSet {
         if (runPython) {
             pythonAverageNMI /= NMIPythonResults.length;
             pythonAverageRandIndex /= randIndexPythonResults.length;
+            pythonAverageTime /= pythonTimes.length;
             System.out.println("Python NMI score: " + pythonAverageNMI);
             System.out.println("Python Rand Index score: " + pythonAverageRandIndex);
+            System.out.println("Python Average Time: " + pythonAverageTime);
         }
 
     }

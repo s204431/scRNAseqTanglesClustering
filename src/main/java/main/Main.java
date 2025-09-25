@@ -179,7 +179,7 @@ public class Main {
         return data;
     }
 
-    public static Tuple<int[], Integer> runPython(String filePath) {
+    public static Tuple<int[], Double> runPython(String filePath) {
         try {
             // Python script path
             String pythonScript = "scRNAseq.py";
@@ -203,10 +203,14 @@ public class Main {
             Gson gson = new Gson();
             int[] numbers = gson.fromJson(response, int[].class);
 
+            // Read time
+            String responseTime = reader.readLine();
+            double pythonTime = Double.parseDouble(responseTime);
+
             int exitCode = process.waitFor();
             System.out.println("Python exited with code: " + exitCode);
 
-            return new Tuple<int[], Integer>(numbers, 0);
+            return new Tuple<int[], Double>(numbers, pythonTime);
 
         } catch (Exception e) {
             e.printStackTrace();

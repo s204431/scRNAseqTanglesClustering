@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import json
+import time
 
 input_str = sys.stdin.readline().strip()
 
@@ -11,6 +12,8 @@ input_str = sys.stdin.readline().strip()
 
 df = pd.read_csv(input_str, index_col=0)
 adata = ad.AnnData(df)
+
+start_time = time.time()
 
 #sc.pp.filter_cells(adata, min_genes=100)
 sc.pp.filter_genes(adata, min_cells=3)
@@ -37,9 +40,11 @@ sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
 
 #sc.pl.umap(adata, color=["leiden"])
 
+end_time = time.time()
 clusters = adata.obs["leiden"]
 
 print(json.dumps(clusters.tolist()))
+print(end_time - start_time)
 
 
 
