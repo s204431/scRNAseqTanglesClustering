@@ -17,7 +17,7 @@ public class View {
     private Model model;
     private MainWindow window;
 
-    private double[][] points;
+    protected double[][] points;
 
     private Monitor monitor;
 

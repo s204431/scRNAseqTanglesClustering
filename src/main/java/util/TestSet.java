@@ -197,7 +197,13 @@ public class TestSet {
 
                 ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
-                int a = (int)(((double)dataset.data.length/nClusters)*config.getaFactor());
+                int a;
+                if (config.isAutoComputeA()) {
+                    a = (int)((hvgData.length/20.0)*0.7);
+                }
+                else {
+                    a = (int)(((double)dataset.data.length/nClusters)*config.getaFactor());
+                }
                 Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.isUseCache(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), a, config.getaFactor(), config.getPsi());
                 newConfig.setAutoCompute(config.isAutoComputeA(), config.isAutoComputePsi());
                 newConfig.setDimensionReductionParameters(config.getSplitSize(), config.getTsneComponents());

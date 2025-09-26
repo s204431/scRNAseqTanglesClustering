@@ -277,7 +277,12 @@ public class ParameterPanel extends JPanel {
         int a;
         double psi;
         try {
-            a = Integer.parseInt(aField.getText());
+            if (autoComputeACheckBox.isSelected()) {
+                a = (int)((view.points.length/20.0)*0.7);
+            }
+            else {
+                a = Integer.parseInt(aField.getText());
+            }
             psi = Double.parseDouble(psiField.getText());
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
