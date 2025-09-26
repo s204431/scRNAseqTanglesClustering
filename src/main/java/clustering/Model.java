@@ -64,6 +64,8 @@ public class Model {
     }
 
     public void loadDataset(String observedFilePath, int hvg) {
+        monitor.setFilePath(observedFilePath);
+
         String labelFilePath = observedFilePath.replace("observed_counts", "labels");
 
         originalData = loadData(observedFilePath);

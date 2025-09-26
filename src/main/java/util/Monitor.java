@@ -6,6 +6,7 @@ import datasets.ScRNAseqDataset;
 import java.util.List;
 
 public class Monitor {
+    private String filePath;
     private ScRNAseqDataset dataset;
     private TangleSearchTree uncondensedTree;
     private TangleSearchTree condensedTree;
@@ -41,5 +42,13 @@ public class Monitor {
 
     public List<double[]> getBranchCosts() {
         return branchCosts;
+    }
+
+    public void setFilePath(String observedFilePath) {
+        filePath = observedFilePath;
+    }
+
+    public String getFilePath() {
+        return filePath;
     }
 }
