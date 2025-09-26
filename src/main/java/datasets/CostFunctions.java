@@ -315,7 +315,7 @@ public class CostFunctions {
                 if (initialCuts[i].get(j)) {
                     continue;
                 }
-                for (int k = j; k < dataPoints.length; k++) {
+                for (int k = 0; k < dataPoints.length; k++) {
                     if (!initialCuts[i].get(k)) {
                         continue;
                     }
@@ -339,7 +339,7 @@ public class CostFunctions {
                 if (initialCuts[i].get(j)) {
                     continue;
                 }
-                for (int k = j; k < dataPoints.length; k++) {
+                for (int k = 0; k < dataPoints.length; k++) {
                     if (!initialCuts[i].get(k)) {
                         continue;
                     }
