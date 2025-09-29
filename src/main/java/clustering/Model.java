@@ -72,8 +72,9 @@ public class Model {
 
         String labelFilePath = observedFilePath.replace("observed_counts", "labels");
 
-        originalData = loadData(observedFilePath);
-        groundTruth = loadGroundTruth(labelFilePath);
+        Tuple<double[][], int[]> data = loadData(observedFilePath, labelFilePath);
+        originalData = data.x;
+        groundTruth = data.y;
         normalizedData = logNormalize(originalData);
 
         int maxGenes = normalizedData[0].length;
@@ -397,12 +398,22 @@ public class Model {
         return tsne(encoded.toDoubleMatrix(), nComponents);
     }
 
-    public double[][] loadData(String filePath) {
-        return readCSV(filePath);
+    public Tuple<double[][], int[]> loadData(String observedFilePath, String labelsFilePath) {
+        if (observedFilePath.endsWith(".csv")) {
+            return new Tuple<>(readCSV(observedFilePath), loadGroundTruthCSV(labelsFilePath));
+        }
+        else if (observedFilePath.endsWith(".h5ad")) {
+            return readH5AD(observedFilePath);
+        }
+        System.out.println("File type not supported");
+        return null;
     }
 
-    public int[] loadGroundTruth(String filePath) {
-        double[][] temp = loadData(filePath);
+    public int[] loadGroundTruthCSV(String filePath) {
+        double[][] temp = readCSV(filePath);
+        if (temp == null) {
+            return null;
+        }
         int[] gt = new int[temp.length];
         for (int i = 0; i < temp.length; i++) {
             gt[i] = (int)temp[i][0];
@@ -582,8 +593,10 @@ public class Model {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         } catch (NumberFormatException e) {
             System.out.println("Invalid number in CSV: " + e.getMessage());
+            return null;
         }
 
         // Convert ArrayList<int[]> to int[][]
@@ -595,7 +608,7 @@ public class Model {
         return data;
     }
 
-    public double[][] readH5AD(String filePath) {
+    public Tuple<double[][], int[]> readH5AD(String filePath) {
         File file = new File(filePath);
         try (HdfFile hdfFile = new HdfFile(file)) {
             Group xGroup = (Group) hdfFile.getChildren().get("X");
@@ -620,7 +633,19 @@ public class Model {
                     dense[row][col] = data[i];
                 }
             }
-            return dense;
+
+            int[] groundTruth = null;
+            try {
+                byte[] codes = (byte[]) hdfFile.getDatasetByPath("obs/cell_ontology_class/codes").getData();
+                groundTruth = new int[codes.length];
+                for (int i = 0; i < codes.length; i++) {
+                    groundTruth[i] = codes[i];
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+            return new Tuple<>(dense, groundTruth);
         }
     }
 

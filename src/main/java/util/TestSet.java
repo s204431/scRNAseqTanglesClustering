@@ -97,8 +97,9 @@ public class TestSet {
         for (int i = 0; i < observedPaths.length; i++) {
             String observedFilePath = observedPaths[i];
             String labelFilePath = labelsPaths[i];
-            double[][] originalData = model.loadData(dirPath + "/" +  observedFilePath);
-            int[] groundTruth = model.loadGroundTruth(dirPath + "/" + labelFilePath);
+            Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
+            double[][] originalData = loaded.x;
+            int[] groundTruth = loaded.y;
             double[][] normalizedData = model.logNormalize(originalData);
             double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
             int nClusters = getNumberOfClusters(groundTruth);
@@ -184,8 +185,9 @@ public class TestSet {
         for (int i = 0; i < observedPaths.length; i++) {
             String observedFilePath = observedPaths[i];
             String labelFilePath = labelsPaths[i];
-            double[][] originalData = model.loadData(dirPath + "/" +  observedFilePath);
-            int[] groundTruth = model.loadGroundTruth(dirPath + "/" + labelFilePath);
+            Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
+            double[][] originalData = loaded.x;
+            int[] groundTruth = loaded.y;
             long preTime1 = System.currentTimeMillis();
             double[][] normalizedData = model.logNormalize(originalData);
             double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);

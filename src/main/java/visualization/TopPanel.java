@@ -52,7 +52,7 @@ public class TopPanel extends JPanel {
             public boolean accept(File f) {
                 if (f.isDirectory()) return true;
                 String name = f.getName().toLowerCase();
-                return name.contains("observed_counts") && name.endsWith(".csv");
+                return name.contains("observed_counts") && (name.endsWith(".csv") ||name.endsWith(".h5ad"));
             }
 
             @Override
