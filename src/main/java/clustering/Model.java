@@ -13,6 +13,10 @@ import elki.projection.BarnesHutTSNE;
 import elki.projection.PerplexityAffinityMatrixBuilder;
 import elki.utilities.random.RandomFactory;
 import elki.distance.minkowski.EuclideanDistance;
+import io.jhdf.HdfFile;
+import io.jhdf.api.Dataset;
+import io.jhdf.api.Group;
+import io.jhdf.api.Node;
 import util.Monitor;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
@@ -589,6 +593,35 @@ public class Model {
         }
 
         return data;
+    }
+
+    public double[][] readH5AD(String filePath) {
+        File file = new File(filePath);
+        try (HdfFile hdfFile = new HdfFile(file)) {
+            Group xGroup = (Group) hdfFile.getChildren().get("X");
+            /*for (Map.Entry<String, Node> entry : xGroup.getChildren().entrySet()) {
+                System.out.println("Key: " + entry.getKey() + " -> " + entry.getValue().getClass().getSimpleName());
+            }*/
+
+            float[] data = (float[]) ((Dataset) xGroup.getChildren().get("data")).getData();
+            int[] indices = (int[]) ((Dataset) xGroup.getChildren().get("indices")).getData();
+            int[] indptr = (int[]) ((Dataset) xGroup.getChildren().get("indptr")).getData();
+
+            int nRows = indptr.length - 1;
+            int nCols = Arrays.stream(indices).max().orElse(-1) + 1;
+
+            double[][] dense = new double[nRows][nCols];
+
+            for (int row = 0; row < nRows; row++) {
+                int start = indptr[row];
+                int end = indptr[row + 1];
+                for (int i = start; i < end; i++) {
+                    int col = indices[i];
+                    dense[row][col] = data[i];
+                }
+            }
+            return dense;
+        }
     }
 
     public BitSet[] getCuts() {
