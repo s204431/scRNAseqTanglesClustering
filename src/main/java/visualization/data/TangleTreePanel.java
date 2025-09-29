@@ -126,8 +126,27 @@ public class TangleTreePanel extends JPanel {
                 view.showCut(cut, cutIndex);
 
                 TangleSearchTree.Node node = idToNode.get(uniqueId);
-                double cost = sortedCutCosts[cutIndex];
-                System.out.println("Cut: " + cutIndex + " Cost: " + cost +  (branchCosts == null ? "" : " Branch cost: " + branchCosts.get(node.parent.branchId)[node.originalOrientation]) + " Original Index: " + cutIndex);
+
+                int originalOrientation = node.originalOrientation;
+                TangleSearchTree.Node lastParentBranchNode = node.parent;
+                while (lastParentBranchNode.leftChild == null || lastParentBranchNode.rightChild == null) {
+                    lastParentBranchNode = lastParentBranchNode.parent;
+                }
+
+                String originalCost = "Original Cost: " + sortedCutCosts[cutIndex];
+                String branchCost = (branchCosts == null ? "" : "Branch cost: " + branchCosts.get(node.parent.branchId)[originalOrientation]);
+                String parentBranchCost = (branchCosts == null) ? "" : "Parent branch cost: " + branchCosts.get(lastParentBranchNode.branchId)[originalOrientation];
+
+                System.out.println("Cut Index: " + cutIndex);
+                System.out.println("Cost: " + node.cost);
+                System.out.println("Original Orientation: " + originalOrientation);
+                System.out.println(originalCost);
+                if (branchCosts != null) {
+                    System.out.println(branchCost);
+                    System.out.println(parentBranchCost);
+                }
+                System.out.println();
+
             }
         });
 
@@ -183,7 +202,7 @@ public class TangleTreePanel extends JPanel {
 
         cuts = view.getCuts();
         cutCosts = view.getCutCosts();
-        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.90);
+        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
         cuts = result.x;
         cutCosts = result.y;
 

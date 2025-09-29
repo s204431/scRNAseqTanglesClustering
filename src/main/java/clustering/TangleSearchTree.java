@@ -322,6 +322,8 @@ public class TangleSearchTree {
     }
 
     protected void limitSplitCosts(Node node, double maxCost) {
+
+        // Split node
         if (node.leftChild != null && node.rightChild != null) {
             if ((branchCosts != null && branchCosts.get(node.branchId)[node.leftChild.originalOrientation] > maxCost) || (branchCosts == null && cutCosts[node.leftChild.originalOrientation] > maxCost)) { //Local cost
                 //Remove child nodes since
@@ -329,6 +331,32 @@ public class TangleSearchTree {
                 node.rightChild = null;
             }
         }
+
+
+        /*// Vote cuts (internal nodes)
+        else {
+            if (node.parent != null) {
+
+                // Search for lowest node in parent branch
+                Node lowestParentBranchNode = node.parent;
+                while (lowestParentBranchNode.leftChild == null || lowestParentBranchNode.rightChild == null && lowestParentBranchNode.parent != null) {
+                    lowestParentBranchNode = lowestParentBranchNode.parent;
+                }
+
+                if (node.leftChild != null) {
+                    if ((branchCosts != null && branchCosts.get(lowestParentBranchNode.branchId)[node.leftChild.originalOrientation] > maxCost) || (branchCosts == null && cutCosts[node.leftChild.originalOrientation] > maxCost)) { //Local cost
+                        node.leftChild = null;
+                    }
+                }
+                if (node.rightChild != null) {
+                    if ((branchCosts != null && branchCosts.get(lowestParentBranchNode.branchId)[node.rightChild.originalOrientation] > maxCost) || (branchCosts == null && cutCosts[node.rightChild.originalOrientation] > maxCost)) { //Local cost
+                        node.rightChild = null;
+                    }
+                }
+            }
+        }*/
+
+        // Recursive calls
         if (node.leftChild != null) {
             limitSplitCosts(node.leftChild, maxCost);
         }
@@ -484,6 +512,7 @@ public class TangleSearchTree {
         newNode.originalOrientation = oldNode.originalOrientation;
         newNode.side = oldNode.side;
         newNode.branchId = oldNode.branchId;
+        newNode.cost = oldNode.cost;
         if (oldNode.intersection != null) {
             newNode.intersection = oldNode.intersection.clone();
         }
@@ -512,6 +541,7 @@ public class TangleSearchTree {
         public Node parent;
         public boolean side;
         public int originalDepth = 1;
+        public double cost;
 
         // TODO: LOOK AT THESE!!!!
         public int branchId;

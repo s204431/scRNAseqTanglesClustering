@@ -8,7 +8,6 @@ import util.BitSet;
 import util.Tuple;
 import datasets.ScRNAseqDataset;
 
-import javax.swing.plaf.synth.SynthOptionPaneUI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -54,11 +53,11 @@ public class TangleClusterer {
         dataset.setA(a);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
         double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
-        Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.90); //Set factor to 1 to turn it off.
+        Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
         TangleSearchTree tree = useOscarWerner ?
-                newMethod(initialCuts, costs, dataset.data, config) :
+                oscarWerner(initialCuts, costs, dataset.data, config) :
                 generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
@@ -127,19 +126,25 @@ public class TangleClusterer {
                 consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
                 consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
                 if (node.leftChild != null && node.rightChild != null) {
+                    node.leftChild.cost = costsOrdered[i];
+                    node.rightChild.cost = costsOrdered[i];
                     splitCosts.add(costs[indices[i]]);
                 }
                 else if (autoLimitSplitCosts && node.leftChild != null) {
-                    tree.a = (int) (node.intersection.count()*0.667);
+                    int newA = (int) (node.intersection.count()*0.667);
+                    tree.a = newA;
                     node.leftChild = null;
                     consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
                     tree.a = a;
+                    if (node.leftChild != null) node.leftChild.cost = newA;
                 }
                 else if (autoLimitSplitCosts && node.rightChild != null) {
-                    tree.a = (int) (node.intersection.count()*0.667);
+                    int newA = (int) (node.intersection.count()*0.667);
+                    tree.a = newA;
                     node.rightChild = null;
                     consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
                     tree.a = a;
+                    if (node.leftChild != null) node.leftChild.cost = newA;
                 }
             }
             if (earlyStop && !consistent) { //Stop if no nodes were added to the tree.
@@ -149,7 +154,7 @@ public class TangleClusterer {
         return tree;
     }
 
-    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
+    private TangleSearchTree oscarWernerOld(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
         int n = costs.length;
         int a = config.getA();
         double psi = config.getPsi();
@@ -210,20 +215,23 @@ public class TangleClusterer {
                 if (removeRedundantCuts) branchCuts = branchCutSets.get(node.branchId);
 
                 for (int i = branchPointer; i < initialCuts.length; i++) {
+                    int cutIndex = branchIndicesOrdered[i];
+                    double cutCost = branchCosts.get(node.branchId)[cutIndex];
+
                     boolean consistent = false;
 
-                    if (psi != 0 && branchCosts.get(node.branchId)[branchIndicesOrdered[i]] > psi) {
+                    if (psi != 0 && cutCost > psi) {
                         break;
                     }
 
-                    if (removeRedundantCuts && !branchCuts.contains(branchIndicesOrdered[i])) {
+                    if (removeRedundantCuts && !branchCuts.contains(cutIndex)) {
                         //System.out.println("Node " + debugIndices[node.originalOrientation]  + (node.side ? "L" : "R") + " in branch: " + node.branchId + " has skipped cut: " + debugIndices[branchIndicesOrdered[i]]);
                         branchPointer++;
                         continue;
                     }
 
-                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], true, useAlternateConsistencyCheck) || consistent;
-                    consistent = tree.addOrientation(node, branchIndicesOrdered[i], false, useAlternateConsistencyCheck) || consistent;
+                    consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
+                    consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
                     if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
                         node.leftChild = null;
                     }
@@ -233,11 +241,12 @@ public class TangleClusterer {
 
                     if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
 
-                        splitCosts.add(branchCosts.get(node.branchId)[branchIndicesOrdered[i]]);
+                        splitCosts.add(branchCosts.get(node.branchId)[cutIndex]);
 
                         for (int j = 0; j < 2; j++) {
 
                             Node childNode = j == 0 ? node.leftChild : node.rightChild;
+                            childNode.cost = cutCost;
 
                             branchId++;
                             childNode.branchId = branchId;
@@ -291,16 +300,20 @@ public class TangleClusterer {
                         break;
                     }
                     else if (autoLimitSplitCosts && node.leftChild != null) {
-                        tree.a = (int) (node.intersection.count()*0.667);
+                        int newA = (int) (node.intersection.count()*0.667);
+                        tree.a = newA;
                         node.leftChild = null;
-                        consistent = tree.addOrientation(node, branchIndicesOrdered[i], true, useAlternateConsistencyCheck) || consistent;
+                        consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
+                        if (node.leftChild != null) node.leftChild.cost = newA;
                     }
                     else if (autoLimitSplitCosts && node.rightChild != null) {
-                        tree.a = (int) (node.intersection.count()*0.667);
+                        int newA = (int) (node.intersection.count()*0.667);
+                        tree.a = newA;
                         node.rightChild = null;
-                        consistent = tree.addOrientation(node, branchIndicesOrdered[i], false, useAlternateConsistencyCheck) || consistent;
+                        consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
+                        if (node.rightChild != null) node.rightChild.cost = newA;
                     }
 
                     branchPointer++;
@@ -309,8 +322,10 @@ public class TangleClusterer {
                         //A single child was added to the branch
                         branchPointers.set(node.branchId, branchPointer);
                         if (node.leftChild != null) {
+                            node.leftChild.cost = cutCost;
                             node = node.leftChild;
                         } else if (node.rightChild != null) {
+                            node.rightChild.cost = cutCost;
                             node = node.rightChild;
                         }
                     }
@@ -323,7 +338,7 @@ public class TangleClusterer {
         return tree;
     }
 
-    private TangleSearchTree newMethod(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
+    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
         int n = costs.length;
         int a = config.getA();
         double psi = config.getPsi();
@@ -364,8 +379,6 @@ public class TangleClusterer {
         }
         branchCutSets.add(initialBranchCuts);
 
-        for (int i = 0; i < n; i++) indicesOrdered.getFirst()[i] = i;
-        System.arraycopy(costs, 0, branchCosts.getFirst(), 0, n);
         quicksort(initialCosts, indicesOrdered.getFirst(), 0, n - 1);
 
         int[] debugIndices = new int[n];
@@ -393,7 +406,6 @@ public class TangleClusterer {
 
                 boolean hasParent = node.parent != null;
                 double[] parentCosts = hasParent ? branchCosts.get(node.parent.branchId) : null;
-                int[] parentBranchIndicesOrdered = hasParent ? indicesOrdered.get(node.parent.branchId) : null;
                 int votePointer = 0;
 
                 // ========== SPLIT CUTS ==========
@@ -434,6 +446,7 @@ public class TangleClusterer {
 
                             boolean left = j == 0;
                             Node childNode = left ? node.leftChild : node.rightChild;
+                            childNode.cost = localCosts[cutIndex];
 
                             branchId++;
                             childNode.branchId = branchId;
@@ -479,23 +492,23 @@ public class TangleClusterer {
                 // ========== VOTE CUTS ==========
                 double splitCost = splitCutAdded ? localCosts[branchIndicesOrdered[branchPointer]] : Double.MAX_VALUE;
                 double[] parentCostsOrdered = parentCosts.clone();
-                int[] indices = new int[parentCostsOrdered.length];
-                for (int i = 0; i < indices.length; i++) indices[i] = i;
-                quicksort(parentCostsOrdered, indices, 0, parentCostsOrdered.length - 1);
+                int[] parentIndices = new int[parentCostsOrdered.length];
+                for (int i = 0; i < parentIndices.length; i++) parentIndices[i] = i;
+                quicksort(parentCostsOrdered, parentIndices, 0, parentCostsOrdered.length - 1);
 
-                while (hasParent && votePointer < parentCosts.length) {
-                    int cutIndex = indices[votePointer];
+                while (votePointer < parentCosts.length) {
+                    int cutIndex = parentIndices[votePointer];
+                    double cutCost = parentCostsOrdered[votePointer];
 
-                    if (parentCostsOrdered[votePointer] >= splitCost || (usePsi && parentCostsOrdered[votePointer] >= psi)) {
+                    if (cutCost >= splitCost || (usePsi && cutCost >= psi)) {
                         break;
                     }
 
+                    votePointer++;
+
                     if (leftUsedCuts.contains(cutIndex)) {
-                        votePointer++;
                         continue;
                     }
-
-                    votePointer++;
 
                     Node leftChild = node.leftChild;
                     Node rightChild = node.rightChild;
@@ -503,9 +516,12 @@ public class TangleClusterer {
                     node.rightChild = null;
 
                     // Try to add vote cut
+                    if (autoLimitSplitCosts) tree.a = (int) (node.intersection.count()*0.8);
                     boolean consistent = false;
                     consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
                     consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
+                    tree.a = a;
+
                     if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
                         node.leftChild = null;
                     }
@@ -517,7 +533,7 @@ public class TangleClusterer {
                         node.leftChild = leftChild;
                         node.rightChild = rightChild;
                         continue;
-                    } else if (node.leftChild == null && node.rightChild == null) {     // No child was added
+                    } else if (node.leftChild == null && node.rightChild == null || !consistent) {     // No child was added
                         node.leftChild = leftChild;
                         node.rightChild = rightChild;
                         continue;
@@ -525,6 +541,7 @@ public class TangleClusterer {
 
                     // Single vote cut was added
                     if (node.leftChild != null) {
+                        node.leftChild.cost = cutCost;
                         if (splitCutAdded) {
                             node.leftChild.leftChild = leftChild;
                             node.leftChild.rightChild = rightChild;
@@ -547,6 +564,7 @@ public class TangleClusterer {
                         }
 
                     } else if (node.rightChild != null) {
+                        node.rightChild.cost = cutCost;
                         if (splitCutAdded) {
                             node.rightChild.leftChild = leftChild;
                             node.rightChild.rightChild = rightChild;
