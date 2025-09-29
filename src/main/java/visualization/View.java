@@ -163,4 +163,8 @@ public class View {
 
         SwingUtilities.invokeLater(window::stopTesting);
     }
+
+    public String getCurrentFilePath() {
+        return monitor.getFilePath();
+    }
 }

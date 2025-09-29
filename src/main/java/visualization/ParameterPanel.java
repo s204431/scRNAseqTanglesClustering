@@ -1,6 +1,7 @@
 package visualization;
 
 import clustering.TangleClusterer;
+import main.Main;
 import util.BitSet;
 import util.Config;
 import util.GlobalConstants;
@@ -51,6 +52,7 @@ public class ParameterPanel extends JPanel {
     private JTextField psiField;
     private JButton clusterButton;
     private JCheckBox groundTruthCheckBox;
+    private JButton pythonClusterButton;
 
     // Cut section components
     private JCheckBox showCutCheckBox;
@@ -167,6 +169,9 @@ public class ParameterPanel extends JPanel {
             groundTruthCheckBox = new JCheckBox("<html>Show Ground<br>Truth</html>");
             groundTruthCheckBox.setSelected(false);
             addRow(groundTruthCheckBox, clusterButton);
+
+            pythonClusterButton = new JButton("Cluster using standard pipeline");
+            addFullWidth(pythonClusterButton);
         }
     }
 
@@ -208,6 +213,7 @@ public class ParameterPanel extends JPanel {
             clusterButton.addActionListener(this::clusterAction);
             plusButton.addActionListener(e -> stepCutCounter(1));
             minusButton.addActionListener(e -> stepCutCounter(-1));
+            pythonClusterButton.addActionListener(this::pythonClusterAction);
         } else {
             testButton.addActionListener(this::testAction);
         }
@@ -275,6 +281,16 @@ public class ParameterPanel extends JPanel {
                 }
             });
         }
+    }
+
+    private void pythonClusterAction(ActionEvent e) {
+        Tuple<int[], Double> result = Main.runPython(view.getCurrentFilePath());
+        if (result == null) return;
+
+        view.showClustering(result.x);
+        groundTruthCheckBox.setSelected(false);
+        cutNumberField.setText("0");
+        turnOffCuts();
     }
 
     private void clusterAction(ActionEvent e) {
