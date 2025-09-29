@@ -404,7 +404,7 @@ public class CostFunctions {
         for (int i = 0; i < initialCuts.length; i++) {
             int cutCount = initialCuts[i].count();
             if (cutCount == 0 || cutCount == initialCuts[i].size()) {
-                costs[i] = 0;
+                costs[i] = 1;
                 continue;
             }
             double[] mean1 = new double[dataPoints[0].length];

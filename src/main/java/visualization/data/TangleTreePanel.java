@@ -127,7 +127,7 @@ public class TangleTreePanel extends JPanel {
 
                 TangleSearchTree.Node node = idToNode.get(uniqueId);
                 double cost = sortedCutCosts[cutIndex];
-                System.out.println("Cut: " + cutIndex + " Cost: " + cost +  (branchCosts == null ? "" : " Branch cost: " + branchCosts.get(node.parent.branchId)[node.originalOrientation]));
+                System.out.println("Cut: " + cutIndex + " Cost: " + cost +  (branchCosts == null ? "" : " Branch cost: " + branchCosts.get(node.parent.branchId)[node.originalOrientation]) + " Original Index: " + cutIndex);
             }
         });
 
@@ -145,7 +145,7 @@ public class TangleTreePanel extends JPanel {
         int cutIndex = originalCutIndexToSortedCutIndex.get(node.originalOrientation);
 
         // Temporary unique ID for each node as identical node names are currently not allowed
-        String uniqueId = "" + nodeCounter++;//UUID.randomUUID();
+        String uniqueId = "" + UUID.randomUUID();
         String nodeName = originalCutIndexToSortedCutIndex.get(node.originalOrientation) + (node.side ? "L" : "R");
 
         if (parent.equals("None")) {    // Root
@@ -183,7 +183,7 @@ public class TangleTreePanel extends JPanel {
 
         cuts = view.getCuts();
         cutCosts = view.getCutCosts();
-        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
+        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.90);
         cuts = result.x;
         cutCosts = result.y;
 

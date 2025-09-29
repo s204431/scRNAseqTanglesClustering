@@ -99,7 +99,7 @@ public class TangleSearchTree {
     }
 
     //Checks whether the tree is still consistent after adding "newNode".
-    private boolean isConsistent(Node newNode) {
+    protected boolean isConsistent(Node newNode) {
         int depth = getDepth(newNode);
         if (depth < 2) {
             return cuts[newNode.originalOrientation].countFlipped(newNode.side) >= a;
@@ -137,7 +137,7 @@ public class TangleSearchTree {
         return true;
     }
 
-    private boolean isConsistentOscarWerner(Node newNode) {
+    protected boolean isConsistentOscarWerner(Node newNode) {
         int depth = getDepth(newNode);
 
         if (depth < 2) {
