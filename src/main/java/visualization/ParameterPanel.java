@@ -39,6 +39,7 @@ public class ParameterPanel extends JPanel {
     private JCheckBox consistencyCheckbox;
     private JCheckBox wernerModificationCheckbox;
     private JCheckBox useCacheCheckBox;
+    private JCheckBox removeRedundantCheckBox;
     private JComboBox<String> cutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
     private JComboBox<String> lowLevelCostFunctionDropdown;
@@ -121,7 +122,10 @@ public class ParameterPanel extends JPanel {
 
         useCacheCheckBox = new JCheckBox("Use Cache");
         useCacheCheckBox.setSelected(true);
-        addFullWidth(useCacheCheckBox);
+
+        removeRedundantCheckBox = new JCheckBox("<html>Remove Cuts<br>Iteratively</html>");
+        removeRedundantCheckBox.setSelected(false);
+        addRow(useCacheCheckBox, removeRedundantCheckBox);
 
         cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
         addRow("Cut Generator ", cutGeneratorDropdown);
@@ -333,6 +337,7 @@ public class ParameterPanel extends JPanel {
                 psi);
         config.setAutoCompute(autoComputeACheckBox.isSelected(), autoComputePsiCheckBox.isSelected());
         config.setDimensionReductionParameters(splitSize, tsneComponents);
+        config.setRemoveRedundant(removeRedundantCheckBox.isSelected());
         return config;
     }
 

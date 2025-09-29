@@ -14,6 +14,8 @@ public final class Config {
     private boolean autoComputeA = false;
     private boolean autoComputePsi = false;
 
+    private boolean removeRedundant = false;
+
     private int splitSize = 1000;
     private int tsneComponents = 5;
 
@@ -59,6 +61,10 @@ public final class Config {
         this.tsneComponents = tsneComponents;
     }
 
+    public void setRemoveRedundant(boolean remove) {
+        this.removeRedundant = remove;
+    }
+
     public boolean isUseAlternateConsistencyCheck() {
         return useAlternateConsistencyCheck;
     }
@@ -69,6 +75,10 @@ public final class Config {
 
     public boolean isUseCache() {
         return useCache;
+    }
+
+    public boolean isRemoveRedundant() {
+        return removeRedundant;
     }
 
     public String getCutGeneratorName() {

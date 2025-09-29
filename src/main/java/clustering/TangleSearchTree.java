@@ -541,11 +541,9 @@ public class TangleSearchTree {
         public Node parent;
         public boolean side;
         public int originalDepth = 1;
-        public double cost;
-
-        // TODO: LOOK AT THESE!!!!
         public int branchId;
         public BitSet intersection;
+        public double cost;
 
         //Creates a default node (used to generate the root).
         private Node() {

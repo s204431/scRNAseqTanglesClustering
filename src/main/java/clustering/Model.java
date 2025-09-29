@@ -187,13 +187,19 @@ public class Model {
         boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
         boolean prev2 = tangleClusterer.useOscarWerner;
         boolean prev3 = tangleClusterer.autoLimitSplitCosts;
+        boolean prev4 = tangleClusterer.removeRedundantCuts;
+
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
+        tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
+
         tangleClusterer.generateClusters(dataset, config);
+
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
         tangleClusterer.autoLimitSplitCosts = prev3;
+        tangleClusterer.removeRedundantCuts = prev4;
 
         hardClustering = tangleClusterer.getHardClustering();
         double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
@@ -208,13 +214,19 @@ public class Model {
         boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
         boolean prev2 = tangleClusterer.useOscarWerner;
         boolean prev3 = tangleClusterer.autoLimitSplitCosts;
+        boolean prev4 = tangleClusterer.removeRedundantCuts;
+
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
+        tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
+
         tangleClusterer.generateClusters(dataset, config);
+
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
         tangleClusterer.autoLimitSplitCosts = prev3;
+        tangleClusterer.removeRedundantCuts = prev4;
 
         hardClustering = tangleClusterer.getHardClustering();
         return hardClustering;

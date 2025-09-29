@@ -124,7 +124,8 @@ public class View {
     }
 
     public void loadDataset() {
-        points = Model.tsne(model.getHvgData(), 2);
+        points = Model.svd(model.getHvgData(), 100);
+        points = Model.tsne(points, 2);
         points = Main.zScoreNorm(points);
 
         SwingUtilities.invokeLater(() -> {
