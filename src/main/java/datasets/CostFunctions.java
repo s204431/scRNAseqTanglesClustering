@@ -297,7 +297,7 @@ public class CostFunctions {
         for (int i = 0; i < initialCuts.length; i++) {
             List<Double> distances = knnGraph.getDistancesBetween(initialCuts[i]);
             for (int j = 0; j < distances.size(); j++) {
-                costs[i] += Math.exp(-5.0*(1.0/maxRange)*distances.get(j));
+                costs[i] += Math.exp(-1.0*distances.get(j));
             }
             //costs[i] = distances.size();
         }
@@ -322,7 +322,7 @@ public class CostFunctions {
                     cost = Math.min(getDistance(dataPoints[j], dataPoints[k]), cost);
                 }
             }
-            costs[i] = Math.exp(-5.0*(1.0/maxRange)*cost);
+            costs[i] = Math.exp(-1.0*cost);
         }
         //cutCosts = costs;
         return costs;
@@ -343,7 +343,7 @@ public class CostFunctions {
                     if (!initialCuts[i].get(k)) {
                         continue;
                     }
-                    cost += Math.exp(-1.0*(1.0/maxRange)*getDistance(dataPoints[j], dataPoints[k]));
+                    cost += Math.exp(-1.0*getDistance(dataPoints[j], dataPoints[k]));
                 }
             }
             costs[i] = cost/(initialCuts[i].count()*(initialCuts[i].size()-initialCuts[i].count()));
@@ -380,7 +380,7 @@ public class CostFunctions {
                     closestDist = Math.min(closestDist, getDistance(dataPoints[j], dataPoints[k]));
                 }
                 if (closestDist < threshold) {
-                    cost += Math.exp(-5.0*(1.0/maxRange)*closestDist);
+                    cost += Math.exp(-1.0*closestDist);
                     nBad++;
                 }
             }
@@ -429,7 +429,7 @@ public class CostFunctions {
             for (int j = 0; j < initialCuts[i].size(); j++) {
                 double[] mean = initialCuts[i].get(j) ? mean2 : mean1;
                 double[] meanOther = initialCuts[i].get(j) ? mean1 : mean2;
-                costs[i] += Math.exp(-(1.0/maxRange)*(getDistance(dataPoints[j], mean) - getDistance(dataPoints[j], meanOther)));
+                costs[i] += Math.exp(-1.0*(getDistance(dataPoints[j], mean) - getDistance(dataPoints[j], meanOther)));
                 //costs[i] += Math.exp(-(1.0/maxRange)*getDistance(dataPoints[j], mean));
             }
             costs[i] /= initialCuts[i].size();
