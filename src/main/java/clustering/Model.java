@@ -51,8 +51,6 @@ import visualization.test.TestEditPanel;
 
 
 public class Model {
-    private double[][] originalData;
-    private double[][] normalizedData;
     private double[][] hvgData;
     private double[][] projectedData;
     private ScRNAseqDataset dataset;
@@ -73,13 +71,13 @@ public class Model {
         String labelFilePath = observedFilePath.replace("observed_counts", "labels");
 
         Tuple<double[][], int[]> data = loadData(observedFilePath, labelFilePath);
-        originalData = data.x;
+        double[][] originalData = data.x;
         groundTruth = data.y;
-        normalizedData = logNormalize(originalData);
+        logNormalize(originalData);
 
-        int maxGenes = normalizedData[0].length;
+        int maxGenes = originalData[0].length;
         hvg = (hvg <= 0 || hvg >= maxGenes) ? maxGenes : hvg;
-        hvgData = highlyVariableGenes(normalizedData, hvg);
+        hvgData = highlyVariableGenes(originalData, hvg);
         System.out.println("Finished loading data");
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {
@@ -90,9 +88,8 @@ public class Model {
 
 
         //projectedData = tsne(hvgData, 2);
-        projectedData = hvgData;
 
-        dataset = new ScRNAseqDataset(projectedData);
+        dataset = new ScRNAseqDataset(hvgData);
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
 
@@ -561,11 +558,10 @@ public class Model {
     }
 
     public double[][] logNormalize(double[][] data) {
-        double[][] normalized = new double[data.length][data[0].length];
         int nZeros = 0;
         for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++) {
-                normalized[i][j] = Math.log(1.0 + data[i][j]);
+                data[i][j] = Math.log(1.0 + data[i][j]);
                 if (data[i][j] == 0.0) {
                     nZeros++;
                 }
@@ -573,7 +569,7 @@ public class Model {
         }
         //System.out.println("Sparsity: " + ((double)nZeros)/(normalized.length*normalized[0].length));
         //System.out.println("Dimension: " + normalized.length + " " + normalized[0].length);
-        return normalized;
+        return data;
     }
 
     public double[][] readCSV(String filePath) {
@@ -679,14 +675,6 @@ public class Model {
 
     public double[][] getHvgData() {
         return hvgData;
-    }
-
-    public double[][] getNormalizedData() {
-        return normalizedData;
-    }
-
-    public double[][] getOriginalData() {
-        return originalData;
     }
 
     public int[] getHardClustering() {
