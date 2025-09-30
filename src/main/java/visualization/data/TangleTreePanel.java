@@ -23,16 +23,23 @@ import java.util.List;
 public class TangleTreePanel extends JPanel {
     private View view;
 
-    private JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-    private JPanel treePanel = new JPanel(new BorderLayout());
+    private final JTabbedPane treeTabs = new JTabbedPane(JTabbedPane.TOP);
 
-    private HashMap<String, TangleSearchTree.Node> idToNode = new HashMap<>();
-    private HashMap<String, String> idToNodeName = new HashMap<>();
-    private HashMap<String, String> idToEdgeName = new HashMap<>();
-    private HashMap<String, BitSet> idToCut = new HashMap<>();
-    private HashMap<String, Integer> idToCutIndex = new HashMap<>();
-    private HashMap<Integer, Integer> originalCutIndexToSortedCutIndex = new HashMap<>();
-    private HashMap<Integer, Integer> sortedCutIndexToOriginalCutIndex = new HashMap<>();
+    private final JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+    private final JCheckBox intersectionCheckBox = new JCheckBox("Toggle intersections");
+
+    private final JPanel treePanelOriginal = new JPanel(new BorderLayout());
+    private final JPanel treePanelSplitPruned = new JPanel(new BorderLayout());
+    private final JPanel treePanelCondensed = new JPanel(new BorderLayout());
+
+    private final HashMap<String, TangleSearchTree.Node> idToNode = new HashMap<>();
+    private final HashMap<String, String> idToNodeName = new HashMap<>();
+    private final HashMap<String, String> idToEdgeName = new HashMap<>();
+    private final HashMap<String, BitSet> idToCut = new HashMap<>();
+    private final HashMap<String, BitSet> idToIntersection = new HashMap<>();
+    private final HashMap<String, Integer> idToCutIndex = new HashMap<>();
+    private final HashMap<Integer, Integer> originalCutIndexToSortedCutIndex = new HashMap<>();
+    private final HashMap<Integer, Integer> sortedCutIndexToOriginalCutIndex = new HashMap<>();
 
     private BitSet[] cuts;
     private double[] cutCosts;
@@ -42,39 +49,41 @@ public class TangleTreePanel extends JPanel {
 
     private List<double[]> branchCosts;
 
-    private boolean showCondensedTree = false;
-    private boolean useIntersections = false;
-
-    private int nodeCounter = 0;
-
     public TangleTreePanel(View view) {
         this.view = view;
         setLayout(new BorderLayout());
-
-        // Checkbox to toggle condensed / uncondensed
-        JCheckBox condensedCheckBox = new JCheckBox("Condense tree", showCondensedTree);
-        condensedCheckBox.addActionListener(e -> {
-            showCondensedTree = condensedCheckBox.isSelected();
-            view.drawTangleSearchTree(showCondensedTree);
-        });
-        topPanel.add(condensedCheckBox);
-
-        // Checkbox to toggle the use of intersections when clicking on cuts in the tree
-        JCheckBox intersectionCheckBox = new JCheckBox("Use intersections", useIntersections);
-        intersectionCheckBox.addActionListener(e -> {
-            useIntersections = intersectionCheckBox.isSelected();
-            view.drawTangleSearchTree(showCondensedTree);
-        });
-        topPanel.add(intersectionCheckBox);
-
         add(topPanel, BorderLayout.NORTH);
-        add(treePanel, BorderLayout.CENTER);
+        add(treeTabs, BorderLayout.CENTER);
+
+        topPanel.add(intersectionCheckBox);
     }
 
-    public void drawTree(TangleSearchTree tst) {
+    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed) {
         getSortedCutsAndCosts();
         resetHistoryVariables();
 
+        while (treeTabs.getTabCount() > 0)
+            treeTabs.remove(0);
+
+        if (originalTree != null) {
+            drawTree(originalTree, treePanelOriginal);
+            treeTabs.add("Original Tree", treePanelOriginal);
+        }
+
+        if (splitPruned != null) {
+            drawTree(splitPruned, treePanelSplitPruned);
+            treeTabs.add("Split Pruned Tree", treePanelSplitPruned);
+        }
+        if (condensed != null) {
+            drawTree(condensed, treePanelCondensed);
+            treeTabs.add("Condensed Tree", treePanelCondensed);
+        }
+
+        revalidate();
+        repaint();
+    }
+
+    public void drawTree(TangleSearchTree tst, JPanel treePanel) {
         TangleSearchTree.Node root = tst.getRoot();
         DelegateTree<String, String> tree = new DelegateTree<>();
 
@@ -121,7 +130,7 @@ public class TangleTreePanel extends JPanel {
                     return;
                 }
 
-                BitSet cut = idToCut.get(uniqueId);
+                BitSet cut = intersectionCheckBox.isSelected() ? idToIntersection.get(uniqueId) : idToCut.get(uniqueId);
                 int cutIndex = idToCutIndex.get(uniqueId);
                 view.showCut(cut, cutIndex);
 
@@ -186,12 +195,9 @@ public class TangleTreePanel extends JPanel {
         idToNodeName.put(uniqueId, nodeName);
         idToEdgeName.put(uniqueId, "");
         idToCutIndex.put(uniqueId, cutIndex);
-        if (useIntersections) {
-            BitSet intersection = node.intersection.clone();
-            idToCut.put(uniqueId, intersection);
-        } else {
-            idToCut.put(uniqueId, cut);
-        }
+        BitSet intersection = node.intersection.clone();
+        idToIntersection.put(uniqueId, intersection);
+        idToCut.put(uniqueId, cut);
 
         addNode(tree, node.leftChild, uniqueId);
         addNode(tree, node.rightChild, uniqueId);
@@ -232,6 +238,7 @@ public class TangleTreePanel extends JPanel {
         idToNodeName.clear();
         idToEdgeName.clear();
         idToCut.clear();
+        idToIntersection.clear();
         idToCutIndex.clear();
     }
 }

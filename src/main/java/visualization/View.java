@@ -96,11 +96,8 @@ public class View {
         return model.getCutCosts();
     }
 
-    public void drawTangleSearchTree(boolean condensed) {
-        TangleSearchTree tree = condensed ? monitor.getCondensedTree() : monitor.getUncondensedTree();
-        if (tree != null) {
-            window.drawTangleSearchTree(tree);
-        }
+    public void drawTangleSearchTree() {
+        window.drawTangleSearchTree(monitor.getUncondensedTree(), null, monitor.getCondensedTree());
     }
 
     public void loadDataset(String filePath, int hvg) {

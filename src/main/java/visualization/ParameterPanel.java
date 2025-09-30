@@ -21,8 +21,8 @@ public class ParameterPanel extends JPanel {
     private static final String FONT_NAME = "Arial";
     private static final int TITLE_TEXT_SIZE = 18;
     private static final int DEFAULT_TEXT_SIZE = 14;
-    private static final Insets DEFAULT_INSETS = new Insets(5, 5, 5, 5);
-    private static final Insets TITLE_INSETS = new Insets(25, 5, 5, 5);
+    private static final Insets DEFAULT_INSETS = new Insets(0, 5, 5, 5);
+    private static final Insets TITLE_INSETS = new Insets(0, 5, 5, 5);
 
     // Layout state
     private final GridBagConstraints gbc = new GridBagConstraints();
@@ -107,6 +107,8 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildAlgorithmSection() {
+        addFullWidth(new JLabel(" "));
+
         addTitle("Algorithm Modifications");
 
         consistencyCheckbox = new JCheckBox("<html>" +
@@ -140,6 +142,8 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildClusteringSection() {
+        addFullWidth(new JLabel(" "));
+
         addTitle("Cluster Parameters");
 
         aField = new JTextField(6);
@@ -176,6 +180,8 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildCutsSection() {
+        addFullWidth(new JLabel(" "));
+
         addTitle("Cut Visualization");
 
         // A counter for cuts ( - [number] + )
@@ -333,7 +339,7 @@ public class ParameterPanel extends JPanel {
         Config config = getConfig(a, 0.0, psi, splitSize, tsneComponents);
 
         view.performClustering(config);
-        view.drawTangleSearchTree(false);
+        view.drawTangleSearchTree();
 
         getAndSortCutsAndCosts();
         groundTruthCheckBox.setSelected(false);

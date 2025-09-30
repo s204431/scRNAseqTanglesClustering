@@ -120,8 +120,8 @@ public class MainWindow extends JFrame {
         scatterPanel.drawClusters(points, clustering);
     }
 
-    public void drawTangleSearchTree(TangleSearchTree tree) {
-        tangleTreePanel.drawTree(tree);
+    public void drawTangleSearchTree(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed) {
+        tangleTreePanel.drawTrees(originalTree, splitPruned, condensed);
     }
 
     public void turnOnCuts(int cutIndex) {
