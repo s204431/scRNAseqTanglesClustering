@@ -18,7 +18,7 @@ public class ParameterPanel extends JPanel {
     private final View view;
 
     // Constants
-    private static final String FONT_NAME = "Arial";
+    private static final String FONT_NAME = null;
     private static final int TITLE_TEXT_SIZE = 18;
     private static final int DEFAULT_TEXT_SIZE = 14;
     private static final Insets DEFAULT_INSETS = new Insets(0, 5, 5, 5);
@@ -51,7 +51,6 @@ public class ParameterPanel extends JPanel {
     private JTextField aField;
     private JTextField psiField;
     private JButton clusterButton;
-    private JCheckBox groundTruthCheckBox;
     private JButton pythonClusterButton;
 
     // Cut section components
@@ -170,12 +169,8 @@ public class ParameterPanel extends JPanel {
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster");
-            groundTruthCheckBox = new JCheckBox("<html>Show Ground<br>Truth</html>");
-            groundTruthCheckBox.setSelected(false);
-            addRow(groundTruthCheckBox, clusterButton);
-
-            pythonClusterButton = new JButton("Cluster using standard pipeline");
-            addFullWidth(pythonClusterButton);
+            pythonClusterButton = new JButton("<html>Cluster using<br>standard pipeline</html>");
+            addRow(clusterButton, pythonClusterButton);
         }
     }
 
@@ -226,18 +221,6 @@ public class ParameterPanel extends JPanel {
 
 
         // ==================== Check Box Logic ==================== //
-        if (dataPanel) {
-            groundTruthCheckBox.addItemListener(e -> {
-                boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-                if (isChecked) {
-                    view.showGroundTruth();
-                    turnOffCuts();
-                } else {
-                    view.showClustering();
-                }
-            });
-        }
-
         autoComputeACheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
             aField.setEditable(!isChecked);
@@ -254,7 +237,6 @@ public class ParameterPanel extends JPanel {
             showCutCheckBox.addItemListener(e -> {
                 boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
                 if (isChecked) {
-                    groundTruthCheckBox.setSelected(false);
                     if (sortedCuts == null || sortedCuts.length == 0) {
                         view.showClustering();
                         return;
@@ -293,8 +275,7 @@ public class ParameterPanel extends JPanel {
         Tuple<int[], Double> result = Main.runPython(view.getCurrentFilePath());
         if (result == null) return;
 
-        view.showClustering(result.x);
-        groundTruthCheckBox.setSelected(false);
+        view.showClustering(result.x, false);
         cutNumberField.setText("0");
         turnOffCuts();
     }
@@ -342,7 +323,6 @@ public class ParameterPanel extends JPanel {
         view.drawTangleSearchTree();
 
         getAndSortCutsAndCosts();
-        groundTruthCheckBox.setSelected(false);
         cutNumberField.setText("0");
         turnOffCuts();
     }

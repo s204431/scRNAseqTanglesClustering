@@ -10,8 +10,11 @@ import util.Config;
 import visualization.test.TestEditPanel;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.util.List;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 public class View {
     private Model model;
@@ -26,6 +29,19 @@ public class View {
 
     public View(Model model) {
         this.model = model;
+
+        FlatLightLaf.setup();
+        UIManager.put("defaultFont", new Font("Inter", Font.PLAIN, 13));
+        UIManager.put("Component.arc", 12);
+        UIManager.put("Button.arc", 14);
+        UIManager.put("TextComponent.arc", 12);
+
+        UIManager.put("TabbedPane.tabsPopupPolicy", "asNeeded");
+        UIManager.put("TabbedPane.showTabSeparators", true);
+        UIManager.put("TabbedPane.tabSeparatorsFullHeight", true);
+        UIManager.put("TabbedPane.tabAreaInsets", new Insets(5, 2, 5, 2));
+
+        System.setProperty("sun.java2d.uiScale.enabled", "true");
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
@@ -64,17 +80,21 @@ public class View {
         testThread.start();
     }
 
-    public void showClustering(int[] clustering) {
-        window.drawClusters(points, clustering);
+    public void showClustering() {
+        showClustering(model.getHardClustering());
     }
 
-    public void showClustering() {
-        window.drawClusters(points, model.getHardClustering());
+    public void showClustering(int[] clustering) {
+        showClustering(clustering, true);
+    }
+
+    public void showClustering(int[] clustering, boolean tangle) {
+        window.drawClusters(points, clustering, tangle);
         window.turnOffCuts();
     }
 
     public void showGroundTruth() {
-        showClustering(model.getGroundTruth());
+        window.drawGroundTruth(points, model.getGroundTruth());
     }
 
     public void showCut(BitSet cut, int cutIndex) {
@@ -126,9 +146,11 @@ public class View {
         points = Main.zScoreNorm(points);
 
         SwingUtilities.invokeLater(() -> {
+            window.removeScatterTabs();
             window.drawPoints(points);
             window.showInformation(model.getDataset());
             window.changeView(MainWindow.DATA_VIEW);
+            if (model.getGroundTruth() != null) showGroundTruth();
         });
     }
 

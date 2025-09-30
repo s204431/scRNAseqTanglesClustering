@@ -12,36 +12,47 @@ import visualization.View;
 import javax.swing.*;
 import java.awt.*;
 
-public class ScatterPlotPanel extends JPanel {
+public class ScatterPlotPanel extends JTabbedPane {
     private View view;
 
-    private static Color[] COLORS = {Color.RED, Color.BLUE, Color.GREEN, Color.ORANGE, Color.MAGENTA};
-
     private static final boolean SHOW_GRID = true;
+    private static final char MARK = 'o';
+
+    private int tangleCounter = 0;
 
     public ScatterPlotPanel(View view) {
         this.view = view;
-
-        setLayout(new BorderLayout());
-        setBackground(Color.LIGHT_GRAY);
+        setBackground(new Color(230, 230, 230));
+        setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
     }
 
     public void drawScatterPlot(double[][] points) {
-        removeAll();
-        ScatterPlot plot = ScatterPlot.of(points, 'o');
+        ScatterPlot plot = ScatterPlot.of(points, MARK);
         Figure figure = plot.figure();
 
-        figure.setAxisLabels("", "");
+        figure.setAxisLabels("t-SNE1", "t-SNE2");
         figure.getAxis(0).setGridVisible(SHOW_GRID);
         figure.getAxis(1).setGridVisible(SHOW_GRID);
 
         Canvas canvas = new Canvas(figure);
-        add(canvas, BorderLayout.CENTER);
-        revalidate();
-        repaint();
+        add("Points", canvas);
+        setSelectedIndex(getTabCount() - 1);
     }
 
-    public void drawClusters(double[][] points, int[] clusters) {
+    public void drawGroundTruth(double[][] points, int[] groundTruth) {
+        drawClusters(points, groundTruth, "Ground Truth");
+        setSelectedIndex(0);
+    }
+
+    public void drawClusters(double[][] points, int[] clusters, boolean tangle) {
+        String title = "Scanpy";
+        if (tangle) {
+            title = "Tangle " + (++tangleCounter);
+        }
+        drawClusters(points, clusters, title);
+    }
+
+    public void drawClusters(double[][] points, int[] clusters, String title) {
         if (clusters == null || clusters.length != points.length) {
             drawScatterPlot(points);
             return;
@@ -60,18 +71,80 @@ public class ScatterPlotPanel extends JPanel {
                 new IntVector("cluster", clusters)
         );
 
-        removeAll();
-
-        ScatterPlot plot = ScatterPlot.of(data, "X", "Y", "cluster", 'o');
+        ScatterPlot plot = ScatterPlot.of(data, "X", "Y", "cluster", MARK);
         Figure fig = plot.figure();
 
-        fig.setAxisLabels("", "");
+        fig.setAxisLabels("t-SNE1", "t-SNE2");
         fig.getAxis(0).setGridVisible(SHOW_GRID);
         fig.getAxis(1).setGridVisible(SHOW_GRID);
 
         Canvas canvas = new Canvas(fig);
-        add(canvas, BorderLayout.CENTER);
-        revalidate();
-        repaint();
+
+        if (title.equals("Ground Truth")) add(title, canvas);
+        else addClosableTab(title, canvas);
+    }
+
+    public void removeAllTabs() {
+        while (getTabCount() > 0) {
+            remove(0);
+        }
+        tangleCounter = 0;
+    }
+
+    public void addClosableTab(String title, Component comp) {
+        super.addTab(title, comp);
+        int idx = getTabCount() - 1;
+        setTabComponentAt(idx, makeTabHeader(title));
+        setSelectedIndex(idx);
+    }
+
+    private Component makeTabHeader(String title) {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        p.setOpaque(false);
+
+        JLabel lbl = new JLabel(title);
+
+        JButton close = new JButton(new CrossIcon(10, 2f));
+        close.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+        close.setContentAreaFilled(false);
+        close.setFocusable(false);
+        close.setRolloverEnabled(true);
+        close.setToolTipText("Close");
+        close.addActionListener(e -> {
+            int i = indexOfTabComponent(p);
+            if (i != -1) removeTabAt(i);
+        });
+
+        p.add(lbl);
+        p.add(close);
+        return p;
+    }
+
+    private class CrossIcon implements Icon {
+        private final int size;
+        private final float stroke;
+        CrossIcon(int size, float stroke) { this.size = size; this.stroke = stroke; }
+
+        @Override public int getIconWidth()  { return size; }
+        @Override public int getIconHeight() { return size; }
+
+        @Override public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            boolean rollover = c instanceof AbstractButton && ((AbstractButton) c).getModel().isRollover();
+
+            // Change color when hovering
+            Color col = rollover ? new Color(200, 50, 50) : new Color(100, 115, 130);
+            g2.setColor(col);
+            g2.setStroke(new BasicStroke(stroke, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+            int pad = 2;
+            int w = size - pad * 2;
+            int x1 = x + pad, y1 = y + pad, x2 = x + pad + w, y2 = y + pad + w;
+            g2.drawLine(x1, y1, x2, y2);
+            g2.drawLine(x1, y2, x2, y1);
+            g2.dispose();
+        }
     }
 }

@@ -116,8 +116,12 @@ public class MainWindow extends JFrame {
         scatterPanel.drawScatterPlot(points);
     }
 
-    public void drawClusters(double[][] points, int[] clustering) {
-        scatterPanel.drawClusters(points, clustering);
+    public void drawClusters(double[][] points, int[] clustering, boolean tangle) {
+        scatterPanel.drawClusters(points, clustering, tangle);
+    }
+
+    public void drawGroundTruth(double[][] points, int[] groundTruth) {
+        scatterPanel.drawGroundTruth(points, groundTruth);
     }
 
     public void drawTangleSearchTree(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed) {
@@ -162,5 +166,9 @@ public class MainWindow extends JFrame {
 
     public void stopTesting() {
         testEditPanel.stopTimer();
+    }
+
+    public void removeScatterTabs() {
+        scatterPanel.removeAllTabs();
     }
 }
