@@ -10,8 +10,11 @@ input_str = sys.stdin.readline().strip()
 
 #adata = sc.read("data/Ear_TSP1_30_version2d_10X_smartseq_scvi_Nov122024.h5ad", index_col=0)
 
-df = pd.read_csv(input_str, index_col=0)
-adata = ad.AnnData(df)
+if input_str.endswith(".h5ad"):
+    adata = sc.read(input_str, index_col=0)
+else:
+    df = pd.read_csv(input_str, index_col=0)
+    adata = ad.AnnData(df)
 
 start_time = time.time()
 
