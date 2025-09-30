@@ -54,10 +54,10 @@ public class ParameterPanel extends JPanel {
     private JButton pythonClusterButton;
 
     // Cut section components
-    private JCheckBox showCutCheckBox;
     private JTextField cutNumberField;
     private JButton minusButton;
     private JButton plusButton;
+    private JButton cutButton;
 
     // Test section components
     private JTextField runNumberField;
@@ -168,8 +168,8 @@ public class ParameterPanel extends JPanel {
         addRow(psiComponent, autoComputePsiCheckBox);
 
         if (dataPanel) {
-            clusterButton = new JButton("Cluster");
-            pythonClusterButton = new JButton("<html>Cluster using<br>standard pipeline</html>");
+            clusterButton = new JButton("Cluster Tangles");
+            pythonClusterButton = new JButton("Cluster Scanpy");
             addRow(clusterButton, pythonClusterButton);
         }
     }
@@ -190,10 +190,8 @@ public class ParameterPanel extends JPanel {
         counterPanel.add(cutNumberField);
         counterPanel.add(plusButton);
 
-        showCutCheckBox = new JCheckBox("Show cuts");
-        showCutCheckBox.setSelected(false);
-
-        addRow(showCutCheckBox, counterPanel);
+        cutButton = new JButton("Show Cut");
+        addRow(counterPanel, cutButton);
     }
 
     private void buildTestSection() {
@@ -214,6 +212,7 @@ public class ParameterPanel extends JPanel {
             clusterButton.addActionListener(this::clusterAction);
             plusButton.addActionListener(e -> stepCutCounter(1));
             minusButton.addActionListener(e -> stepCutCounter(-1));
+            cutButton.addActionListener(e -> readAndShowCut());
             pythonClusterButton.addActionListener(this::pythonClusterAction);
         } else {
             testButton.addActionListener(this::testAction);
@@ -233,41 +232,30 @@ public class ParameterPanel extends JPanel {
             psiField.setEnabled(!isChecked);
         });
 
-        if (dataPanel) {
-            showCutCheckBox.addItemListener(e -> {
-                boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-                if (isChecked) {
-                    if (sortedCuts == null || sortedCuts.length == 0) {
-                        view.showClustering();
-                        return;
-                    }
-                    showCut(restrictCutIndex(parseCutNumberField()));
-                } else {
-                    view.showClustering();
-                }
-            });
-        }
-
 
 
         // ==================== Text Field Logic ==================== //
         if (dataPanel) {
             cutNumberField.addActionListener(e -> {
-                if (showCutCheckBox.isSelected()) {
-                    try {
-                        int value = Integer.parseInt(cutNumberField.getText());
-                        if (value >= sortedCuts.length) {
-                            value = sortedCuts.length - 1;
-                            cutNumberField.setText(String.valueOf(value));
-                        }
-                        int cutIndex = restrictCutIndex(parseCutNumberField());
-                        showCut(cutIndex);
-                        System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
-                    } catch (NumberFormatException ex) {
-                        cutNumberField.setText("0");
-                    }
-                }
+                readAndShowCut();
             });
+        }
+    }
+
+    private void readAndShowCut() {
+        if (sortedCuts == null || sortedCuts.length == 0) return;
+
+        try {
+            int value = Integer.parseInt(cutNumberField.getText());
+            if (value >= sortedCuts.length) {
+                value = sortedCuts.length - 1;
+                cutNumberField.setText(String.valueOf(value));
+            }
+            int cutIndex = restrictCutIndex(parseCutNumberField());
+            showCut(cutIndex);
+            //System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
+        } catch (NumberFormatException ex) {
+            cutNumberField.setText("0");
         }
     }
 
@@ -277,7 +265,6 @@ public class ParameterPanel extends JPanel {
 
         view.showClustering(result.x, false);
         cutNumberField.setText("0");
-        turnOffCuts();
     }
 
     private void clusterAction(ActionEvent e) {
@@ -324,7 +311,6 @@ public class ParameterPanel extends JPanel {
 
         getAndSortCutsAndCosts();
         cutNumberField.setText("0");
-        turnOffCuts();
     }
 
     private Config getConfig(int a, double aFactor, double psi, int splitSize, int tsneComponents) {
@@ -394,7 +380,7 @@ public class ParameterPanel extends JPanel {
     }
 
     private void stepCutCounter(int step) {
-        if (!showCutCheckBox.isSelected() || sortedCuts == null || sortedCuts.length == 0) {
+        if (sortedCuts == null || sortedCuts.length == 0) {
             return;
         }
         int cutIndex = parseCutNumberField() + step;
@@ -462,19 +448,12 @@ public class ParameterPanel extends JPanel {
     }
 
     // ================= TOGGLES =================
-
     public void turnOnCuts(int cutIndex) {
         cutIndex = restrictCutIndex(cutIndex);
         cutNumberField.setText(Integer.toString(Math.min(cutIndex, sortedCuts.length - 1)));
-        showCutCheckBox.setSelected(true);
-    }
-
-    public void turnOffCuts() {
-        showCutCheckBox.setSelected(false);
     }
 
     // ================= LAYOUT HELPERS =================
-
     private void addTitle(String text) {
         JLabel title = new JLabel(text);
         title.setFont(new Font(FONT_NAME, Font.BOLD, TITLE_TEXT_SIZE));

@@ -132,10 +132,6 @@ public class MainWindow extends JFrame {
         dataParameterPanel.turnOnCuts(cutIndex);
     }
 
-    public void turnOffCuts() {
-        dataParameterPanel.turnOffCuts();
-    }
-
     public void showTestSet(List<File> selectedDirs) {
         testEditPanel.loadTestSet(selectedDirs);
     }
@@ -170,5 +166,13 @@ public class MainWindow extends JFrame {
 
     public void removeScatterTabs() {
         scatterPanel.removeAllTabs();
+    }
+
+    public void initializeScatterPlotPanel(double[][] points, int[] groundTruth) {
+        scatterPanel.initialize(points, groundTruth);
+    }
+
+    public void showCut(double[][] points, int[] clustering) {
+        scatterPanel.drawCut(points, clustering);
     }
 }

@@ -1,7 +1,6 @@
 package visualization;
 
 import clustering.Model;
-import clustering.TangleSearchTree;
 import datasets.ScRNAseqDataset;
 import main.Main;
 import util.Monitor;
@@ -90,7 +89,6 @@ public class View {
 
     public void showClustering(int[] clustering, boolean tangle) {
         window.drawClusters(points, clustering, tangle);
-        window.turnOffCuts();
     }
 
     public void showGroundTruth() {
@@ -105,7 +103,7 @@ public class View {
             }
         }
         window.turnOnCuts(cutIndex);
-        showClustering(clustering);
+        window.showCut(points, clustering);
     }
 
     public BitSet[] getCuts() {
@@ -147,10 +145,9 @@ public class View {
 
         SwingUtilities.invokeLater(() -> {
             window.removeScatterTabs();
-            window.drawPoints(points);
+            window.initializeScatterPlotPanel(points, model.getGroundTruth());
             window.showInformation(model.getDataset());
             window.changeView(MainWindow.DATA_VIEW);
-            if (model.getGroundTruth() != null) showGroundTruth();
         });
     }
 

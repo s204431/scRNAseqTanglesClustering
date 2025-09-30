@@ -15,6 +15,10 @@ import java.awt.*;
 public class ScatterPlotPanel extends JTabbedPane {
     private View view;
 
+    private static final int POINTS_IDX = 0;
+    private static final int GROUND_TRUTH_IDX = 1;
+    private static final int CUT_IDX = 2;
+
     private static final boolean SHOW_GRID = true;
     private static final char MARK = 'o';
 
@@ -24,6 +28,12 @@ public class ScatterPlotPanel extends JTabbedPane {
         this.view = view;
         setBackground(new Color(230, 230, 230));
         setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+    }
+
+    public void initialize(double[][] points, int[] groundTruth) {
+        drawScatterPlot(points);
+        if (groundTruth != null) drawGroundTruth(points, groundTruth);
+        setSelectedIndex(0);
     }
 
     public void drawScatterPlot(double[][] points) {
@@ -39,9 +49,12 @@ public class ScatterPlotPanel extends JTabbedPane {
         setSelectedIndex(getTabCount() - 1);
     }
 
+    public void drawCut(double[][] points, int[] clustering) {
+        drawClusters(points, clustering, "Cut");
+    }
+
     public void drawGroundTruth(double[][] points, int[] groundTruth) {
         drawClusters(points, groundTruth, "Ground Truth");
-        setSelectedIndex(0);
     }
 
     public void drawClusters(double[][] points, int[] clusters, boolean tangle) {
@@ -80,8 +93,32 @@ public class ScatterPlotPanel extends JTabbedPane {
 
         Canvas canvas = new Canvas(fig);
 
-        if (title.equals("Ground Truth")) add(title, canvas);
-        else addClosableTab(title, canvas);
+        if (title.equals("Ground Truth")) {
+            int i = indexOfTab(title);
+            if (i >= 0) {
+                setComponentAt(i, canvas);
+                setSelectedIndex(i);
+            } else {
+                insertTab(title, null, canvas, null, GROUND_TRUTH_IDX);
+                setSelectedIndex(GROUND_TRUTH_IDX);
+            }
+        }
+
+        else if (title.equals("Cut")) {
+            int i = indexOfTab(title);
+            if (i >= 0) {
+                setComponentAt(i, canvas);
+                setSelectedIndex(i);
+            } else {
+                int newI = getComponentAt(GROUND_TRUTH_IDX).toString().equals("Ground Truth") ? GROUND_TRUTH_IDX : CUT_IDX;
+                insertTab(title, null, canvas, null, newI);
+                setTabComponentAt(newI, makeTabHeader(title));
+                setSelectedIndex(newI);
+            }
+
+        } else {
+            addClosableTab(title, canvas);
+        }
     }
 
     public void removeAllTabs() {
