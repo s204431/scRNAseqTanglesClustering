@@ -63,6 +63,9 @@ public class TangleClusterer {
         monitor.setUncondensedTree(tree.copy());
         if (autoLimitSplitCosts) {
             tree.limitSplitCosts(tree.root, calculateMaxSplitCost());
+            monitor.setSplitPrunedTree(tree.copy());
+        } else {
+            monitor.setSplitPrunedTree(null);
         }
         try {
             tree.condenseTree(autoLimitSplitCosts ? 0 : 1);

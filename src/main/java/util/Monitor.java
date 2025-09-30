@@ -9,6 +9,7 @@ public class Monitor {
     private String filePath;
     private ScRNAseqDataset dataset;
     private TangleSearchTree uncondensedTree;
+    private TangleSearchTree splitPrunedTree;
     private TangleSearchTree condensedTree;
     private List<double[]> branchCosts;
 
@@ -18,6 +19,10 @@ public class Monitor {
 
     public void setUncondensedTree(TangleSearchTree tree) {
         this.uncondensedTree = tree;
+    }
+
+    public void setSplitPrunedTree(TangleSearchTree splitPrunedTree) {
+        this.splitPrunedTree = splitPrunedTree;
     }
 
     public void setCondensedTree(TangleSearchTree condensedTree) {
@@ -34,6 +39,10 @@ public class Monitor {
 
     public TangleSearchTree getUncondensedTree() {
         return uncondensedTree;
+    }
+
+    public TangleSearchTree getSplitPrunedTree() {
+        return splitPrunedTree;
     }
 
     public TangleSearchTree getCondensedTree() {

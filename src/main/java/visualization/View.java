@@ -97,7 +97,7 @@ public class View {
     }
 
     public void drawTangleSearchTree() {
-        window.drawTangleSearchTree(monitor.getUncondensedTree(), null, monitor.getCondensedTree());
+        window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree());
     }
 
     public void loadDataset(String filePath, int hvg) {

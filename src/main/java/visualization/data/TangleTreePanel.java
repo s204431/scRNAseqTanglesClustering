@@ -67,16 +67,17 @@ public class TangleTreePanel extends JPanel {
 
         if (originalTree != null) {
             drawTree(originalTree, treePanelOriginal);
-            treeTabs.add("Original Tree", treePanelOriginal);
+            treeTabs.add("Original", treePanelOriginal);
         }
 
         if (splitPruned != null) {
             drawTree(splitPruned, treePanelSplitPruned);
-            treeTabs.add("Split Pruned Tree", treePanelSplitPruned);
+            treeTabs.add("Split Pruned", treePanelSplitPruned);
         }
+
         if (condensed != null) {
             drawTree(condensed, treePanelCondensed);
-            treeTabs.add("Condensed Tree", treePanelCondensed);
+            treeTabs.add("Condensed", treePanelCondensed);
         }
 
         revalidate();
