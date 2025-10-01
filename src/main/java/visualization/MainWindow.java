@@ -157,7 +157,7 @@ public class MainWindow extends JFrame {
     }
 
     public void visualizeTestResults(int i, int j, boolean isTangle) {
-        testGraphPanel.drawHistogram(i, j);
+        testGraphPanel.drawPlots(i, j);
         testResultPanel.drawResultsTable(i, j, isTangle);
     }
 

@@ -12,36 +12,103 @@ public class TestGraphPanel extends JPanel {
 
     private TestEditPanel.TestProgressManager testProgressManager;
 
+    private final JComboBox<String> plotStyleComboBox = new JComboBox<>(new String[] {"Bar Plot", "Line Plot"});
+    private final JCheckBox showTimeCheckBox = new JCheckBox("Show time plot", false);
+
+    private final JPanel componentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 1));
+    private final JPanel plotPanel = new JPanel(new GridLayout(2, 1, 5, 5));
+
+    private int lastLow = 0;
+    private int lastHigh = 0;
+
     public TestGraphPanel(View view, TestEditPanel.TestProgressManager testProgressManager) {
         this.view = view;
         this.testProgressManager = testProgressManager;
 
-        setLayout(new GridLayout(3, 1, 5, 5));
-        drawEmptyHistogram();
+        setLayout(new BorderLayout(5, 5));
+
+        componentPanel.add(plotStyleComboBox);
+        componentPanel.add(showTimeCheckBox);
+
+        add(componentPanel, BorderLayout.NORTH);
+        add(plotPanel, BorderLayout.CENTER);
+
+        addActions();
+
+        drawEmptyPlots();
     }
 
-    public void drawHistogram(int low, int high) {
+    private void addActions() {
+        plotStyleComboBox.addActionListener(e -> {
+            drawPlots(lastLow, lastHigh);
+        });
+
+        showTimeCheckBox.addActionListener(e -> {
+            drawPlots(lastLow, lastHigh);
+        });
+    }
+
+    public void drawPlots(int low, int high) {
+        lastLow = low;
+        lastHigh = high;
+
+        int rows = showTimeCheckBox.isSelected() ? 3 : 2;
+        plotPanel.setLayout(new GridLayout(rows, 1, 5, 5));
+
         int n = high - low + 1;
 
-        double[][] nmiScores = new double[2][n];
-        double[][] randIdxScores = new double[2][n];
-        double[][] times = new double[2][n];
+        double[][] barPlotNmiScores = new double[2][n];
+        double[][] barPlotRandIdxScores = new double[2][n];
+        double[][] barPlotTimes = new double[2][n];
+        double[][][] linePlotNmiScores = new double[2][n][2];
+        double[][][] linePlotRandScores = new double[2][n][2];
+        double[][][] linePlotTimeScores = new double[2][n][2];
         for (int i = 0; i < n; i++) {
             int idx = low + i;
-            nmiScores[0][i] = testProgressManager.getNMI(idx, true);
-            nmiScores[1][i] = testProgressManager.getNMI(idx, false);
-            randIdxScores[0][i] = testProgressManager.getRandIdx(idx, true);
-            randIdxScores[1][i] = testProgressManager.getRandIdx(idx, false);
-            times[0][i] = testProgressManager.getTime(idx, true);
-            times[1][i] = testProgressManager.getTime(idx, false);
+
+            for (int j = 0; j < 2; j++) {
+                boolean tangle = j == 0;
+                barPlotNmiScores[j][i] = testProgressManager.getNMI(idx, tangle);
+                barPlotRandIdxScores[j][i] = testProgressManager.getRandIdx(idx, tangle);
+                barPlotTimes[j][i] = testProgressManager.getTime(idx, tangle);
+
+                linePlotNmiScores[j][i][0] = i + 1;
+                linePlotRandScores[j][i][0] = i + 1;
+                linePlotTimeScores[j][i][0] = i + 1;
+                linePlotNmiScores[j][i][1] = testProgressManager.getNMI(idx, tangle);
+                linePlotRandScores[j][i][1] = testProgressManager.getRandIdx(idx, tangle);
+                linePlotTimeScores[j][i][1] = testProgressManager.getTime(idx, tangle);
+            }
         }
 
-        removeAll();
+        Line[] nmiLines = new Line[2];
+        Line[] randLines = new Line[2];
+        Line[] timeLines = new Line[2];
+        for (int i = 0; i < 2; i++) {
+            boolean tangles = i == 0;
+            Line.Style style = Line.Style.SOLID;
+            char mark = linePlotTimeScores[i][0][1] == 0 ? ' ' : '@';
+            Color color = i == 0 ? Color.RED : Color.BLUE;
+
+            nmiLines[i] = new Line(linePlotNmiScores[i], style, mark, color);
+            randLines[i] = new Line(linePlotRandScores[i], style, mark, color);
+            timeLines[i] = new Line(linePlotTimeScores[i], style, mark, color);
+        }
+
+        String plotStyle = (String) plotStyleComboBox.getSelectedItem();
+        boolean barPlotStyle = plotStyle != null && plotStyle.equals("Bar Plot");
 
         String[] l = new String[]{"Tangle", "Python"};
-        BarPlot nmiPlot = BarPlot.of(nmiScores, l);
-        BarPlot randIdxPlot = BarPlot.of(randIdxScores, l);
-        BarPlot timePlot = BarPlot.of(times, l);
+        Legend[] legends = new Legend[] { new Legend(l[0], Color.RED), new Legend(l[1], Color.BLUE) };
+        Plot nmiPlot = barPlotStyle ?
+                BarPlot.of(barPlotNmiScores, l) :
+                new LinePlot(nmiLines, legends);
+        Plot randIdxPlot = barPlotStyle ?
+                BarPlot.of(barPlotRandIdxScores, l) :
+                new LinePlot(randLines, legends);
+        Plot timePlot = barPlotStyle ?
+                BarPlot.of(barPlotTimes, l) :
+                new LinePlot(timeLines, legends);
 
         Figure nmiFig = nmiPlot.figure();
         Figure randFig = randIdxPlot.figure();
@@ -57,8 +124,8 @@ public class TestGraphPanel extends JPanel {
 
         double maxTime = 0;
         for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < times[i].length; j++) {
-                maxTime = Math.max(maxTime, times[i][j]);
+            for (int j = 0; j < barPlotTimes[i].length; j++) {
+                maxTime = Math.max(maxTime, barPlotTimes[i][j]);
             }
         }
 
@@ -70,39 +137,48 @@ public class TestGraphPanel extends JPanel {
         randFig.setAxisLabels("Test", "Rand Index Score");
         timeFig.setAxisLabels("Test", "Time (seconds)");
 
-        if (n <= 1) {
-            String[] labels = new String[]{"1", ""};
-            double[] locations = new double[]{0.375, 1.375};
-            nmiFig.getAxis(0).setTicks(labels, locations);
-            randFig.getAxis(0).setTicks(labels, locations);
-            timeFig.getAxis(0).setTicks(labels, locations);
+        nmiFig.getAxis(0).setGridVisible(false);
+        randFig.getAxis(0).setGridVisible(false);
+        timeFig.getAxis(0).setGridVisible(false);
 
-        } else {
-            String[] labels = new String[n];
-            double[] locations = new double[n];
-            for (int i = 0; i < n; i++) {
-                labels[i] = "" + (i+1);
-                locations[i] = (double) i + 0.375;  // Center between the two bars
+        if (barPlotStyle) {
+            if (n <= 1) {
+                String[] labels = new String[]{"1", ""};
+                double[] locations = new double[]{0.375, 1.375};
+                nmiFig.getAxis(0).setTicks(labels, locations);
+                randFig.getAxis(0).setTicks(labels, locations);
+                timeFig.getAxis(0).setTicks(labels, locations);
+
+            } else {
+                String[] labels = new String[n];
+                double[] locations = new double[n];
+                for (int i = 0; i < n; i++) {
+                    labels[i] = "" + (i + 1);
+                    locations[i] = (double) i + 0.375;  // Center between the two bars
+                }
+                nmiFig.getAxis(0).setTicks(labels, locations);
+                randFig.getAxis(0).setTicks(labels, locations);
+                timeFig.getAxis(0).setTicks(labels, locations);
             }
-            nmiFig.getAxis(0).setTicks(labels, locations);
-            randFig.getAxis(0).setTicks(labels, locations);
-            timeFig.getAxis(0).setTicks(labels, locations);
         }
 
         Canvas nmiCanvas = new Canvas(nmiFig);
         Canvas randCanvas = new Canvas(randFig);
         Canvas timeCanvas = new Canvas(timeFig);
 
-        add(nmiCanvas);
-        add(randCanvas);
-        add(timeCanvas);
+        plotPanel.removeAll();
 
-        revalidate();
-        repaint();
+        plotPanel.add(nmiCanvas);
+        plotPanel.add(randCanvas);
+        if (showTimeCheckBox.isSelected()) plotPanel.add(timeCanvas);
+
+        plotPanel.revalidate();
+        plotPanel.repaint();
     }
 
-    public void drawEmptyHistogram() {
-        removeAll();
+    public void drawEmptyPlots() {
+        int rows = showTimeCheckBox.isSelected() ? 3 : 2;
+        plotPanel.setLayout(new GridLayout(rows, 1, 5, 5));
 
         BarPlot nmiPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
         BarPlot randPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
@@ -125,17 +201,17 @@ public class TestGraphPanel extends JPanel {
         timeFig.setAxisLabels("Test", "Time (seconds)");
         timeFig.getAxis(0).setTicks(new String[]{"", ""}, new double[]{0.375, 1.375});
 
-
         Canvas nmiCanvas = new Canvas(nmiFig);
-        add(nmiCanvas);
-
         Canvas randCanvas = new Canvas(randFig);
-        add(randCanvas);
-
         Canvas timeCanvas = new Canvas(timeFig);
-        add(timeCanvas);
 
-        revalidate();
-        repaint();
+        plotPanel.removeAll();
+
+        plotPanel.add(nmiCanvas);
+        plotPanel.add(randCanvas);
+        if (showTimeCheckBox.isSelected()) plotPanel.add(timeCanvas);
+
+        plotPanel.revalidate();
+        plotPanel.repaint();
     }
 }

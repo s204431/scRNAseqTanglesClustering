@@ -68,7 +68,9 @@ public class ScatterPlotPanel extends JTabbedPane {
                     JMenuItem saveHardClustering = new JMenuItem("Save hard clustering...");
                     saveHardClustering.addActionListener(ee -> saveHardClusteringAsCsv(clusters));
                     menu.add(saveHardClustering);
+                }
 
+                if (!title.equals(POINTS_TITLE) && !title.equals(GROUND_TRUTH_TITLE)) {
                     JMenuItem saveSoftClustering = new JMenuItem("Save soft clustering...");
                     saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv());
                     menu.add(saveSoftClustering);
