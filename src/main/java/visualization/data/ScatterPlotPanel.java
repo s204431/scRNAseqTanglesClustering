@@ -12,9 +12,16 @@ import visualization.View;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ScatterPlotPanel extends JTabbedPane {
     private View view;
+
+    private static final String POINTS_TITLE = "Points";
+    private static final String GROUND_TRUTH_TITLE = "Ground Truth";
+    private static final String CUT_TITLE = "Cut";
 
     private static final int POINTS_IDX = 0;
     private static final int GROUND_TRUTH_IDX = 1;
@@ -23,18 +30,86 @@ public class ScatterPlotPanel extends JTabbedPane {
     private static final boolean SHOW_GRID = true;
     private static final char MARK = 'o';
 
+    private int attachmentIndex = 0;
     private int tangleCounter = 0;
 
     public ScatterPlotPanel(View view) {
         this.view = view;
         setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);    // Should differ only a little from white
         setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        addSaveActions();
     }
 
     public void initialize(double[][] points, int[] groundTruth) {
         drawScatterPlot(points);
         if (groundTruth != null) drawGroundTruth(points, groundTruth);
         setSelectedIndex(0);
+    }
+
+    private void addSaveActions() {
+        addMouseListener(new MouseAdapter() {
+            private void maybeShowMenu(MouseEvent e) {
+                if (!e.isPopupTrigger()) return;
+                int idx = indexAtLocation(e.getX(), e.getY());
+                if (idx < 0) return;
+                setSelectedIndex(idx);
+
+                Canvas c = (Canvas) getComponentAt(idx);
+                String title = (String) c.getClientProperty("title");
+                int[] clusters = (int[]) c.getClientProperty("clusters");
+
+                JPopupMenu menu = new JPopupMenu();
+
+                JMenuItem savePlotPng = new JMenuItem("Export to PNG...");
+                savePlotPng.addActionListener(ee -> exportTabAsPNG(c, title));
+                menu.add(savePlotPng);
+
+                if (!title.equals(POINTS_TITLE)) {
+                    JMenuItem saveHardClustering = new JMenuItem("Save hard clustering...");
+                    saveHardClustering.addActionListener(ee -> saveHardClusteringAsCsv(clusters));
+                    menu.add(saveHardClustering);
+
+                    JMenuItem saveSoftClustering = new JMenuItem("Save soft clustering...");
+                    saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv());
+                    menu.add(saveSoftClustering);
+                }
+
+                menu.show(e.getComponent(), e.getX(), e.getY());
+            }
+
+            @Override public void mousePressed(MouseEvent e)  { maybeShowMenu(e); }
+            @Override public void mouseReleased(MouseEvent e) { maybeShowMenu(e); }
+        });
+    }
+
+    private void exportTabAsPNG(Canvas canvas, String title) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Export plot as PNG");
+        chooser.setSelectedFile(new java.io.File(title + ".png"));
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PNG files", "png"));
+
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        java.io.File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".png")) {
+            file = new java.io.File(file.getParentFile(), file.getName() + ".png");
+        }
+
+        try {
+            // This is the in-built smile save function
+            canvas.save(file);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to save PNG:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void saveHardClusteringAsCsv(int[] clusters) {
+
+    }
+
+    private void saveSoftClusteringAsCsv() {
+
     }
 
     public void drawScatterPlot(double[][] points) {
@@ -46,16 +121,18 @@ public class ScatterPlotPanel extends JTabbedPane {
         figure.getAxis(1).setGridVisible(SHOW_GRID);
 
         Canvas canvas = new Canvas(figure);
-        add("Points", canvas);
+        attachTabData(canvas, POINTS_TITLE, null);
+
+        add(POINTS_TITLE, canvas);
         setSelectedIndex(getTabCount() - 1);
     }
 
     public void drawCut(double[][] points, int[] clustering) {
-        drawClusters(points, clustering, "Cut");
+        drawClusters(points, clustering, CUT_TITLE);
     }
 
     public void drawGroundTruth(double[][] points, int[] groundTruth) {
-        drawClusters(points, groundTruth, "Ground Truth");
+        drawClusters(points, groundTruth, GROUND_TRUTH_TITLE);
     }
 
     public void drawClusters(double[][] points, int[] clusters, boolean tangle) {
@@ -93,8 +170,9 @@ public class ScatterPlotPanel extends JTabbedPane {
         fig.getAxis(1).setGridVisible(SHOW_GRID);
 
         Canvas canvas = new Canvas(fig);
+        attachTabData(canvas, title, clusters);
 
-        if (title.equals("Ground Truth")) {
+        if (title.equals(GROUND_TRUTH_TITLE)) {
             int i = indexOfTab(title);
             if (i >= 0) {
                 setComponentAt(i, canvas);
@@ -105,13 +183,13 @@ public class ScatterPlotPanel extends JTabbedPane {
             }
         }
 
-        else if (title.equals("Cut")) {
+        else if (title.equals(CUT_TITLE)) {
             int i = indexOfTab(title);
             if (i >= 0) {
                 setComponentAt(i, canvas);
                 setSelectedIndex(i);
             } else {
-                int newI = getComponentAt(GROUND_TRUTH_IDX).toString().equals("Ground Truth") ? GROUND_TRUTH_IDX : CUT_IDX;
+                int newI = getComponentAt(GROUND_TRUTH_IDX).toString().equals(GROUND_TRUTH_TITLE) ? GROUND_TRUTH_IDX : CUT_IDX;
                 insertTab(title, null, canvas, null, newI);
                 setTabComponentAt(newI, makeTabHeader(title));
                 setSelectedIndex(newI);
@@ -127,6 +205,12 @@ public class ScatterPlotPanel extends JTabbedPane {
             remove(0);
         }
         tangleCounter = 0;
+    }
+
+    private void attachTabData(Canvas canvas, String title, int[] clusters) {
+        canvas.putClientProperty("title", title);
+        canvas.putClientProperty("index", attachmentIndex++);
+        canvas.putClientProperty("clusters", clusters);
     }
 
     public void addClosableTab(String title, Component comp) {
