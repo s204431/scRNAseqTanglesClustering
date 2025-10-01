@@ -62,7 +62,6 @@ public class TestEditPanel extends JPanel {
 
     public TestEditPanel(View view) {
         this.view = view;
-        setBackground(new Color(230, 230, 230));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         table.setFillsViewportHeight(false);

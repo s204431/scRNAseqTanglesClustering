@@ -4,6 +4,7 @@ import visualization.View;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -20,11 +21,39 @@ public class TestResultPanel extends JPanel {
         this.testProgressManager = testProgressManager;
         setLayout(new BorderLayout());
 
-        //table.setFillsViewportHeight(true);
         table.setRowSelectionAllowed(false);
+        addTableCellRenderer();
+
         add(new JScrollPane(table), BorderLayout.CENTER);
         setBorder(BorderFactory.createTitledBorder("Test Results"));
-        resizeViewportToRows(3);
+        resizeViewportToRows(4);
+    }
+
+    private void addTableCellRenderer() {
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table,
+                                                           Object value,
+                                                           boolean isSelected,
+                                                           boolean hasFocus,
+                                                           int row,
+                                                           int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+
+                ((JComponent) c).setBorder(null);
+
+                String desc = (String) table.getModel().getValueAt(row, 0);
+                if (desc != null && (desc.startsWith("Test") || desc.startsWith("Averages"))) {
+
+                    // Seperate each test block
+                    ((JComponent) c).setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.GRAY));
+                    c.setFont(c.getFont().deriveFont(Font.BOLD));
+                }
+
+                return c;
+            }
+        });
     }
 
     public void drawResultsTable(int low, int high, boolean isTangle) {
@@ -66,16 +95,16 @@ public class TestResultPanel extends JPanel {
         pythonAvgNmi /= isTangle ? n-1 : n;
         tangleAvgRandIdx /= n;
         pythonAvgRandIdx /= isTangle ? n-1 : n;
-        resultsTable.setRowValues(0, tangleAvgTime, pythonAvgTime);
-        resultsTable.setRowValues(1, tangleAvgNmi, pythonAvgNmi);
-        resultsTable.setRowValues(2, tangleAvgRandIdx, pythonAvgRandIdx);
+        resultsTable.setRowValues(1, tangleAvgTime, pythonAvgTime);
+        resultsTable.setRowValues(2, tangleAvgNmi, pythonAvgNmi);
+        resultsTable.setRowValues(3, tangleAvgRandIdx, pythonAvgRandIdx);
     }
 
     public void initializeResultsTable() {
         int size = testProgressManager.getSize();
         resultsTable = new ResultsTable(size);
         table.setModel(resultsTable);
-        resizeViewportToRows(size*4 + 3);
+        resizeViewportToRows(size*4 + 4);
     }
 
     private void resizeViewportToRows(int maxRows) {
@@ -89,7 +118,7 @@ public class TestResultPanel extends JPanel {
     private class ResultsTable extends AbstractTableModel {
         private static final String[] COLUMN_NAMES = { "", "Tangle", "Python" };
 
-        public static final int HEADER_ROWS = 3;
+        public static final int HEADER_ROWS = 4;
         public static final int ROW_OFFSET = 4;
         private static final int ROW_TEST = 0;
         private static final int ROW_TIME = 1;
@@ -112,6 +141,7 @@ public class TestResultPanel extends JPanel {
         private DecimalFormat df = new DecimalFormat("0.###");
 
         public ResultsTable(int size) {
+            createEmptyRow("Averages");
             createEmptyRow("Avg Time");
             createEmptyRow("Avg NMI");
             createEmptyRow("Avg Rand Idx");
@@ -167,8 +197,8 @@ public class TestResultPanel extends JPanel {
 
             switch (columnIndex) {
                 case 0: return row.description;
-                case 1: if (isTestRow(rowIndex)) return ""; else return format(row.tangleVal);
-                case 2: if (isTestRow(rowIndex)) return ""; else return format(row.pythonVal);
+                case 1: if (isFillerRow(rowIndex)) return ""; else return format(row.tangleVal);
+                case 2: if (isFillerRow(rowIndex)) return ""; else return format(row.pythonVal);
                 default: return "";
             }
         }
@@ -177,8 +207,9 @@ public class TestResultPanel extends JPanel {
             return (val == null || val == 0) ? "-" : df.format(val);
         }
 
-        private boolean isTestRow(int rowIndex) {
-            return rows.get(rowIndex).description.contains("Test");
+        private boolean isFillerRow(int rowIndex) {
+            Row r = rows.get(rowIndex);
+            return r.description.contains("Test") || r.description.contains("Averages");
         }
     }
 }
