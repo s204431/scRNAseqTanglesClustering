@@ -6,6 +6,7 @@ import smile.data.vector.IntVector;
 import smile.plot.swing.Canvas;
 import smile.plot.swing.Figure;
 import smile.plot.swing.ScatterPlot;
+import util.GlobalConstants;
 import visualization.View;
 
 
@@ -26,7 +27,7 @@ public class ScatterPlotPanel extends JTabbedPane {
 
     public ScatterPlotPanel(View view) {
         this.view = view;
-        setBackground(new Color(230, 230, 230));
+        setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);    // Should differ only a little from white
         setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
     }
 

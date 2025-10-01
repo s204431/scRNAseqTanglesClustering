@@ -1,12 +1,12 @@
 package visualization;
 
+import util.GlobalConstants;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.NumberFormatter;
 import java.io.IOException;
-import java.text.FieldPosition;
 import java.text.NumberFormat;
-import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.*;
@@ -22,7 +22,7 @@ public class TopPanel extends JPanel {
 
     public TopPanel(View view) {
         this.view = view;
-
+        setBackground(new Color(220, 230, 245));
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
         JButton openButton = new JButton("Open Data Set");

@@ -69,7 +69,7 @@ public class ParameterPanel extends JPanel {
     public ParameterPanel(View view, boolean dataPanel) {
         this.view = view;
         this.dataPanel = dataPanel;
-
+        //setBackground(Color.WHITE);
         setLayout(new GridBagLayout());
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = DEFAULT_INSETS;
@@ -152,7 +152,7 @@ public class ParameterPanel extends JPanel {
             //aFieldText += "(0-1) ";
         }
         autoComputeACheckBox = new JCheckBox("<html>Automatically<br> Compute a</html>");
-        autoComputeACheckBox.setSelected(false);
+        autoComputeACheckBox.setSelected(true);
         JPanel aComponent = new JPanel(new BorderLayout());
         aComponent.add(new JLabel(aFieldText), BorderLayout.WEST);
         aComponent.add(aField, BorderLayout.EAST);
@@ -161,7 +161,7 @@ public class ParameterPanel extends JPanel {
         psiField = new JTextField(6);
         psiField.setText("0");
         autoComputePsiCheckBox = new JCheckBox("<html>Automatically<br> Compute ψ</html>");
-        autoComputePsiCheckBox.setSelected(false);
+        autoComputePsiCheckBox.setSelected(true);
         JPanel psiComponent = new JPanel(new BorderLayout());
         psiComponent.add(new JLabel(" ψ "), BorderLayout.WEST);
         psiComponent.add(psiField, BorderLayout.EAST);

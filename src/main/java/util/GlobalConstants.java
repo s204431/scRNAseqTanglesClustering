@@ -1,5 +1,7 @@
 package util;
 
+import java.awt.*;
+
 public class GlobalConstants {
     public enum CUT_GENERATOR {
         SPLIT,
@@ -55,4 +57,9 @@ public class GlobalConstants {
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.PAIRWISE_CLOSEST.ordinal()] = LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST;
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.KNN.ordinal()] = LOW_LEVEL_COST_FUNCTION_KNN;
     }
+
+    public static final Color COLOR_GRAY = new Color(200, 200, 200);
+    public static final Color COLOR_LIGHT_GRAY = new Color(220, 220, 220);
+    public static final Color COLOR_VERY_LIGHT_GRAY = new Color(230, 230, 230);
+    public static final Color COLOR_ALMOST_WHITE = new Color(245, 245, 245);
 }

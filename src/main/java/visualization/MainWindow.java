@@ -59,10 +59,15 @@ public class MainWindow extends JFrame {
         cards.add(createTestView(), TEST_VIEW);
         cards.add(createLoadingView(), LOADING_VIEW);
 
-        root.add(topPanel, BorderLayout.NORTH);
-        root.add(cards, BorderLayout.CENTER);
-        setContentPane(root);
+        JPanel temp = new JPanel();
+        temp.setLayout(new BoxLayout(temp, BoxLayout.Y_AXIS));
+        temp.add(topPanel);
+        temp.add(Box.createRigidArea(new Dimension(0,5)));
 
+        root.add(temp, BorderLayout.NORTH);
+        root.add(cards, BorderLayout.CENTER);
+
+        setContentPane(root);
         setVisible(true);
     }
 
