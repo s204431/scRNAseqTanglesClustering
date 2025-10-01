@@ -91,9 +91,16 @@ public class ParameterPanel extends JPanel {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         add(Box.createGlue(), gbc);
+
+        // Placed at the end to trigger change actions of check boxes
+        autoComputeACheckBox.setSelected(true);
+        autoComputePsiCheckBox.setSelected(true);
     }
 
     private void buildDimensionSection() {
+        addFullWidth(new JLabel(" "));
+        addFullWidth(new JLabel(" "));
+
         addTitle("Dimension Reduction");
 
         splitSizeField = new JTextField(5);
@@ -152,7 +159,7 @@ public class ParameterPanel extends JPanel {
             //aFieldText += "(0-1) ";
         }
         autoComputeACheckBox = new JCheckBox("<html>Automatically<br> Compute a</html>");
-        autoComputeACheckBox.setSelected(true);
+        autoComputeACheckBox.setSelected(false);
         JPanel aComponent = new JPanel(new BorderLayout());
         aComponent.add(new JLabel(aFieldText), BorderLayout.WEST);
         aComponent.add(aField, BorderLayout.EAST);
@@ -161,7 +168,7 @@ public class ParameterPanel extends JPanel {
         psiField = new JTextField(6);
         psiField.setText("0");
         autoComputePsiCheckBox = new JCheckBox("<html>Automatically<br> Compute ψ</html>");
-        autoComputePsiCheckBox.setSelected(true);
+        autoComputePsiCheckBox.setSelected(false);
         JPanel psiComponent = new JPanel(new BorderLayout());
         psiComponent.add(new JLabel(" ψ "), BorderLayout.WEST);
         psiComponent.add(psiField, BorderLayout.EAST);

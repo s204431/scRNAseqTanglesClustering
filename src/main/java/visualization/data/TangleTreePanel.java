@@ -52,10 +52,12 @@ public class TangleTreePanel extends JPanel {
 
     public TangleTreePanel(View view) {
         this.view = view;
-        //setBackground(Color.WHITE);
+        //setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
         setLayout(new BorderLayout());
         add(topPanel, BorderLayout.NORTH);
         add(treeTabs, BorderLayout.CENTER);
+
+        treeTabs.setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
 
         //topPanel.setBackground(Color.WHITE);
         topPanel.add(intersectionCheckBox);
@@ -106,7 +108,7 @@ public class TangleTreePanel extends JPanel {
 
         // Visualization
         VisualizationViewer<String, String> vv = new VisualizationViewer<>(layout);
-        //vv.setBackground(GlobalConstants.COLOR_ALMOST_WHITE);
+        //vv.setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
         vv.getRenderContext().setVertexLabelTransformer(idToNodeName::get);
         vv.getRenderContext().setVertexFillPaintTransformer(v -> Color.WHITE);
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
