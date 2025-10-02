@@ -28,7 +28,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     private static final int CUT_IDX = 2;
 
     private static final boolean SHOW_GRID = true;
-    private static final char MARK = '#';
+    private static final char MARK = 'o';
 
     private int attachmentIndex = 0;
     private int tangleCounter = 0;
