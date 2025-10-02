@@ -1,0 +1,14 @@
+use_alternate_consistency_check:true
+cse_werner_modification:true
+use_cache:true
+cut_generator:Default
+high_level_cost_function:Default
+low_level_cot_function:Default
+a:0
+psi:0.0
+a_factor:0.667
+auto_compute_a:true
+auto_compute_psi:true
+remove_redundant_cuts:false
+split_size:1000
+tsne_components:5
