@@ -145,6 +145,7 @@ public class View {
 
         SwingUtilities.invokeLater(() -> {
             window.removeScatterTabs();
+            window.removeTrees();
             window.initializeScatterPlotPanel(points, model.getGroundTruth());
             window.showInformation(model.getDataset());
             window.changeView(MainWindow.DATA_VIEW);
@@ -182,5 +183,17 @@ public class View {
 
     public String getCurrentFilePath() {
         return monitor.getFilePath();
+    }
+
+    public void loadAndDrawTrees(int clusterIndex) {
+        window.loadAndDrawTrees(clusterIndex);
+    }
+
+    public void removeTree(int clusterIndex) {
+        window.removeTree(clusterIndex);
+    }
+
+    public void removeTrees() {
+        window.removeTrees();
     }
 }

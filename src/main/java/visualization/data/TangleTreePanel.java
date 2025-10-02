@@ -42,6 +42,11 @@ public class TangleTreePanel extends JPanel {
     private final HashMap<Integer, Integer> originalCutIndexToSortedCutIndex = new HashMap<>();
     private final HashMap<Integer, Integer> sortedCutIndexToOriginalCutIndex = new HashMap<>();
 
+    private final HashMap<Integer, TangleSearchTree[]> clusterIndexToTrees = new HashMap<>();
+    private final HashMap<Integer, BitSet[]> clusterIndexToCuts = new HashMap<>();
+    private final HashMap<Integer, double[]> clusterIndexToCutCosts = new HashMap<>();
+    private final HashMap<Integer, List<double[]>> clusterIndexToBranchCosts = new HashMap<>();
+
     private BitSet[] cuts;
     private double[] cutCosts;
 
@@ -63,12 +68,59 @@ public class TangleTreePanel extends JPanel {
         topPanel.add(intersectionCheckBox);
     }
 
-    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed) {
-        getSortedCutsAndCosts();
-        resetHistoryVariables();
+    public void removeTree(int clusterIndex) {
+        clusterIndexToTrees.remove(clusterIndex);
+        clusterIndexToCuts.remove(clusterIndex);
+        clusterIndexToCutCosts.remove(clusterIndex);
+        clusterIndexToBranchCosts.remove(clusterIndex);
+    }
 
+    public void removeTrees() {
+        clusterIndexToTrees.clear();
+        clusterIndexToCuts.clear();
+        clusterIndexToCutCosts.clear();
+        clusterIndexToBranchCosts.clear();
+
+        treePanelOriginal.removeAll();
+        treePanelSplitPruned.removeAll();
+        treePanelCondensed.removeAll();
+
+        removeTabs();
+    }
+
+    public void removeTabs() {
         while (treeTabs.getTabCount() > 0)
             treeTabs.remove(0);
+    }
+
+    public void loadTrees(int clusterIndex) {
+        if (!clusterIndexToTrees.containsKey(clusterIndex)) return;
+
+        cuts = clusterIndexToCuts.get(clusterIndex);
+        cutCosts = clusterIndexToCutCosts.get(clusterIndex);
+        branchCosts = clusterIndexToBranchCosts.get(clusterIndex);
+        sortCutsAndCosts();
+
+        TangleSearchTree[] trees = clusterIndexToTrees.get(clusterIndex);
+        drawTrees(trees[0], trees[1], trees[2]);
+    }
+
+    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, int clusterIndex) {
+        getCutsAndCosts();
+        sortCutsAndCosts();
+
+        clusterIndexToTrees.put(clusterIndex, new TangleSearchTree[] { originalTree, splitPruned, condensed });
+        clusterIndexToCuts.put(clusterIndex, cuts.clone());
+        clusterIndexToCutCosts.put(clusterIndex, cutCosts.clone());
+        clusterIndexToBranchCosts.put(clusterIndex, new ArrayList<>(branchCosts));
+
+        drawTrees(originalTree, splitPruned, condensed);
+    }
+
+    private void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed) {
+        resetHistoryVariables();
+
+        removeTabs();
 
         if (originalTree != null) {
             drawTree(originalTree, treePanelOriginal);
@@ -84,9 +136,6 @@ public class TangleTreePanel extends JPanel {
             drawTree(condensed, treePanelCondensed);
             treeTabs.add("Condensed", treePanelCondensed);
         }
-
-        revalidate();
-        repaint();
     }
 
     public void drawTree(TangleSearchTree tst, JPanel treePanel) {
@@ -210,7 +259,7 @@ public class TangleTreePanel extends JPanel {
         addNode(tree, node.rightChild, uniqueId);
     }
 
-    private void getSortedCutsAndCosts() {
+    private void getCutsAndCosts() {
         branchCosts = view.getBranchCosts();
 
         cuts = view.getCuts();
@@ -218,7 +267,9 @@ public class TangleTreePanel extends JPanel {
         Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
         cuts = result.x;
         cutCosts = result.y;
+    }
 
+    private void sortCutsAndCosts() {
         int n = cutCosts.length;
         Integer[] indices = new Integer[n];
         for (int i = 0; i < n; i++) {

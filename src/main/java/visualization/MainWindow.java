@@ -130,7 +130,8 @@ public class MainWindow extends JFrame {
     }
 
     public void drawTangleSearchTree(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed) {
-        tangleTreePanel.drawTrees(originalTree, splitPruned, condensed);
+        int clusterIndex = scatterPanel.getClusterIndex();
+        tangleTreePanel.drawTrees(originalTree, splitPruned, condensed, clusterIndex);
     }
 
     public void turnOnCuts(int cutIndex) {
@@ -179,5 +180,17 @@ public class MainWindow extends JFrame {
 
     public void showCut(double[][] points, int[] clustering) {
         scatterPanel.drawCut(points, clustering);
+    }
+
+    public void loadAndDrawTrees(int clusterIndex) {
+        tangleTreePanel.loadTrees(clusterIndex);
+    }
+
+    public void removeTree(int clusterIndex) {
+        tangleTreePanel.removeTree(clusterIndex);
+    }
+
+    public void removeTrees() {
+        tangleTreePanel.removeTrees();
     }
 }

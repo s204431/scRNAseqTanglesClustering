@@ -28,7 +28,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     private static final int CUT_IDX = 2;
 
     private static final boolean SHOW_GRID = true;
-    private static final char MARK = 'o';
+    private static final char MARK = '#';
 
     private int attachmentIndex = 0;
     private int tangleCounter = 0;
@@ -38,80 +38,13 @@ public class ScatterPlotPanel extends JTabbedPane {
         setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);    // Should differ only a little from white
         setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         addSaveActions();
+        addSelectionChangeListener();
     }
 
     public void initialize(double[][] points, int[] groundTruth) {
         drawScatterPlot(points);
         if (groundTruth != null) drawGroundTruth(points, groundTruth);
         setSelectedIndex(0);
-    }
-
-    private void addSaveActions() {
-        addMouseListener(new MouseAdapter() {
-            private void maybeShowMenu(MouseEvent e) {
-                if (!e.isPopupTrigger()) return;
-                int idx = indexAtLocation(e.getX(), e.getY());
-                if (idx < 0) return;
-                setSelectedIndex(idx);
-
-                Canvas c = (Canvas) getComponentAt(idx);
-                String title = (String) c.getClientProperty("title");
-                int[] clusters = (int[]) c.getClientProperty("clusters");
-
-                JPopupMenu menu = new JPopupMenu();
-
-                JMenuItem savePlotPng = new JMenuItem("Export to PNG...");
-                savePlotPng.addActionListener(ee -> exportTabAsPNG(c, title));
-                menu.add(savePlotPng);
-
-                if (!title.equals(POINTS_TITLE)) {
-                    JMenuItem saveHardClustering = new JMenuItem("Save hard clustering...");
-                    saveHardClustering.addActionListener(ee -> saveHardClusteringAsCsv(clusters));
-                    menu.add(saveHardClustering);
-                }
-
-                if (!title.equals(POINTS_TITLE) && !title.equals(GROUND_TRUTH_TITLE)) {
-                    JMenuItem saveSoftClustering = new JMenuItem("Save soft clustering...");
-                    saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv());
-                    menu.add(saveSoftClustering);
-                }
-
-                menu.show(e.getComponent(), e.getX(), e.getY());
-            }
-
-            @Override public void mousePressed(MouseEvent e)  { maybeShowMenu(e); }
-            @Override public void mouseReleased(MouseEvent e) { maybeShowMenu(e); }
-        });
-    }
-
-    private void exportTabAsPNG(Canvas canvas, String title) {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Export plot as PNG");
-        chooser.setSelectedFile(new java.io.File(title + ".png"));
-        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PNG files", "png"));
-
-        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
-
-        java.io.File file = chooser.getSelectedFile();
-        if (!file.getName().toLowerCase().endsWith(".png")) {
-            file = new java.io.File(file.getParentFile(), file.getName() + ".png");
-        }
-
-        try {
-            // This is the in-built smile save function
-            canvas.save(file);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Failed to save PNG:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void saveHardClusteringAsCsv(int[] clusters) {
-
-    }
-
-    private void saveSoftClusteringAsCsv() {
-
     }
 
     public void drawScatterPlot(double[][] points) {
@@ -236,7 +169,13 @@ public class ScatterPlotPanel extends JTabbedPane {
         close.setToolTipText("Close");
         close.addActionListener(e -> {
             int i = indexOfTabComponent(p);
-            if (i != -1) removeTabAt(i);
+            if (i != -1) {
+                Canvas c = (Canvas) getComponentAt(i);
+                int clusterIndex = (int) c.getClientProperty("index");
+                String t = (String) c.getClientProperty("title");
+                if (!t.equals(CUT_TITLE)) view.removeTree(clusterIndex);
+                removeTabAt(i);
+            }
         });
 
         p.add(lbl);
@@ -270,5 +209,88 @@ public class ScatterPlotPanel extends JTabbedPane {
             g2.drawLine(x1, y2, x2, y1);
             g2.dispose();
         }
+    }
+
+    public int getClusterIndex() {
+        return attachmentIndex - 1;
+    }
+
+    private void addSelectionChangeListener() {
+        addChangeListener(e -> {
+            int idx = getSelectedIndex();
+            if (idx < 2) return;
+
+            Canvas c = (Canvas) getComponentAt(idx);
+            int index = (int) c.getClientProperty("index");
+            view.loadAndDrawTrees(index);
+        });
+    }
+
+    private void addSaveActions() {
+        addMouseListener(new MouseAdapter() {
+            private void maybeShowMenu(MouseEvent e) {
+                if (!e.isPopupTrigger()) return;
+                int idx = indexAtLocation(e.getX(), e.getY());
+                if (idx < 0) return;
+                setSelectedIndex(idx);
+
+                Canvas c = (Canvas) getComponentAt(idx);
+                String title = (String) c.getClientProperty("title");
+                int[] clusters = (int[]) c.getClientProperty("clusters");
+
+                JPopupMenu menu = new JPopupMenu();
+
+                JMenuItem savePlotPng = new JMenuItem("Export to PNG...");
+                savePlotPng.addActionListener(ee -> exportTabAsPNG(c, title));
+                menu.add(savePlotPng);
+
+                if (!title.equals(POINTS_TITLE)) {
+                    JMenuItem saveHardClustering = new JMenuItem("Save hard clustering...");
+                    saveHardClustering.addActionListener(ee -> saveHardClusteringAsCsv(clusters));
+                    menu.add(saveHardClustering);
+                }
+
+                if (!title.equals(POINTS_TITLE) && !title.equals(GROUND_TRUTH_TITLE)) {
+                    JMenuItem saveSoftClustering = new JMenuItem("Save soft clustering...");
+                    saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv());
+                    menu.add(saveSoftClustering);
+                }
+
+                menu.show(e.getComponent(), e.getX(), e.getY());
+            }
+
+            @Override public void mousePressed(MouseEvent e)  { maybeShowMenu(e); }
+            @Override public void mouseReleased(MouseEvent e) { maybeShowMenu(e); }
+        });
+    }
+
+    private void exportTabAsPNG(Canvas canvas, String title) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Export plot as PNG");
+        chooser.setSelectedFile(new java.io.File(title + ".png"));
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PNG files", "png"));
+
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        java.io.File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".png")) {
+            file = new java.io.File(file.getParentFile(), file.getName() + ".png");
+        }
+
+        try {
+            // This is the in-built smile save function
+            canvas.save(file);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to save PNG:\n" + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void saveHardClusteringAsCsv(int[] clusters) {
+
+    }
+
+    private void saveSoftClusteringAsCsv() {
+
     }
 }
