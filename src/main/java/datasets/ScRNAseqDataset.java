@@ -1,5 +1,6 @@
 package datasets;
 
+import clustering.Model;
 import smile.base.mlp.Cost;
 import util.BitSet;
 import util.GlobalConstants;

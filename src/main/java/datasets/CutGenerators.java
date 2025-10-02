@@ -112,7 +112,7 @@ public class CutGenerators {
         try {
             double[][] reducedPoints = Model.pca(dataPoints, nComponents);
             for (int i = a; i < dataPoints.length; i *= 2) {
-                bitSets.add(getInitialCutsLocalMeans(reducedPoints, i));
+                bitSets.add(getInitialCutsKNN(reducedPoints, i));
             }
         }
         catch (Exception e) {
@@ -120,7 +120,7 @@ public class CutGenerators {
         }
         double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
         for (int i = a; i < dataPoints.length; i *= 2) {
-            bitSets.add(getInitialCutsLocalMeans(reducedPoints, i));
+            bitSets.add(getInitialCutsKNN(reducedPoints, i));
         }
         /*try {
             bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
@@ -130,7 +130,7 @@ public class CutGenerators {
         }*/
         reducedPoints = Model.svd(dataPoints, nComponents);
         for (int i = a; i < dataPoints.length; i *= 2) {
-            bitSets.add(getInitialCutsLocalMeans(reducedPoints, i));
+            bitSets.add(getInitialCutsKNN(reducedPoints, i));
         }
 
         return mergeCuts(bitSets);
@@ -151,6 +151,114 @@ public class CutGenerators {
         }
         return merged;
     }
+
+    public BitSet[] getInitialCutsKNN(double[][] dataPoints, int a) {
+        List<BitSet[]> bitSets = new ArrayList<>();
+        for (int k = 1; k <= 30; k++) {
+            KNNGraph knnGraph = new KNNGraph(dataPoints, k);
+            double[] heuristicRepresentation = new double[dataPoints.length];
+            int[] addedOrder = new int[dataPoints.length];
+            int addedOrderIndex = 0;
+            List<List<Integer>> connectedComponents = knnGraph.getConnectedComponents();
+
+            //Greedy best first search
+            //boolean[] visited = new boolean[dataPoints.length];
+            boolean[] finished = new boolean[dataPoints.length]; //Visited and no longer in frontier
+            int[] indexInQueue = new int[dataPoints.length];
+            List<Integer> originalIndices = new ArrayList<>();
+            int currentUniqueIndex = 0;
+            PriorityQueue<Integer> frontier = new PriorityQueue<>(Comparator.comparingDouble(i -> heuristicRepresentation[originalIndices.get(i)]));
+
+            Collections.shuffle(connectedComponents);
+            List<Integer> orderedIndices = new ArrayList<>();
+            for (int i = 0; i < dataPoints.length; i++) {
+                orderedIndices.add(i);
+            }
+            Collections.shuffle(orderedIndices);
+
+            for (int startVertex : orderedIndices) { //In case the graph contains multiple connected components
+                if (finished[startVertex]) {
+                    continue;
+                }
+                //visited[startVertex] = true;
+                heuristicRepresentation[startVertex] = 10*k; //Choose value larger than any distance between points (assumes z-score normalized)
+                originalIndices.add(startVertex);
+                indexInQueue[startVertex] = currentUniqueIndex;
+                frontier.add(currentUniqueIndex);
+                currentUniqueIndex++;
+                while (!frontier.isEmpty()) {
+                    int uniqueIndex = frontier.poll();
+                    int vertex = originalIndices.get(uniqueIndex);
+                    if (finished[vertex] || indexInQueue[vertex] != uniqueIndex) {
+                        continue;
+                    }
+                    finished[vertex] = true;
+                    addedOrder[addedOrderIndex] = vertex;
+                    addedOrderIndex++;
+                    for (int i = 0; i < knnGraph.graph.get(vertex).size(); i++) {
+                        int neighbor = knnGraph.graph.get(vertex).get(i);
+                        if (!finished[neighbor]) {
+                            double heuristic = knnSearchHeuristic(knnGraph, finished, neighbor);
+                            heuristicRepresentation[neighbor] = heuristic;
+                            originalIndices.add(neighbor);
+                            indexInQueue[neighbor] = currentUniqueIndex;
+                            //visited[neighbor] = true;
+                            frontier.add(currentUniqueIndex);
+                            currentUniqueIndex++;
+                        }
+                    }
+                }
+            }
+
+            //Create 1D representation based on the traversed order and heuristic values
+            double[][] oneDRepresentation = new double[dataPoints.length][1];
+            double minimum = Double.MAX_VALUE; //We shift heuristic values by minimum so they are non-negative
+            for (int i = 0; i < heuristicRepresentation.length; i++) {
+                minimum = Math.min(minimum, heuristicRepresentation[i]);
+            }
+            //The value of each point is the sum of heuristic values added up to and including the point
+            double sum = 0.0;
+            for (int i = 0; i < addedOrder.length; i++) {
+                double heuristicValue = heuristicRepresentation[addedOrder[i]] + (minimum < 0.0 ? -minimum : 0.0) + 1;
+                sum += heuristicValue;
+                oneDRepresentation[addedOrder[i]][0] = sum;
+            }
+
+            BitSet[] cuts = getInitialCutsRange(oneDRepresentation, a); //Use a standard cut generator on 1D representation
+            bitSets.add(cuts);
+        }
+
+        return mergeCuts(bitSets);
+    }
+
+    //Calculates the heuristic value for a given vertex (for KNN initial cut generator)
+    private double knnSearchHeuristic(KNNGraph knnGraph, boolean[] inSet, int vertex) {
+        double heuristicValue = 0.0;
+        int inSetCount = 0;
+        int notInSetCount = 0;
+        for (int i = 0; i < knnGraph.graph.get(vertex).size(); i++) {
+            int neighbor = knnGraph.graph.get(vertex).get(i);
+            if (inSet[neighbor]) {
+                inSetCount++;
+            }
+            else {
+                notInSetCount++;
+            }
+        }
+        for (int i = 0; i < knnGraph.graph.get(vertex).size(); i++) {
+            int neighbor = knnGraph.graph.get(vertex).get(i);
+            double weight = knnGraph.distances.get(vertex).get(i);
+            if (inSet[neighbor]) {
+                heuristicValue += (weight/inSetCount)*notInSetCount;
+            }
+            else {
+                heuristicValue -= (weight/notInSetCount)*inSetCount;
+            }
+        }
+        return heuristicValue;
+    }
+
+
 
     public double[][] moveTowardsNearestNeighbours(double[][] dataPoints) {
         int iterations = 1;

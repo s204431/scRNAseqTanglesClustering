@@ -15,6 +15,7 @@ public class KNNGraph {
     public List<List<Integer>> graph = new ArrayList<>(); //Directed graph
     public List<List<Integer>> graphUndirected = new ArrayList<>(); //Undirected graph
     public List<List<Double>> distances = new ArrayList<>(); //Directed distances
+    public List<List<Double>> distancesUndirected = new ArrayList<>(); //Undirected distances
 
     public KNNGraph(double[][] data, int k) {
         KDTree<double[]> kdTree = new KDTree<>(data, data);
@@ -22,6 +23,7 @@ public class KNNGraph {
             graph.add(new ArrayList<>());
             graphUndirected.add(new ArrayList<>());
             distances.add(new ArrayList<>());
+            distancesUndirected.add(new ArrayList<>());
         }
         for (int i = 0; i < data.length; i++) {
             Neighbor[] neighbors = kdTree.search(data[i], k);
@@ -31,6 +33,8 @@ public class KNNGraph {
                     graphUndirected.get(i).add(neighbor.index());
                     graphUndirected.get(neighbor.index()).add(i);
                     distances.get(i).add(neighbor.distance());
+                    distancesUndirected.get(i).add(neighbor.distance());
+                    distancesUndirected.get(neighbor.index()).add(neighbor.distance());
                 }
             }
         }
