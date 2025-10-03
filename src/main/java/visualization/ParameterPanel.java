@@ -97,8 +97,7 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildDimensionSection() {
-        addFullWidth(new JLabel(" "));
-        addFullWidth(new JLabel(" "));
+        addFiller(10);
 
         addTitle("Dimension Reduction");
 
@@ -112,7 +111,7 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildAlgorithmSection() {
-        addFullWidth(new JLabel(" "));
+        addFiller(5);
 
         addTitle("Algorithm Modifications");
 
@@ -146,7 +145,7 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildClusteringSection() {
-        addFullWidth(new JLabel(" "));
+        addFiller(5);
 
         addTitle("Cluster Parameters");
 
@@ -180,7 +179,7 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildCutsSection() {
-        addFullWidth(new JLabel(" "));
+        addFiller(5);
 
         addTitle("Cut Visualization");
 
@@ -200,6 +199,8 @@ public class ParameterPanel extends JPanel {
     }
 
     private void buildTestSection() {
+        addFiller(5);
+
         addTitle("Test Parameters");
 
         runNumberField = new JTextField(3);
@@ -482,14 +483,19 @@ public class ParameterPanel extends JPanel {
         row++;
     }
 
+    // Add vertical filler
+    private void addFiller(int height) {
+        addFullWidth(Box.createRigidArea(new Dimension(0, height)));
+    }
+
     // Adds component spanning two columns
-    private void addFullWidth(JComponent component) {
+    private void addFullWidth(Component component) {
         addAt(component, 0, 2);
         row++;
     }
 
     // Adds component at given col index spanning spanColumns
-    private void addAt(JComponent comp, int col, int spanColumns) {
+    private void addAt(Component comp, int col, int spanColumns) {
         gbc.gridx = col;
         gbc.gridy = row;
         gbc.gridwidth = spanColumns;
