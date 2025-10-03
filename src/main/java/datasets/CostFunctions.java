@@ -288,7 +288,7 @@ public class CostFunctions {
     }
 
     public double[] knnCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
-        int k = 1;
+        int k = 10;
 
         double maxRange = getMaxRange(dataPoints);
 
@@ -300,6 +300,7 @@ public class CostFunctions {
                 costs[i] += Math.exp(-1.0*distances.get(j));
             }
             //costs[i] = distances.size();
+            costs[i] /= initialCuts[i].size();
         }
         return costs;
     }

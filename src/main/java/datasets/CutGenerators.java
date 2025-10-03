@@ -154,7 +154,7 @@ public class CutGenerators {
 
     public BitSet[] getInitialCutsKNN(double[][] dataPoints, int a) {
         List<BitSet[]> bitSets = new ArrayList<>();
-        for (int k = 1; k <= 30; k++) {
+        for (int k = 15; k <= 25; k++) {
             KNNGraph knnGraph = new KNNGraph(dataPoints, k);
             double[] heuristicRepresentation = new double[dataPoints.length];
             int[] addedOrder = new int[dataPoints.length];
