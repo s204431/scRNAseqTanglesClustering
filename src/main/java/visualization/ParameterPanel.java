@@ -18,8 +18,8 @@ public class ParameterPanel extends JPanel {
     private final View view;
 
     // Constants
-    private static final int TITLE_TEXT_SIZE = (int) (MainWindow.SCREEN_SIZE.height * 0.015);
-    private static final int DEFAULT_TEXT_SIZE = (int) (MainWindow.SCREEN_SIZE.height * 0.013);
+    private static final int TITLE_TEXT_SIZE = 16;
+    private static final int DEFAULT_TEXT_SIZE = 13;
     private static final Insets DEFAULT_INSETS = new Insets(0, 5, 5, 5);
     private static final Insets TITLE_INSETS = new Insets(0, 5, 5, 5);
 
@@ -118,7 +118,6 @@ public class ParameterPanel extends JPanel {
 
         consistencyCheckbox = new JCheckBox("<html>" +
                 "Consistency<br>" +
-                " Check<br>" +
                 "Modification" +
             "</html>");
         wernerModificationCheckbox = new JCheckBox("<html>" +
