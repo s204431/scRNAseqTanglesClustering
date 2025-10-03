@@ -54,7 +54,9 @@ public class Model {
     private double[][] hvgData;
     private double[][] projectedData;
     private ScRNAseqDataset dataset;
+    private int seed;
     private int[] groundTruth;
+    private int[] shuffledGroundTruth;
     private int[] hardClustering;
 
     private Monitor monitor;
@@ -73,6 +75,13 @@ public class Model {
         Tuple<double[][], int[]> data = loadData(observedFilePath, labelFilePath);
         double[][] originalData = data.x;
         groundTruth = data.y;
+        shuffledGroundTruth = groundTruth.clone();
+
+        Random r = new Random();
+        seed = r.nextInt();
+        shuffleArray(originalData, seed);
+        shuffleArray(shuffledGroundTruth, seed);
+
         logNormalize(originalData);
 
         int maxGenes = originalData[0].length;
@@ -99,6 +108,28 @@ public class Model {
         System.out.println("NMI python: " + NMIPython);
         System.out.println("Rand index python: " + randIndex);*/
 
+    }
+
+    // Fisher-Yayes shuffle to limit space usage
+    // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    public void shuffleArray(double[][] array, int seed) {
+        Random rand = new Random(seed);
+        for (int i = array.length - 1; i > 0; i--) {
+            int j = rand.nextInt(i + 1);
+            double[] temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
+    public void shuffleArray(int[] array, int seed) {
+        Random rand = new Random(seed);
+        for (int i = array.length - 1; i > 0; i--) {
+            int j = rand.nextInt(i + 1);
+            int temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
     }
 
     public void runTestset() {
@@ -199,8 +230,8 @@ public class Model {
         tangleClusterer.removeRedundantCuts = prev4;
 
         hardClustering = tangleClusterer.getHardClustering();
-        double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-        double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+        double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+        double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
         System.out.println(NMIScore);
         System.out.println(randIndex);
     }
@@ -261,8 +292,8 @@ public class Model {
         for (int a2 = minA; a2 < maxA; a2 += 5) {
             tangleClusterer.generateClusters(a2, psi, initialCuts, costs);
             hardClustering = tangleClusterer.getHardClustering();
-            double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-            double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+            double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+            double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
 
             System.out.println(NMIScore);
             System.out.println(randIndex);
@@ -277,8 +308,8 @@ public class Model {
 
         hardClustering = bestHardClustering;
 
-        double NMIScore = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-        double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+        double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+        double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
 
         System.out.println("Best a: " + bestA);
         System.out.println(NMIScore);
@@ -669,6 +700,10 @@ public class Model {
         return groundTruth;
     }
 
+    public int[] getShuffledGroundTruth() {
+        return shuffledGroundTruth;
+    }
+
     public double[][] getProjectedData() {
         return projectedData;
     }
@@ -683,6 +718,10 @@ public class Model {
 
     public ScRNAseqDataset getDataset() {
         return dataset;
+    }
+
+    public int getSeed() {
+        return seed;
     }
 
     public void setMonitor(Monitor monitor) {

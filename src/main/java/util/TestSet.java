@@ -9,6 +9,7 @@ import visualization.test.TestEditPanel;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.Random;
 
 public class TestSet {
 
@@ -100,6 +101,13 @@ public class TestSet {
             Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
             double[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
+
+            Random r = new Random();
+            int seed = r.nextInt();
+            int[] shuffledGroundTruth = groundTruth.clone();
+            model.shuffleArray(shuffledGroundTruth, seed);
+            model.shuffleArray(originalData, seed);
+
             double[][] normalizedData = model.logNormalize(originalData);
             double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
             int nClusters = getNumberOfClusters(groundTruth);
@@ -110,8 +118,8 @@ public class TestSet {
                 int a = (int)(((double)dataset.data.length/nClusters)*0.667);
                 Config config = new Config(a);
                 int[] hardClustering = model.clusterAndReturn(dataset, config);
-                double NMI = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-                double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+                double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+                double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
                 averageNMIScores[i] += NMI;
                 averageRandIndexScores[i] += randIndex;
             }
@@ -188,6 +196,13 @@ public class TestSet {
             Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
             double[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
+
+            Random r = new Random();
+            int seed = r.nextInt();
+            int[] shuffledGroundTruth = groundTruth.clone();
+            model.shuffleArray(shuffledGroundTruth, seed);
+            model.shuffleArray(originalData, seed);
+
             long preTime1 = System.currentTimeMillis();
             double[][] normalizedData = model.logNormalize(originalData);
             double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
@@ -213,8 +228,8 @@ public class TestSet {
                 int[] hardClustering = model.clusterAndReturn(dataset, newConfig);
                 averageTimes[i] += (preTime + (System.currentTimeMillis() - time1))/1000.0;
 
-                double NMI = NormalizedMutualInformation.joint(hardClustering, groundTruth);
-                double randIndex = AdjustedRandIndex.of(groundTruth, hardClustering);
+                double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+                double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
                 averageNMIScores[i] += NMI;
                 averageRandIndexScores[i] += randIndex;
             }

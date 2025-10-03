@@ -115,8 +115,8 @@ public class TestGraphPanel extends JPanel {
         Figure timeFig = timePlot.figure();
 
         // X-axis should center bars around 1, 2, 3,... and Y_axis always between [0,1]
-        double xMin = -0.5;
-        double xMax = n == 1 ? 1.5 : n + 0.5;   // Weird edge case where everything blows up if there is only one tick
+        double xMin = barPlotStyle ? -0.5 : 0.9;
+        double xMax = n == 1 ? 1.5 : n + (barPlotStyle ? 0.5: 0.1);   // Weird edge case where everything blows up if there is only one tick
         double yMin = 0.0;
         double yMax = 1.0;
         double[] minBounds = new double[] { xMin, yMin };
@@ -141,26 +141,33 @@ public class TestGraphPanel extends JPanel {
         randFig.getAxis(0).setGridVisible(false);
         timeFig.getAxis(0).setGridVisible(false);
 
+        String[] labels = new String[n];
+        double[] locations = new double[n];
         if (barPlotStyle) {
+            double barPlotShift = 0.375;
             if (n <= 1) {
-                String[] labels = new String[]{"1", ""};
-                double[] locations = new double[]{0.375, 1.375};
-                nmiFig.getAxis(0).setTicks(labels, locations);
-                randFig.getAxis(0).setTicks(labels, locations);
-                timeFig.getAxis(0).setTicks(labels, locations);
+                labels = new String[]{"1", ""};
+                locations = new double[]{barPlotShift, 1 + barPlotShift};
 
             } else {
-                String[] labels = new String[n];
-                double[] locations = new double[n];
                 for (int i = 0; i < n; i++) {
                     labels[i] = "" + (i + 1);
-                    locations[i] = (double) i + 0.375;  // Center between the two bars
+                    locations[i] = (double) i + barPlotShift;  // Center between the two bars
                 }
-                nmiFig.getAxis(0).setTicks(labels, locations);
-                randFig.getAxis(0).setTicks(labels, locations);
-                timeFig.getAxis(0).setTicks(labels, locations);
             }
+        } else {
+            int m = n == 1 ? 2 : n;
+            labels = new String[m];
+            locations = new double[m];
+            for (int i = 0; i < m; i++) {
+                labels[i] = "" + (i + 1);
+                locations[i] = i + 1;
+            }
+            if (n == 1) labels[n] = "";
         }
+        nmiFig.getAxis(0).setTicks(labels, locations);
+        randFig.getAxis(0).setTicks(labels, locations);
+        timeFig.getAxis(0).setTicks(labels, locations);
 
         Canvas nmiCanvas = new Canvas(nmiFig);
         Canvas randCanvas = new Canvas(randFig);

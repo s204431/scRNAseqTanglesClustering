@@ -30,7 +30,7 @@ public class View {
         this.model = model;
 
         FlatLightLaf.setup();
-        UIManager.put("defaultFont", new Font("Inter", Font.PLAIN, 13));
+        UIManager.put("defaultFont", new javax.swing.plaf.FontUIResource("Inter", Font.PLAIN, 13));
         UIManager.put("Component.arc", 12);
         UIManager.put("Button.arc", 14);
         UIManager.put("TextComponent.arc", 12);
@@ -40,7 +40,9 @@ public class View {
         UIManager.put("TabbedPane.tabSeparatorsFullHeight", true);
         UIManager.put("TabbedPane.tabAreaInsets", new Insets(5, 2, 5, 2));
 
-        System.setProperty("sun.java2d.uiScale.enabled", "true");
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
+        //System.setProperty("sun.java2d.uiScale.enabled", "true");
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
@@ -88,11 +90,15 @@ public class View {
     }
 
     public void showClustering(int[] clustering, boolean tangle) {
+        if (!tangle) {
+            // Shuffle python's result to match the order of the data points
+            model.shuffleArray(clustering, model.getSeed());
+        }
         window.drawClusters(points, clustering, tangle);
     }
 
     public void showGroundTruth() {
-        window.drawGroundTruth(points, model.getGroundTruth());
+        window.drawGroundTruth(points, model.getShuffledGroundTruth());
     }
 
     public void showCut(BitSet cut, int cutIndex) {
@@ -146,7 +152,7 @@ public class View {
         SwingUtilities.invokeLater(() -> {
             window.removeScatterTabs();
             window.removeTrees();
-            window.initializeScatterPlotPanel(points, model.getGroundTruth());
+            window.initializeScatterPlotPanel(points, model.getShuffledGroundTruth());
             window.showInformation(model.getDataset());
             window.changeView(MainWindow.DATA_VIEW);
         });

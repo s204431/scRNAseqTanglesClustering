@@ -18,9 +18,8 @@ public class ParameterPanel extends JPanel {
     private final View view;
 
     // Constants
-    private static final String FONT_NAME = null;
-    private static final int TITLE_TEXT_SIZE = 18;
-    private static final int DEFAULT_TEXT_SIZE = 14;
+    private static final int TITLE_TEXT_SIZE = (int) (MainWindow.SCREEN_SIZE.height * 0.015);
+    private static final int DEFAULT_TEXT_SIZE = (int) (MainWindow.SCREEN_SIZE.height * 0.013);
     private static final Insets DEFAULT_INSETS = new Insets(0, 5, 5, 5);
     private static final Insets TITLE_INSETS = new Insets(0, 5, 5, 5);
 
@@ -463,7 +462,7 @@ public class ParameterPanel extends JPanel {
     // ================= LAYOUT HELPERS =================
     private void addTitle(String text) {
         JLabel title = new JLabel(text);
-        title.setFont(new Font(FONT_NAME, Font.BOLD, TITLE_TEXT_SIZE));
+        title.setFont(title.getFont().deriveFont(Font.BOLD, TITLE_TEXT_SIZE));
         Insets previousInsets = gbc.insets;
         gbc.insets = TITLE_INSETS;
         addFullWidth(title);
@@ -473,7 +472,7 @@ public class ParameterPanel extends JPanel {
     // Adds a label and a component on the same row
     private void addRow(String text, JComponent component) {
         JLabel textLabel = new JLabel(text);
-        textLabel.setFont(new Font(FONT_NAME, Font.PLAIN, DEFAULT_TEXT_SIZE));
+        textLabel.setFont(textLabel.getFont().deriveFont(Font.PLAIN, DEFAULT_TEXT_SIZE));
         addRow(textLabel, component);
     }
 
@@ -497,6 +496,7 @@ public class ParameterPanel extends JPanel {
         gbc.gridwidth = spanColumns;
         gbc.weightx = (col == 1 || spanColumns == 2) ? 1.0 : 0.0;
         gbc.anchor = (col == 0) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
+        //gbc.anchor = GridBagConstraints.BASELINE_LEADING;
 
         add(comp, gbc);
 

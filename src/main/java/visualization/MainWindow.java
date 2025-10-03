@@ -17,6 +17,7 @@ import java.io.File;
 public class MainWindow extends JFrame {
     private View view;
 
+    public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
     public static final String DATA_VIEW = "data";
     public static final String TEST_VIEW = "test";
     public static final String LOADING_VIEW = "loading";
@@ -49,9 +50,8 @@ public class MainWindow extends JFrame {
         this.testResultPanel = new TestResultPanel(view, testEditPanel.getTestProgressManager());
         this.testGraphPanel = new TestGraphPanel(view, testEditPanel.getTestProgressManager());
 
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int width = (int) (screenSize.width * 0.7);
-        int height = (int) (screenSize.height * 0.8);
+        int width = (int) (SCREEN_SIZE.width * 0.7);
+        int height = (int) (SCREEN_SIZE.height * 0.8);
         setSize(width, height);
         setLocationRelativeTo(null);
 
