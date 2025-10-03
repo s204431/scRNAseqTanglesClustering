@@ -750,9 +750,13 @@ public class TangleClusterer {
         //Find maximum difference from the mean in a window.
         double maxDifference = -1;
         int maxDifferenceIndex = -1;
+
+        double sum = 0.0;
+
         for (int i = 1; i < sumArray.length; i++) {
             double mean = sumArray[i-1] / Math.min(i, windowSize);
             double difference = splitCosts[i] - mean;
+            sum += difference;
             if (difference > maxDifference) {
                 maxDifference = difference;
                 maxDifferenceIndex = i;
@@ -761,6 +765,7 @@ public class TangleClusterer {
 
         //Return split cost for cut before the max difference;
         System.out.println("Found max split cost: " + splitCosts[maxDifferenceIndex-1]);
+        System.out.println("Certainty: " + (maxDifference/sum));
         return splitCosts[maxDifferenceIndex-1];
     }
 
