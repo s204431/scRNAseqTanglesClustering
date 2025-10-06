@@ -62,15 +62,22 @@ public class View {
         }
 
         TestEditPanel.TestProgressManager progressManager = window.prepareUIForTesting();
-        File[] selectedFiles = window.getSelectedTestFiles();
-        if (selectedFiles == null || selectedFiles.length == 0) {
+        File[] selectedTestFiles = window.getSelectedTestFiles();
+        if (selectedTestFiles == null || selectedTestFiles.length == 0) {
             System.out.println("No test files were selected.");
             return;
         }
 
+        File[] selectedConfigFiles = window.getSelectedConfigFiles();
+        Config[] configs = new Config[selectedConfigFiles.length + 1];  // Make space for user defined configurations
+        configs[0] = config;
+        for (int i = 0; i < selectedConfigFiles.length; i++) {
+            configs[i+1] = Config.loadConfiguration(selectedConfigFiles[i].getName());
+        }
+
         testThread = new Thread(() -> {
             try {
-                model.runTestset(selectedFiles, config, runs, compareWithStandardPipeline, progressManager);
+                model.runTestset(selectedTestFiles, configs, runs, compareWithStandardPipeline, progressManager);
             } catch (Throwable t) {
                 t.printStackTrace();
             } finally {
@@ -162,8 +169,8 @@ public class View {
         window.showTestSet(selectedDirs);
     }
 
-    public void visualizeTestResults(int i, int j, boolean isTangle) {
-        window.visualizeTestResults(i, j, isTangle);
+    public void visualizeTestResults(int i, int j) {
+        window.visualizeTestResults(i, j);
     }
 
 

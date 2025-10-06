@@ -52,43 +52,49 @@ public class TestGraphPanel extends JPanel {
         lastLow = low;
         lastHigh = high;
 
-        int rows = showTimeCheckBox.isSelected() ? 3 : 2;
-        plotPanel.setLayout(new GridLayout(rows, 1, 5, 5));
+        int nGraphs = showTimeCheckBox.isSelected() ? 3 : 2;
+        plotPanel.setLayout(new GridLayout(nGraphs, 1, 5, 5));
 
-        int n = high - low + 1;
+        int nTests = high - low + 1;
+        int nTangleResults = testProgressManager.getConfigsSize();
+        int pythonIndex = nTangleResults;
 
-        double[][] barPlotNmiScores = new double[2][n];
-        double[][] barPlotRandIdxScores = new double[2][n];
-        double[][] barPlotTimes = new double[2][n];
-        double[][][] linePlotNmiScores = new double[2][n][2];
-        double[][][] linePlotRandScores = new double[2][n][2];
-        double[][][] linePlotTimeScores = new double[2][n][2];
-        for (int i = 0; i < n; i++) {
-            int idx = low + i;
+        double[][] barPlotNmiScores = new double[nTangleResults + 1][nTests];
+        double[][] barPlotRandIdxScores = new double[nTangleResults + 1][nTests];
+        double[][] barPlotTimes = new double[nTangleResults + 1][nTests];
+        double[][][] linePlotNmiScores = new double[nTangleResults + 1][nTests][2];
+        double[][][] linePlotRandScores = new double[nTangleResults + 1][nTests][2];
+        double[][][] linePlotTimeScores = new double[nTangleResults + 1][nTests][2];
+        for (int i = 0; i < nTests; i++) {
+            for (int j = 0; j < nTangleResults + 1; j++) {
+                boolean isTangle = j < pythonIndex;
 
-            for (int j = 0; j < 2; j++) {
-                boolean tangle = j == 0;
-                barPlotNmiScores[j][i] = testProgressManager.getNMI(idx, tangle);
-                barPlotRandIdxScores[j][i] = testProgressManager.getRandIdx(idx, tangle);
-                barPlotTimes[j][i] = testProgressManager.getTime(idx, tangle);
+                double nmi = isTangle ? testProgressManager.getTangleNMI(j, i) : testProgressManager.getPythonNMI(i);
+                double randIndex = isTangle ? testProgressManager.getTangleRandIndex(j, i) : testProgressManager.getPythonRandIdx(i);
+                double time = isTangle ? testProgressManager.getTangleTime(j, i) : testProgressManager.getPythonTime(i);
+
+                barPlotNmiScores[j][i] = nmi;
+                barPlotRandIdxScores[j][i] = randIndex;
+                barPlotTimes[j][i] = time;
 
                 linePlotNmiScores[j][i][0] = i + 1;
                 linePlotRandScores[j][i][0] = i + 1;
                 linePlotTimeScores[j][i][0] = i + 1;
-                linePlotNmiScores[j][i][1] = testProgressManager.getNMI(idx, tangle);
-                linePlotRandScores[j][i][1] = testProgressManager.getRandIdx(idx, tangle);
-                linePlotTimeScores[j][i][1] = testProgressManager.getTime(idx, tangle);
+                linePlotNmiScores[j][i][1] = nmi;
+                linePlotRandScores[j][i][1] = randIndex;
+                linePlotTimeScores[j][i][1] = time;
             }
         }
 
-        Line[] nmiLines = new Line[2];
-        Line[] randLines = new Line[2];
-        Line[] timeLines = new Line[2];
-        for (int i = 0; i < 2; i++) {
-            boolean tangles = i == 0;
+        Color[] colors = generateColors();
+
+        Line[] nmiLines = new Line[nTangleResults + 1];
+        Line[] randLines = new Line[nTangleResults + 1];
+        Line[] timeLines = new Line[nTangleResults + 1];
+        for (int i = 0; i < nTangleResults + 1; i++) {
             Line.Style style = Line.Style.SOLID;
             char mark = linePlotTimeScores[i][0][1] == 0 ? ' ' : '@';
-            Color color = i == 0 ? Color.RED : Color.BLUE;
+            Color color = colors[i];
 
             nmiLines[i] = new Line(linePlotNmiScores[i], style, mark, color);
             randLines[i] = new Line(linePlotRandScores[i], style, mark, color);
@@ -98,8 +104,15 @@ public class TestGraphPanel extends JPanel {
         String plotStyle = (String) plotStyleComboBox.getSelectedItem();
         boolean barPlotStyle = plotStyle != null && plotStyle.equals("Bar Plot");
 
-        String[] l = new String[]{"Tangle", "Python"};
-        Legend[] legends = new Legend[] { new Legend(l[0], Color.RED), new Legend(l[1], Color.BLUE) };
+        String[] l = new String[nTangleResults + 1];
+        Legend[] legends = new Legend[nTangleResults + 1];
+        for (int i = 0; i < nTangleResults + 1; i++) {
+            boolean isTangle = i < nTangleResults;
+
+            l[i] = isTangle ? "Tangle " + (i + 1) : "Python";
+            legends[i] = new Legend(l[i], colors[i]);
+        }
+
         Plot nmiPlot = barPlotStyle ?
                 BarPlot.of(barPlotNmiScores, l) :
                 new LinePlot(nmiLines, legends);
@@ -116,7 +129,7 @@ public class TestGraphPanel extends JPanel {
 
         // X-axis should center bars around 1, 2, 3,... and Y_axis always between [0,1]
         double xMin = barPlotStyle ? -0.5 : 0.9;
-        double xMax = n == 1 ? 1.5 : n + (barPlotStyle ? 0.5: 0.1);   // Weird edge case where everything blows up if there is only one tick
+        double xMax = nTests == 1 ? 1.5 : nTests + (barPlotStyle ? 0.5: 0.1);   // Weird edge case where everything blows up if there is only one tick
         double yMin = 0.0;
         double yMax = 1.0;
         double[] minBounds = new double[] { xMin, yMin };
@@ -141,29 +154,29 @@ public class TestGraphPanel extends JPanel {
         randFig.getAxis(0).setGridVisible(false);
         timeFig.getAxis(0).setGridVisible(false);
 
-        String[] labels = new String[n];
-        double[] locations = new double[n];
+        String[] labels = new String[nTests];
+        double[] locations = new double[nTests];
         if (barPlotStyle) {
             double barPlotShift = 0.375;
-            if (n <= 1) {
+            if (nTests <= 1) {
                 labels = new String[]{"1", ""};
                 locations = new double[]{barPlotShift, 1 + barPlotShift};
 
             } else {
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < nTests; i++) {
                     labels[i] = "" + (i + 1);
                     locations[i] = (double) i + barPlotShift;  // Center between the two bars
                 }
             }
         } else {
-            int m = n == 1 ? 2 : n;
+            int m = nTests == 1 ? 2 : nTests;
             labels = new String[m];
             locations = new double[m];
             for (int i = 0; i < m; i++) {
                 labels[i] = "" + (i + 1);
                 locations[i] = i + 1;
             }
-            if (n == 1) labels[n] = "";
+            if (nTests == 1) labels[nTests] = "";
         }
         nmiFig.getAxis(0).setTicks(labels, locations);
         randFig.getAxis(0).setTicks(labels, locations);
@@ -220,5 +233,35 @@ public class TestGraphPanel extends JPanel {
 
         plotPanel.revalidate();
         plotPanel.repaint();
+    }
+
+    private Color[] generateColors() {
+        return new Color[] {
+                Color.RED,
+                Color.BLUE,
+                Color.GREEN,
+                Color.PINK,
+                Color.ORANGE,
+                Color.MAGENTA,
+                Color.CYAN,
+                Color.YELLOW,
+                Color.LIGHT_GRAY,
+                Color.GRAY,
+                Color.DARK_GRAY,
+                new Color(128, 0, 128),     // Purple
+                new Color(255, 105, 180),   // Hot pink
+                new Color(0, 128, 128),     // Teal
+                new Color(139, 69, 19),     // Saddle brown
+                new Color(75, 0, 130),      // Indigo
+                new Color(255, 165, 0),     // Orange
+                new Color(50, 205, 50),     // Lime green
+                new Color(0, 191, 255),     // Deep sky blue
+                new Color(220, 20, 60),     // Crimson
+                new Color(255, 215, 0),     // Gold
+                new Color(0, 100, 0),       // Dark green
+                new Color(123, 104, 238),   // Medium slate blue
+                new Color(255, 69, 0),      // Red-orange
+                new Color(47, 79, 79)       // Dark slate gray
+        };
     }
 }

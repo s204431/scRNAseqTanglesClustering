@@ -139,12 +139,12 @@ public class Model {
     }
 
     public void runTestset(File[] selectedFiles,
-                           Config config,
+                           Config[] configs,
                            int runs,
                            boolean compareWithStandardPipeline,
                            TestEditPanel.TestProgressManager progressManager) {
         TestSet testSet = new TestSet(this, selectedFiles);
-        testSet.runWIthUI(config, runs, compareWithStandardPipeline, progressManager);
+        testSet.runWIthUI(configs, runs, compareWithStandardPipeline, progressManager);
     }
 
     public static double getDistance(double[] point1, double[] point2) {

@@ -140,10 +140,15 @@ public class MainWindow extends JFrame {
 
     public void showTestSet(List<File> selectedDirs) {
         testEditPanel.loadTestSet(selectedDirs);
+        testEditPanel.loadConfigFiles();
     }
 
     public File[] getSelectedTestFiles() {
         return testEditPanel.getSelectedTests();
+    }
+
+    public File[] getSelectedConfigFiles() {
+        return testEditPanel.getSelectedConfigFiles();
     }
 
     public TestEditPanel.TestProgressManager prepareUIForTesting() {
@@ -157,9 +162,9 @@ public class MainWindow extends JFrame {
         return testEditPanel.isRunning();
     }
 
-    public void visualizeTestResults(int i, int j, boolean isTangle) {
+    public void visualizeTestResults(int i, int j) {
         testGraphPanel.drawPlots(i, j);
-        testResultPanel.drawResultsTable(i, j, isTangle);
+        testResultPanel.drawResultsTable(i, j);
     }
 
     public void showInformation(ScRNAseqDataset dataSet) {

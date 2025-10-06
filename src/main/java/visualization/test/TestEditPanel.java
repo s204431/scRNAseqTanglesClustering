@@ -6,85 +6,69 @@ import visualization.View;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.*;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class TestEditPanel extends JPanel {
     private View view;
 
     private javax.swing.Timer timer;
     private final TestProgressManager testProgressManager = new TestProgressManager();
-    private int[] rowsPending;
+    private int[] testRowsPending;
+    private int[] configRowsPending;
 
-    private final JButton selectButton = new JButton("Select");
-    private final JButton unselectButton = new JButton("Unselect");
-    private final JButton selectAllButton = new JButton("Select All");
-    private final JButton selectNoneButton = new JButton("Unselect all");
+    private final EditableTable editableTestTable = new EditableTable(new String[] {"Run", "Test Name"});
+    private final JTable testEditTable = createModifiedJTable(editableTestTable);
+    private final JScrollPane testEditScrollPane = new JScrollPane(testEditTable);
 
-    private final TestSetTable testSetTable = new TestSetTable();
-    private final JTable table = new JTable(testSetTable) {
-        @Override
-        public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-            Component c = super.prepareRenderer(renderer, row, column);
-
-            int modelRow = convertRowIndexToModel(row);
-            TestStatus status = testSetTable.getStatus(modelRow);
-
-            if (!isRowSelected(row)) {
-                switch (status) {
-                    case FINISHED:
-                        c.setBackground(new Color(198, 239, 206)); // light green
-                        c.setForeground(Color.BLACK);
-                        break;
-                    case PENDING:
-                        c.setBackground(new Color(255, 242, 204)); // light yellow
-                        c.setForeground(Color.BLACK);
-                        break;
-                    default:
-                        c.setBackground(Color.WHITE);
-                        c.setForeground(getForeground());
-                }
-            } else {
-                c.setBackground(getSelectionBackground());
-                c.setForeground(getSelectionForeground());
-            }
-
-            if (c instanceof JComponent) {
-                ((JComponent) c).setOpaque(true);
-            }
-            return c;
-        }
-    };
-    private final JScrollPane scrollPane = new JScrollPane(table);
+    private final EditableTable editableConfigTable = new EditableTable(new String[] {"Run", "Config Name"});
+    private final JTable configEditTable = createModifiedJTable(editableConfigTable);
+    private final JScrollPane configEditScrollPane = new JScrollPane(configEditTable);
 
     public TestEditPanel(View view) {
         this.view = view;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
+        addTableWithToolbar(editableTestTable, testEditTable, testEditScrollPane, "Choose tests to run");
+        add(Box.createRigidArea(new Dimension(0, 50)));
+        addTableWithToolbar(editableConfigTable, configEditTable, configEditScrollPane, "Choose additional configurations to run");
+
+        configEditScrollPane.setPreferredSize(new Dimension(100, 100));
+    }
+
+    private void addTableWithToolbar(EditableTable editableTable, JTable table, JScrollPane scrollPane, String titledBorder) {
         table.setFillsViewportHeight(false);
-        //table.setAutoCreateRowSorter(true);
+        //editTable.setAutoCreateRowSorter(true);
         table.setRowSelectionAllowed(true);
-        table.getColumnModel().getColumn(0).setMaxWidth(400);
+        table.getColumnModel().getColumn(0).setMaxWidth(100);
 
-
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Tests in test set"));
+        scrollPane.setBorder(BorderFactory.createTitledBorder(titledBorder));
         add(scrollPane);
 
-        JToolBar toolbar = new JToolBar();
-        toolbar.setFloatable(false);
-        toolbar.add(selectButton);
-        toolbar.add(unselectButton);
-        toolbar.add(selectAllButton);
-        toolbar.add(selectNoneButton);
-        add(toolbar);
+        JButton selectButton = new JButton("Select");
+        JButton unselectButton = new JButton("Unselect");
+        JButton selectAllButton = new JButton("Select All");
+        JButton selectNoneButton = new JButton("Unselect All");
 
-        selectButton.addActionListener(e -> testSetTable.setMarked(table.getSelectedRows(), true));
-        unselectButton.addActionListener(e -> testSetTable.setMarked(table.getSelectedRows(), false));
-        selectAllButton.addActionListener(e -> testSetTable.setAll(true));
-        selectNoneButton.addActionListener(e -> testSetTable.setAll(false));
+        selectButton.addActionListener(e -> editableTable.setMarked(table.getSelectedRows(), true));
+        unselectButton.addActionListener(e -> editableTable.setMarked(table.getSelectedRows(), false));
+        selectAllButton.addActionListener(e -> editableTable.setAll(true));
+        selectNoneButton.addActionListener(e -> editableTable.setAll(false));
+
+        JToolBar testToolBar = new JToolBar();
+        testToolBar.setFloatable(false);
+        testToolBar.add(selectButton);
+        testToolBar.add(unselectButton);
+        testToolBar.add(selectAllButton);
+        testToolBar.add(selectNoneButton);
+
+        add(testToolBar);
     }
 
     public void loadTestSet(List<File> selectedDirs) {
@@ -92,11 +76,32 @@ public class TestEditPanel extends JPanel {
         for (File f : selectedDirs) {
             rows.add(new TestRow(true, f));
         }
-        testSetTable.setRows(rows);
-        resizeTableViewportToRows();
+        editableTestTable.setRows(rows);
+        resizeTableViewportToRows(testEditTable, testEditScrollPane);
     }
 
-    private void resizeTableViewportToRows() {
+    public void loadConfigFiles() {
+        Path dir = Paths.get("config");
+        File folder = dir.toFile();
+
+        List<TestRow> rows = new ArrayList<>();
+        if (!folder.exists() || !folder.isDirectory()) {
+            System.out.println("Error in TestEditPanel: Config folder not found");
+            return;
+        }
+
+        File[] files = folder.listFiles();
+        if (files == null) return;
+        for (File f : files) {
+            if (!f.isFile()) continue;
+            rows.add(new TestRow(false, f));
+        }
+
+        editableConfigTable.setRows(rows);
+        resizeTableViewportToRows(configEditTable, configEditScrollPane);
+    }
+
+    private void resizeTableViewportToRows(JTable table, JScrollPane scrollPane) {
         int rows = Math.max(1, Math.min(table.getRowCount(), 40));
         int rowH = table.getRowHeight();
         int headerH = table.getTableHeader() != null
@@ -116,35 +121,56 @@ public class TestEditPanel extends JPanel {
         return timer != null;
     }
 
+    public File[] getSelectedConfigFiles() {
+        return editableConfigTable.getSelectedFiles();
+    }
+
     public File[] getSelectedTests() {
-        return testSetTable.getSelectedFiles();
+        return editableTestTable.getSelectedFiles();
     }
 
     public void updateResults() {
         boolean testingFinished = true;
 
-        for (int j = 0; j < 2; j++) {
-            boolean isTangle = j == 0;
+        for (int testIndex = 0; testIndex < testProgressManager.getSize(); testIndex++) {
+            int testRow = testRowsPending[testIndex];
+            TestStatus testStatus = editableTestTable.getStatus(testRow);
+            boolean currentTestFinished = true;
 
-            for (int i = 0; i < testProgressManager.getSize(); i++) {
-                int row = rowsPending[i];
-                TestStatus status = testSetTable.getStatus(row);
-
-                if (!testProgressManager.getStatus(i, isTangle)) {
+            // Tangle configurations
+            for (int configIndex = 0; configIndex < testProgressManager.getConfigsSize(); configIndex++) {
+                if (!testProgressManager.getTangleStatus(configIndex, testIndex)) {
                     testingFinished = false;
-                    if (status != TestStatus.PENDING) testSetTable.setStatus(row, TestStatus.PENDING);
+                    currentTestFinished = false;
                 } else {
-                    if (status != TestStatus.FINISHED) {
+                    if (testStatus != TestStatus.FINISHED) {
                         // New test has finished
-                        if (!isTangle) testSetTable.setStatus(row, TestStatus.FINISHED);
-                        view.visualizeTestResults(0, i, isTangle);
+                        view.visualizeTestResults(0, testIndex);
                     }
                 }
+            }
+
+            // Python
+            if (!testProgressManager.getPythonStatus(testIndex)) {
+                testingFinished = false;
+                currentTestFinished = false;
+            } else {
+                if (testStatus != TestStatus.FINISHED) {
+                    // New test has finished
+                    view.visualizeTestResults(0, testIndex);
+                }
+            }
+
+            // Color test table
+            if (currentTestFinished) {
+                editableTestTable.setStatus(testRow, TestStatus.FINISHED);
+            } else {
+                editableTestTable.setStatus(testRow, TestStatus.PENDING);
             }
         }
 
         if (testingFinished) {
-            testSetTable.resetRowStatus();
+            editableTestTable.resetRowStatus();
         }
     }
 
@@ -166,9 +192,47 @@ public class TestEditPanel extends JPanel {
         timer = null;
     }
 
+    private JTable createModifiedJTable(EditableTable editableTable) {
+        JTable newJTable = new JTable(editableTable) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+
+                int modelRow = convertRowIndexToModel(row);
+                TestStatus status = editableTable.getStatus(modelRow);
+
+                if (!isRowSelected(row)) {
+                    switch (status) {
+                        case FINISHED:
+                            c.setBackground(new Color(198, 239, 206)); // light green
+                            c.setForeground(Color.BLACK);
+                            break;
+                        case PENDING:
+                            c.setBackground(new Color(255, 242, 204)); // light yellow
+                            c.setForeground(Color.BLACK);
+                            break;
+                        default:
+                            c.setBackground(Color.WHITE);
+                            c.setForeground(getForeground());
+                    }
+                } else {
+                    c.setBackground(getSelectionBackground());
+                    c.setForeground(getSelectionForeground());
+                }
+
+                if (c instanceof JComponent) {
+                    ((JComponent) c).setOpaque(true);
+                }
+                return c;
+            }
+        };
+        return newJTable;
+    }
+
     public TestEditPanel.TestProgressManager initializeTestProgressManager() {
-        rowsPending = testSetTable.getSelectedRows();
-        testProgressManager.reset(rowsPending.length);
+        testRowsPending = editableTestTable.getSelectedRows();
+        configRowsPending = editableConfigTable.getSelectedRows();
+        testProgressManager.reset(testRowsPending.length, configRowsPending.length + 1);
         return testProgressManager;
     }
 
@@ -178,81 +242,108 @@ public class TestEditPanel extends JPanel {
 
     public static class TestProgressManager {
         private int size;
+        private int configs;
 
-        private AtomicBoolean[] tangleFinished;
+        private AtomicReferenceArray<AtomicBoolean[]> tangleFinished;
         private AtomicBoolean[] pythonFinished;
 
-        private AtomicDouble[] tangleTimes;
+        private AtomicReferenceArray<AtomicDouble[]> tangleTimes;
         private AtomicDouble[] pythonTimes;
 
-        private AtomicDouble[] tangleNMI;
+        private AtomicReferenceArray<AtomicDouble[]> tangleNMI;
         private AtomicDouble[] pythonNMI;
 
-        private AtomicDouble[] tangleRandIndex;
+        private AtomicReferenceArray<AtomicDouble[]> tangleRandIndex;
         private AtomicDouble[] pythonRandIndex;
 
         public TestProgressManager() {
-            reset(0);
+            reset(0, 0);
         }
 
-        public void markFinished(int i, boolean tangle, double time, double NMI, double randIndex) {
-            if (tangle) {
-                tangleFinished[i].set(true);
-                tangleTimes[i].set(time);
-                tangleNMI[i].set(NMI);
-                tangleRandIndex[i].set(randIndex);
-            } else {
-                pythonFinished[i].set(true);
-                pythonTimes[i].set(time);
-                pythonNMI[i].set(NMI);
-                pythonRandIndex[i].set(randIndex);
-            }
+        public void markTangleFinished(int configIndex, int i, double time, double nmi, double randIndex) {
+            System.out.println("Size: " + this.size + " Configs: " + this.configs);
+            tangleFinished.get(configIndex)[i].set(true);
+            tangleTimes.get(configIndex)[i].set(time);
+            tangleNMI.get(configIndex)[i].set(nmi);
+            tangleRandIndex.get(configIndex)[i].set(randIndex);
         }
 
-        public boolean getStatus(int i, boolean tangle) {
-            AtomicBoolean[] array = tangle ? tangleFinished : pythonFinished;
-            return array[i].get();
+        public void markPythonFinished(int i, double time, double nmi, double randIndex) {
+            pythonFinished[i].set(true);
+            pythonTimes[i].set(time);
+            pythonNMI[i].set(nmi);
+            pythonRandIndex[i].set(randIndex);
         }
 
-        public double getTime(int i, boolean tangle) {
-            AtomicDouble[] array = tangle ? tangleTimes : pythonTimes;
-            return array[i].get();
+        public boolean getTangleStatus(int configIndex, int i) {
+            return tangleFinished.get(configIndex)[i].get();
         }
 
-        public double getNMI(int i, boolean tangle) {
-            AtomicDouble[] array = tangle ? tangleNMI : pythonNMI;
-            return array[i].get();
+        public double getTangleTime(int configIndex, int i) {
+            return tangleTimes.get(configIndex)[i].get();
         }
 
-        public double getRandIdx(int i, boolean tangle) {
-            AtomicDouble[] array = tangle ? tangleRandIndex : pythonRandIndex;
-            return array[i].get();
+        public double getTangleNMI(int configIndex, int i) {
+            return tangleNMI.get(configIndex)[i].get();
+        }
+
+        public double getTangleRandIndex(int configIndex, int i) {
+            return tangleRandIndex.get(configIndex)[i].get();
+        }
+
+        public boolean getPythonStatus(int i) {
+            return pythonFinished[i].get();
+        }
+
+        public double getPythonTime(int i) {
+            return pythonTimes[i].get();
+        }
+
+        public double getPythonNMI(int i) {
+            return pythonNMI[i].get();
+        }
+
+        public double getPythonRandIdx(int i) {
+            return pythonRandIndex[i].get();
         }
 
         public int getSize() {
             return size;
         }
 
-        public void reset(int size) {
+        public int getConfigsSize() {
+            return configs;
+        }
+
+        public void reset(int size, int configurations) {
             this.size = size;
+            this.configs = configurations;
 
-            tangleFinished = new AtomicBoolean[size];
+            tangleFinished = new AtomicReferenceArray<>(configurations);
+            tangleTimes = new AtomicReferenceArray<>(configurations);
+            tangleNMI = new AtomicReferenceArray<>(configurations);
+            tangleRandIndex = new AtomicReferenceArray<>(configurations);
+            for (int i = 0; i < configurations; i++) {
+                tangleFinished.set(i, new AtomicBoolean[size]);
+                tangleTimes.set(i, new AtomicDouble[size]);
+                tangleNMI.set(i, new AtomicDouble[size]);
+                tangleRandIndex.set(i, new AtomicDouble[size]);
+                for (int j = 0; j < size; j++) {
+                    tangleFinished.get(i)[j] = new AtomicBoolean(false);
+                    tangleTimes.get(i)[j] = new AtomicDouble();
+                    tangleNMI.get(i)[j] = new AtomicDouble();
+                    tangleRandIndex.get(i)[j] = new AtomicDouble();
+                }
+            }
+
             pythonFinished = new AtomicBoolean[size];
-            tangleTimes = new AtomicDouble[size];
             pythonTimes = new AtomicDouble[size];
-            tangleNMI = new AtomicDouble[size];
             pythonNMI = new AtomicDouble[size];
-            tangleRandIndex = new AtomicDouble[size];
             pythonRandIndex = new AtomicDouble[size];
-
             for (int i = 0; i < size; i++) {
-                tangleFinished[i] = new AtomicBoolean(false);
                 pythonFinished[i] = new AtomicBoolean(false);
-                tangleTimes[i] = new AtomicDouble();
                 pythonTimes[i] = new AtomicDouble();
-                tangleNMI[i] = new AtomicDouble();
                 pythonNMI[i] = new AtomicDouble();
-                tangleRandIndex[i] = new AtomicDouble();
                 pythonRandIndex[i] = new AtomicDouble();
             }
         }
@@ -277,10 +368,14 @@ public class TestEditPanel extends JPanel {
         }
     }
 
-    private static final class TestSetTable extends AbstractTableModel {
-        private final String[] cols = {"Run", "Test name"};
-        private final Class<?>[] types = {Boolean.class, String.class};
-        private final List<TestRow> rows = new ArrayList<>();
+    private static final class EditableTable extends AbstractTableModel {
+        private String[] cols;
+        private Class<?>[] types = new Class<?>[] {Boolean.class, String.class};
+        private List<TestRow> rows = new ArrayList<>();
+
+        public EditableTable(String[] columnNames) {
+            this.cols = columnNames;
+        }
 
         void setRows(List<TestRow> data) {
             rows.clear();

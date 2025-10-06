@@ -173,27 +173,28 @@ public class TestSet {
 
     }
 
-    public void runWIthUI(Config config,
+    public void runWIthUI(Config[] configs,
                           int nRunsPerDataset,
                           boolean runPython,
                           TestEditPanel.TestProgressManager progressManager) {
 
         System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
 
+        int nTests = observedPaths.length;
+        int nConfigs = configs.length;
 
-        averageNMIScores = new double[observedPaths.length];
-        averageRandIndexScores = new double[observedPaths.length];
-        averageTimes = new double[observedPaths.length];
-        if (runPython) {
-            NMIPythonResults = new double[observedPaths.length];
-            randIndexPythonResults = new double[observedPaths.length];
-            pythonTimes = new double[observedPaths.length];
-        }
+        double[][] averageNMIScores = new double[nTests][nConfigs];
+        double[][] averageRandIndexScores = new double[nTests][nConfigs];
+        double[][] averageTimes = new double[nTests][nConfigs];
 
-        for (int i = 0; i < observedPaths.length; i++) {
-            String observedFilePath = observedPaths[i];
-            String labelFilePath = labelsPaths[i];
-            Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
+        double[] NMIPythonResults = new double[nTests];
+        double[] randIndexPythonResults = new double[nTests];
+        double[] pythonTimes = new double[nTests];
+
+        for (int testIndex = 0; testIndex < nTests; testIndex++) {
+            String observedFilePath = observedPaths[testIndex];
+            String labelFilePath = labelsPaths[testIndex];
+            Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath, dirPath + "/" + labelFilePath);
             double[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
 
@@ -208,50 +209,53 @@ public class TestSet {
             double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
             int nClusters = getNumberOfClusters(groundTruth);
             long preTime = System.currentTimeMillis() - preTime1;
-            for (int j = 0; j < nRunsPerDataset; j++) {
 
-                long time1 = System.currentTimeMillis();
+            for (int configIndex = 0; configIndex < configs.length; configIndex++) {
+                Config config = configs[configIndex];
 
-                ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
+                for (int run = 0; run < nRunsPerDataset; run++) {
+                    long time1 = System.currentTimeMillis();
+                    ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
-                int a;
-                if (config.isAutoComputeA()) {
-                    a = (int)((hvgData.length/20.0)*0.7);
+                    int a;
+                    if (config.isAutoComputeA()) {
+                        a = (int) ((hvgData.length / 20.0) * 0.7);
+                    } else {
+                        a = (int) (((double) dataset.data.length / nClusters) * config.getaFactor());
+                    }
+                    Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.isUseCache(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), a, config.getaFactor(), config.getPsi());
+                    newConfig.setAutoCompute(config.isAutoComputeA(), config.isAutoComputePsi());
+                    newConfig.setDimensionReductionParameters(config.getSplitSize(), config.getTsneComponents());
+
+                    int[] hardClustering = model.clusterAndReturn(dataset, newConfig);
+                    averageTimes[testIndex][configIndex] += (preTime + (System.currentTimeMillis() - time1)) / 1000.0;
+
+                    double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+                    double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
+                    averageNMIScores[testIndex][configIndex] += NMI;
+                    averageRandIndexScores[testIndex][configIndex] += randIndex;
                 }
-                else {
-                    a = (int)(((double)dataset.data.length/nClusters)*config.getaFactor());
-                }
-                Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.isUseCache(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), a, config.getaFactor(), config.getPsi());
-                newConfig.setAutoCompute(config.isAutoComputeA(), config.isAutoComputePsi());
-                newConfig.setDimensionReductionParameters(config.getSplitSize(), config.getTsneComponents());
 
-                int[] hardClustering = model.clusterAndReturn(dataset, newConfig);
-                averageTimes[i] += (preTime + (System.currentTimeMillis() - time1))/1000.0;
-
-                double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
-                double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
-                averageNMIScores[i] += NMI;
-                averageRandIndexScores[i] += randIndex;
+                averageNMIScores[testIndex][configIndex] /= nRunsPerDataset;
+                averageRandIndexScores[testIndex][configIndex] /= nRunsPerDataset;
+                averageTimes[testIndex][configIndex] /= nRunsPerDataset;
+                progressManager.markTangleFinished(configIndex, testIndex, averageTimes[testIndex][configIndex], averageNMIScores[testIndex][configIndex], averageRandIndexScores[testIndex][configIndex]);
+                if (!runPython) progressManager.markPythonFinished(testIndex, 0, 0, 0);
+                System.out.println("Average results for dataset " + observedPaths[testIndex].replace("observed_counts_", "") + " for config file " + (configIndex + 1));
+                System.out.println("NMI score: " + averageNMIScores[testIndex][configIndex]);
+                System.out.println("Rand Index score: " + averageRandIndexScores[testIndex][configIndex]);
+                System.out.println("Average time (s): " + averageTimes[testIndex][configIndex]);
+                System.out.println();
             }
-            averageNMIScores[i] /= nRunsPerDataset;
-            averageRandIndexScores[i] /= nRunsPerDataset;
-            averageTimes[i] /= nRunsPerDataset;
-            progressManager.markFinished(i, true, averageTimes[i], averageNMIScores[i], averageRandIndexScores[i]);
-            if (!runPython) progressManager.markFinished(i, false, 0, 0, 0);
-            System.out.println("Average results for dataset " + observedPaths[i].replace("observed_counts_", ""));
-            System.out.println("NMI score: " + averageNMIScores[i]);
-            System.out.println("Rand Index score: " + averageRandIndexScores[i]);
-            System.out.println("Average time (s): " + averageTimes[i]);
-            System.out.println();
 
             if (runPython) {
                 Tuple<int[], Double> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
                 double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
-                NMIPythonResults[i] = NMIPython;
-                randIndexPythonResults[i] = randIndexPython;
-                pythonTimes[i] = pythonResult.y;
-                progressManager.markFinished(i, false, pythonTimes[i], NMIPythonResults[i], randIndexPythonResults[i]);
+                NMIPythonResults[testIndex] = NMIPython;
+                randIndexPythonResults[testIndex] = randIndexPython;
+                pythonTimes[testIndex] = pythonResult.y;
+                progressManager.markPythonFinished(testIndex, pythonTimes[testIndex], NMIPythonResults[testIndex], randIndexPythonResults[testIndex]);
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);
                 System.out.println("Python time: " + pythonResult.y);
@@ -268,9 +272,9 @@ public class TestSet {
         double pythonAverageTime = 0.0;
 
         for (int i = 0; i < averageNMIScores.length; i++) {
-            overallAverageNMI += averageNMIScores[i];
-            overallAverageRandIndex += averageRandIndexScores[i];
-            overallAverageTime += averageTimes[i];
+            overallAverageNMI += averageNMIScores[i][0];
+            overallAverageRandIndex += averageRandIndexScores[i][0];
+            overallAverageTime += averageTimes[i][0];
             if (runPython) {
                 pythonAverageNMI += NMIPythonResults[i];
                 pythonAverageRandIndex += randIndexPythonResults[i];
@@ -281,7 +285,7 @@ public class TestSet {
         overallAverageRandIndex /= averageRandIndexScores.length;
         overallAverageTime /= averageTimes.length;
 
-        System.out.println("Overall average:");
+        System.out.println("Overall average for user defined configs:");
         System.out.println("NMI score: " + overallAverageNMI);
         System.out.println("Rand Index score: " + overallAverageRandIndex);
         System.out.println("Time (s): " + overallAverageTime);

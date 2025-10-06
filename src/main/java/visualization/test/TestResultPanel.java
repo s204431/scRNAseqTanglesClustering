@@ -1,5 +1,6 @@
 package visualization.test;
 
+import org.bytedeco.javacpp.indexer.ShortRawIndexer;
 import visualization.View;
 
 import javax.swing.*;
@@ -13,7 +14,7 @@ import java.util.List;
 public class TestResultPanel extends JPanel {
     private View view;
     private TestEditPanel.TestProgressManager testProgressManager;
-    private ResultsTable resultsTable = new ResultsTable(0);
+    private ResultsTable resultsTable = new ResultsTable(0, 3);
     private JTable table = new JTable(resultsTable);
 
     public TestResultPanel(View view, TestEditPanel.TestProgressManager testProgressManager) {
@@ -56,53 +57,67 @@ public class TestResultPanel extends JPanel {
         });
     }
 
-    public void drawResultsTable(int low, int high, boolean isTangle) {
-        // Fill rows
-        int n = high - low + 1;
+    public void drawResultsTable(int low, int high) {
+        int nTests = high - low + 1;
+        int nConfigs = testProgressManager.getConfigsSize();
 
-        double tangleAvgTime = 0;
-        double pythonAvgTime = 0;
-        double tangleAvgNmi = 0;
-        double pythonAvgNmi = 0;
-        double tangleAvgRandIdx = 0;
-        double pythonAvgRandIdx = 0;
+        boolean[] missingValues = new boolean[nConfigs + 1];
+        double[] avgTimes = new double[nConfigs + 1];
+        double[] avgNmiScores = new double[nConfigs + 1];
+        double[] avgRandIndexScores = new double[nConfigs + 1];
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < nTests; i++) {
             int baseRow = i * ResultsTable.ROW_OFFSET + ResultsTable.HEADER_ROWS;
 
-            double tangleTime = testProgressManager.getTime(i, true);
-            double pythonTime = testProgressManager.getTime(i, false);
-            double tangleNmi = testProgressManager.getNMI(i, true);
-            double pythonNmi = testProgressManager.getNMI(i, false);
-            double tangleRandIdx = testProgressManager.getRandIdx(i, true);
-            double pythonRandIdx = testProgressManager.getRandIdx(i, false);
+            double[] timeValues = new double[nConfigs + 1];
+            double[] nmiValues = new double[nConfigs + 1];
+            double[] randIndexValues = new double[nConfigs + 1];
 
-            resultsTable.setRowValues(baseRow + ResultsTable.ROW_TIME, tangleTime, pythonTime);
-            resultsTable.setRowValues(baseRow + ResultsTable.ROW_NMI, tangleNmi, pythonNmi);
-            resultsTable.setRowValues(baseRow + ResultsTable.ROW_RAND_IDX, tangleRandIdx, pythonRandIdx);
+            for (int j = 0; j < nConfigs + 1; j++) {
+                boolean isTangle = j < nConfigs;
 
-            tangleAvgTime += tangleTime;
-            pythonAvgTime += pythonTime;
-            tangleAvgNmi += tangleNmi;
-            pythonAvgNmi += pythonNmi;
-            tangleAvgRandIdx += tangleRandIdx;
-            pythonAvgRandIdx += pythonRandIdx;
+                double time = isTangle ? testProgressManager.getTangleTime(j, i) : testProgressManager.getPythonTime(i);
+                double nmi = isTangle ? testProgressManager.getTangleNMI(j, i) : testProgressManager.getPythonNMI(i);
+                double randIndex = isTangle ? testProgressManager.getTangleRandIndex(j, i) : testProgressManager.getPythonRandIdx(i);
+
+                timeValues[j] = time;
+                nmiValues[j] = nmi;
+                randIndexValues[j] = randIndex;
+
+                if (time == 0 && nmi == 0 && randIndex == 0) {
+                    missingValues[j] = true;
+                } else {
+                    missingValues[j] = false;
+                }
+
+                avgTimes[j] += time;
+                avgNmiScores[j] += nmi;
+                avgRandIndexScores[j] += randIndex;
+            }
+
+            resultsTable.setRowValues(baseRow + ResultsTable.ROW_TIME, timeValues);
+            resultsTable.setRowValues(baseRow + ResultsTable.ROW_NMI, nmiValues);
+            resultsTable.setRowValues(baseRow + ResultsTable.ROW_RAND_IDX, randIndexValues);
         }
 
-        tangleAvgTime /= n;
-        pythonAvgTime /= isTangle ? n-1 : n;
-        tangleAvgNmi /= n;
-        pythonAvgNmi /= isTangle ? n-1 : n;
-        tangleAvgRandIdx /= n;
-        pythonAvgRandIdx /= isTangle ? n-1 : n;
-        resultsTable.setRowValues(1, tangleAvgTime, pythonAvgTime);
-        resultsTable.setRowValues(2, tangleAvgNmi, pythonAvgNmi);
-        resultsTable.setRowValues(3, tangleAvgRandIdx, pythonAvgRandIdx);
+        for (int i = 0; i < nConfigs + 1; i++) {
+            int n = nTests;
+            if (missingValues[i]) n--;
+
+            avgTimes[i] /= n;
+            avgNmiScores[i] /= n;
+            avgRandIndexScores[i] /= n;
+        }
+
+        resultsTable.setRowValues(1, avgTimes);
+        resultsTable.setRowValues(2, avgNmiScores);
+        resultsTable.setRowValues(3, avgRandIndexScores);
     }
 
     public void initializeResultsTable() {
         int size = testProgressManager.getSize();
-        resultsTable = new ResultsTable(size);
+        int rowSize = testProgressManager.getConfigsSize() + 1;
+        resultsTable = new ResultsTable(size, rowSize);
         table.setModel(resultsTable);
         resizeViewportToRows(size*4 + 4);
     }
@@ -116,7 +131,7 @@ public class TestResultPanel extends JPanel {
     }
 
     private class ResultsTable extends AbstractTableModel {
-        private static final String[] COLUMN_NAMES = { "", "Tangle", "Python" };
+        private static String[] COL_NAMES = new String[] { "Tangle 1", "Python" };
 
         public static final int HEADER_ROWS = 4;
         public static final int ROW_OFFSET = 4;
@@ -127,20 +142,29 @@ public class TestResultPanel extends JPanel {
 
         private class Row {
             String description;
-            double tangleVal;
-            double pythonVal;
+            double[] values;
 
-            public Row(String description, double tangleVal, double pythonVal) {
+            public Row(String description, double[] values) {
                 this.description = description;
-                this.tangleVal = tangleVal;
-                this.pythonVal = pythonVal;
+                this.values = values;
             }
         }
 
         private List<Row> rows = new ArrayList<>();
         private DecimalFormat df = new DecimalFormat("0.###");
 
-        public ResultsTable(int size) {
+        private int rowSize;
+
+        public ResultsTable(int size, int rowSize) {
+            this.rowSize = rowSize + 1;
+
+            COL_NAMES = new String[rowSize + 1];
+            for (int i = 1; i < rowSize + 1; i++) {
+                boolean isTangle = i < rowSize;
+                COL_NAMES[i] = isTangle ? ("Tangle " + i) : "Python";
+            }
+            COL_NAMES[0] = "Description";
+
             createEmptyRow("Averages");
             createEmptyRow("Avg Time");
             createEmptyRow("Avg NMI");
@@ -157,13 +181,12 @@ public class TestResultPanel extends JPanel {
         }
 
         public void createEmptyRow(String dscr) {
-            rows.add(new Row(dscr, 0, 0));
+            rows.add(new Row(dscr, new double[rowSize]));
         }
 
-        public void setRowValues(int r, double tangleVal, double pythonVal) {
+        public void setRowValues(int r, double[] values) {
             Row row = rows.get(r);
-            row.tangleVal = tangleVal;
-            row.pythonVal = pythonVal;
+            row.values = values;
             fireTableRowsUpdated(r, r);
         }
 
@@ -183,24 +206,20 @@ public class TestResultPanel extends JPanel {
 
         @Override
         public int getColumnCount() {
-            return COLUMN_NAMES.length;
+            return COL_NAMES.length;
         }
 
         @Override
         public String getColumnName(int columnIndex) {
-            return COLUMN_NAMES[columnIndex];
+            return COL_NAMES[columnIndex];
         }
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             Row row = rows.get(rowIndex);
-
-            switch (columnIndex) {
-                case 0: return row.description;
-                case 1: if (isFillerRow(rowIndex)) return ""; else return format(row.tangleVal);
-                case 2: if (isFillerRow(rowIndex)) return ""; else return format(row.pythonVal);
-                default: return "";
-            }
+            if (columnIndex == 0) return row.description;
+            if (isFillerRow(rowIndex)) return "";
+            return format(row.values[columnIndex - 1]);
         }
 
         private String format(Double val) {

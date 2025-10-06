@@ -3,7 +3,7 @@ cse_werner_modification:true
 use_cache:true
 cut_generator:Default
 high_level_cost_function:Default
-low_level_cot_function:Default
+low_level_cost_function:Default
 a:0
 psi:0.0
 a_factor:0.667
