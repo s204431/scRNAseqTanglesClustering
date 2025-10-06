@@ -18,6 +18,7 @@ import io.jhdf.HdfFile;
 import io.jhdf.api.Dataset;
 import io.jhdf.api.Group;
 import io.jhdf.api.Node;
+import org.ejml.simple.SimpleMatrix;
 import util.Monitor;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
@@ -257,10 +258,6 @@ public class Model {
         tangleClusterer.removeRedundantCuts = prev4;
 
         hardClustering = tangleClusterer.getHardClustering();
-        double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
-        double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
-        System.out.println(NMIScore);
-        System.out.println(randIndex);
 
         return hardClustering;
     }
@@ -335,7 +332,22 @@ public class Model {
     }
 
     public static double[][] svd(double[][] data, int nComponents) {
-        Matrix X = Matrix.of(data);
+        int n = data.length;
+        int d = data[0].length;
+
+        double[] mean = new double[d];
+        for (int j = 0; j < d; j++) {
+            double sum = 0.0;
+            for (int i = 0; i < n; i++) sum += data[i][j];
+            mean[j] = sum / n;
+        }
+
+        double[][] centered = new double[n][d];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < d; j++)
+                centered[i][j] = data[i][j] - mean[j];
+
+        Matrix X = Matrix.of(centered);
         Matrix.SVD svd = X.svd();
 
         Matrix V = svd.V;
