@@ -1,5 +1,6 @@
 package clustering;
 
+import datasets.CostFunctions;
 import datasets.ScRNAseqDataset;
 import elki.data.DoubleVector;
 import elki.data.type.TypeUtil;
@@ -261,8 +262,6 @@ public class Model {
     }
 
     public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
-        int a = config.getA();
-        double psi = config.getPsi();
         String initialCutsGenerator = config.getCutGeneratorName();
         String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
         String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
@@ -272,12 +271,13 @@ public class Model {
 
         int maxClusters = 10;
 
-        int minA = Math.max((dataset.data.length/maxClusters)/2, 1);
-        int maxA = dataset.data.length/2;
+        int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.667), 1);
 
         double[][] reducedPoints = tsne(dataset.data, tsneComponents);
 
         dataset.setA(minA);
+        CostFunctions costFunctions = new CostFunctions();
+        dataset.setCostFunctions(costFunctions);
         BitSet[] initialCuts = dataset.getInitialCuts(initialCutsGenerator);
         double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
@@ -288,32 +288,40 @@ public class Model {
         int[] bestHardClustering = null;
         double bestSilhuetteScore = -1;
         int bestA = -1;
+        double bestPsi = -1;
 
-        for (int a2 = minA; a2 < maxA; a2 += 5) {
-            tangleClusterer.generateClusters(a2, psi, initialCuts, costs);
-            hardClustering = tangleClusterer.getHardClustering();
-            double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
-            double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
+        for (double psi = 0; psi <= 1; psi += 0.05) {
+            for (int nClusters = 2; nClusters <= maxClusters; nClusters++) {
+                int a2 = Math.max((int)((dataset.data.length/(double)nClusters)*0.667), 1);
+                config.setA(a2);
+                config.setPsi(psi);
+                tangleClusterer.generateClusters(dataset, config, initialCuts, costs, costFunctions);
+                hardClustering = tangleClusterer.getHardClustering();
+                //double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+                //double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
 
-            System.out.println(NMIScore);
-            System.out.println(randIndex);
-            double silhuetteScore = silhuetteScore(reducedPoints, hardClustering);
-            if (silhuetteScore < 1.0 && silhuetteScore > bestSilhuetteScore) {
-                bestSilhuetteScore = silhuetteScore;
-                bestHardClustering = hardClustering;
-                bestA = a2;
+                //System.out.println(NMIScore);
+                //System.out.println(randIndex);
+                double silhuetteScore = silhuetteScore(reducedPoints, hardClustering);
+                if (silhuetteScore < 1.0 && silhuetteScore > bestSilhuetteScore) {
+                    bestSilhuetteScore = silhuetteScore;
+                    bestHardClustering = hardClustering;
+                    bestA = a2;
+                    bestPsi = psi;
+                }
+                //System.out.println(silhuetteScore);
             }
-            System.out.println(silhuetteScore);
         }
 
         hardClustering = bestHardClustering;
 
-        double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
-        double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
+        //double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+        //double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
 
         System.out.println("Best a: " + bestA);
-        System.out.println(NMIScore);
-        System.out.println(randIndex);
+        System.out.println("Best psi: " + bestPsi);
+        //System.out.println(NMIScore);
+        //System.out.println(randIndex);
         return hardClustering;
     }
 

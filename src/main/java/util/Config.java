@@ -13,9 +13,9 @@ public final class Config {
     private final String cutGeneratorName;
     private final String highLevelCostFunctionName;
     private final String lowLevelCostFunctionName;
-    private final int a;
-    private final double aFactor;
-    private final double psi;
+    private int a;
+    private double aFactor;
+    private double psi;
     private boolean autoComputeA;
     private boolean autoComputePsi;
     private boolean removeRedundant;
@@ -83,6 +83,14 @@ public final class Config {
     public void setDimensionReductionParameters(int splitSize, int tsneComponents) {
         this.splitSize = splitSize;
         this.tsneComponents = tsneComponents;
+    }
+
+    public void setA(int a) {
+        this.a = a;
+    }
+
+    public void setPsi(double psi) {
+        this.psi = psi;
     }
 
     public void setRemoveRedundant(boolean remove) {

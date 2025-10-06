@@ -79,16 +79,26 @@ public class TangleClusterer {
         tree.calculateHardClustering();
     }
 
-    public void generateClusters(int a, double psi, BitSet[] initialCuts, double[] costs) {
-        TangleSearchTree tree = generateTangleSearchTree(initialCuts, costs, a, psi);
+    public void generateClusters(ScRNAseqDataset dataset, Config config, BitSet[] initialCuts, double[] costs, CostFunctions costFunctions) {
+        int a = config.getA();
+        double psi = config.getPsi();
+
+        splitCosts = new ArrayList<>();
+        this.costFunctions = costFunctions;
+        dataset.setCostFunctions(costFunctions);
+        TangleSearchTree tree = useOscarWerner ?
+                oscarWerner(initialCuts, costs, dataset.data, config) :
+                generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
-        splitCosts = new ArrayList<>();
         if (autoLimitSplitCosts) {
             tree.limitSplitCosts(tree.root, calculateMaxSplitCost());
+            monitor.setSplitPrunedTree(tree.copy());
+        } else {
+            monitor.setSplitPrunedTree(null);
         }
         try {
-            tree.condenseTree(1);
+            tree.condenseTree(autoLimitSplitCosts ? 0 : 1);
         } catch (NullPointerException e) {
             tree.generateDefaultClustering();
             return;
