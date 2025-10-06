@@ -315,7 +315,7 @@ public class ParameterPanel extends JPanel {
         view.runTestSetWithUI(config, runs, pythonCheckBox.isSelected());
     }
 
-    private Config getConfig(boolean testing) {
+    public Config getConfig(boolean testing) {
         int a = 0;
         double aFactor = 0.0;
         double psi;
@@ -383,6 +383,43 @@ public class ParameterPanel extends JPanel {
         config.setDimensionReductionParameters(splitSize, tsneComponents);
         config.setRemoveRedundant(removeRedundantCheckBox.isSelected());
         return config;
+    }
+
+    public void setConfig(Config config) {
+        consistencyCheckbox.setSelected(config.isUseAlternateConsistencyCheck());
+        wernerModificationCheckbox.setSelected(config.isUseWernerModification());
+        useCacheCheckBox.setSelected(config.isUseCache());
+        removeRedundantCheckBox.setSelected(config.isRemoveRedundant());
+
+        selectDropdown(cutGeneratorDropdown, config.getCutGeneratorName());
+        selectDropdown(highLevelCostFunctionDropdown, config.getHighLevelCostFunctionName());
+        selectDropdown(lowLevelCostFunctionDropdown, config.getLowLevelCostFunctionName());
+
+        if (dataPanel) {
+            aField.setText(Integer.toString(config.getA()));
+        } else {
+            aField.setText(Double.toString(config.getaFactor()));
+        }
+        psiField.setText(Double.toString(config.getPsi()));
+        autoComputeACheckBox.setSelected(config.isAutoComputeA());
+        autoComputePsiCheckBox.setSelected(config.isAutoComputePsi());
+        parameterTuningCheckBox.setSelected(config.isTuneParameters());
+        splitSizeField.setText(Integer.toString(config.getSplitSize()));
+        tsneComponentsField.setText(Integer.toString(config.getTsneComponents()));
+
+        revalidate();
+        repaint();
+    }
+
+    private void selectDropdown(JComboBox<String> combo, String value) {
+        ComboBoxModel<String> model = combo.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            if (model.getElementAt(i).equals(value)) {
+                combo.setSelectedItem(value);
+                return;
+            }
+        }
+        combo.setSelectedIndex(0);
     }
 
     private void stepCutCounter(int step) {

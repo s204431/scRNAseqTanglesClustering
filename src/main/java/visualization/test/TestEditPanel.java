@@ -38,8 +38,6 @@ public class TestEditPanel extends JPanel {
         addTableWithToolbar(editableTestTable, testEditTable, testEditScrollPane, "Choose tests to run");
         add(Box.createRigidArea(new Dimension(0, 50)));
         addTableWithToolbar(editableConfigTable, configEditTable, configEditScrollPane, "Choose additional configurations to run");
-
-        configEditScrollPane.setPreferredSize(new Dimension(100, 100));
     }
 
     private void addTableWithToolbar(EditableTable editableTable, JTable table, JScrollPane scrollPane, String titledBorder) {

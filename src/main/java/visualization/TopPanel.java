@@ -1,6 +1,6 @@
 package visualization;
 
-import util.GlobalConstants;
+import util.Config;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -23,7 +23,7 @@ public class TopPanel extends JPanel {
     public TopPanel(View view) {
         this.view = view;
         setBackground(new Color(220, 230, 245));
-        setLayout(new FlowLayout(FlowLayout.LEFT));
+        setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 
         JButton openButton = new JButton("Open Data Set");
         openButton.addActionListener(this::openAction);
@@ -31,8 +31,26 @@ public class TopPanel extends JPanel {
         JButton testSetButton = new JButton("Open Test Set");
         testSetButton.addActionListener(this::testSetAction);
 
-        add(openButton);
-        add(testSetButton);
+        JButton saveConfigButton = new JButton("Save Config");
+        saveConfigButton.addActionListener(this::saveConfigAction);
+
+        JButton loadConfigButton = new JButton("Load Config");
+        loadConfigButton.addActionListener(this::loadConfigAction);
+
+        addButton(openButton);
+        addButton(testSetButton);
+
+        add(Box.createHorizontalGlue());
+
+        addButton(saveConfigButton);
+        addButton(loadConfigButton);
+
+        add(Box.createHorizontalStrut(30));
+    }
+
+    private void addButton(JButton button) {
+        add(Box.createHorizontalStrut(10));
+        add(button);
     }
 
     private void openAction(ActionEvent e) {
@@ -130,5 +148,65 @@ public class TopPanel extends JPanel {
             view.showTestSet(allFiles);
             view.changeView(MainWindow.TEST_VIEW);
         }
+    }
+
+    private void saveConfigAction(ActionEvent e) {
+        Config config = view.getCurrentConfigurations();
+        if (config == null) {
+            System.out.println("Error in top panel: Could not load current configurations");
+            return;
+        }
+
+        JFormattedTextField input = new JFormattedTextField();
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                input,
+                "Enter name of the config file:",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (option == JOptionPane.OK_OPTION) {
+            String name = input.getText();
+            if (!name.endsWith(".txt")) name += ".txt";
+            config.saveConfiguration(name);
+        }
+    }
+
+    private void loadConfigAction(ActionEvent e) {
+        JFileChooser chooser = new JFileChooser();
+
+        Path configDir = Paths.get("config");
+        chooser.setCurrentDirectory(configDir.toFile());
+
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".txt");
+            }
+            @Override public String getDescription() {
+                return "Config files (*.txt)";
+            }
+        });
+
+        int result = chooser.showOpenDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) return;
+
+        File selected = chooser.getSelectedFile();
+        if (selected == null || !selected.isFile()) return;
+
+        String fileName = selected.getName();
+        Config config = Config.loadConfiguration(fileName);
+        if (config == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Could not load the selected configuration.",
+                    "Load Config",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        view.loadConfig(config);
     }
 }

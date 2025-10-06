@@ -30,6 +30,8 @@ public class View {
         this.model = model;
 
         FlatLightLaf.setup();
+        UIManager.put("FileChooser.readOnly", Boolean.TRUE);
+
         UIManager.put("defaultFont", new javax.swing.plaf.FontUIResource("Inter", Font.PLAIN, 13));
         UIManager.put("Component.arc", 12);
         UIManager.put("Button.arc", 14);
@@ -209,5 +211,13 @@ public class View {
 
     public void removeTrees() {
         window.removeTrees();
+    }
+
+    public Config getCurrentConfigurations() {
+        return window.getCurrentConfigurations();
+    }
+
+    public void loadConfig(Config config) {
+        window.loadConfig(config);
     }
 }

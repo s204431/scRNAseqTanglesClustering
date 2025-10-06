@@ -2,6 +2,7 @@ package visualization;
 
 import clustering.TangleSearchTree;
 import datasets.ScRNAseqDataset;
+import util.Config;
 import visualization.data.ScatterPlotPanel;
 import visualization.data.StatisticsPanel;
 import visualization.data.TangleTreePanel;
@@ -34,6 +35,8 @@ public class MainWindow extends JFrame {
     private final TestGraphPanel testGraphPanel;
     private final TestResultPanel testResultPanel;
     private final TopPanel topPanel;
+
+    private String currentView;
 
     public MainWindow(View view) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -72,6 +75,7 @@ public class MainWindow extends JFrame {
     }
 
     public void changeView(String viewName) {
+        currentView = viewName;
         ((CardLayout) cards.getLayout()).show(cards, viewName);
         cards.revalidate();
         cards.repaint();
@@ -197,5 +201,17 @@ public class MainWindow extends JFrame {
 
     public void removeTrees() {
         tangleTreePanel.removeTrees();
+    }
+
+    public Config getCurrentConfigurations() {
+        return currentView.equals(DATA_VIEW) ? dataParameterPanel.getConfig(false) : testParameterPanel.getConfig(true);
+    }
+
+    public void loadConfig(Config config) {
+        if (currentView.equals(DATA_VIEW)) {
+            dataParameterPanel.setConfig(config);
+        } else {
+            testParameterPanel.setConfig(config);
+        }
     }
 }
