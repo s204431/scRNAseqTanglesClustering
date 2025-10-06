@@ -20,9 +20,9 @@ public class TestDistance {
         for (int i = 0; i < dataPaths.length; i++) {
             String path = dataPaths[i];
             String labelFilePath = path.replace("observed_counts", "labels");
-            Tuple<double[][], int[]> loaded = model.loadData(path, labelFilePath);
-            double[][] originalData = loaded.x;
-            double[][] normalizedData = normalize ? model.logNormalize(originalData) : originalData;
+            Tuple<float[][], int[]> loaded = model.loadData(path, labelFilePath);
+            float[][] originalData = loaded.x;
+            float[][] normalizedData = normalize ? model.logNormalize(originalData) : originalData;
             int[] groundTruth = loaded.y;
             double[][] data = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
             fullData[i] = data;

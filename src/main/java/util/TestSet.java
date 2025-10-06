@@ -98,8 +98,8 @@ public class TestSet {
         for (int i = 0; i < observedPaths.length; i++) {
             String observedFilePath = observedPaths[i];
             String labelFilePath = labelsPaths[i];
-            Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
-            double[][] originalData = loaded.x;
+            Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
+            float[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
 
             Random r = new Random();
@@ -108,7 +108,7 @@ public class TestSet {
             model.shuffleArray(shuffledGroundTruth, seed);
             model.shuffleArray(originalData, seed);
 
-            double[][] normalizedData = model.logNormalize(originalData);
+            float[][] normalizedData = model.logNormalize(originalData);
             double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
             int nClusters = getNumberOfClusters(groundTruth);
             for (int j = 0; j < nRunsPerDataset; j++) {
@@ -194,8 +194,8 @@ public class TestSet {
         for (int testIndex = 0; testIndex < nTests; testIndex++) {
             String observedFilePath = observedPaths[testIndex];
             String labelFilePath = labelsPaths[testIndex];
-            Tuple<double[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath, dirPath + "/" + labelFilePath);
-            double[][] originalData = loaded.x;
+            Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath, dirPath + "/" + labelFilePath);
+            float[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
 
             Random r = new Random();
@@ -205,7 +205,7 @@ public class TestSet {
             model.shuffleArray(originalData, seed);
 
             long preTime1 = System.currentTimeMillis();
-            double[][] normalizedData = model.logNormalize(originalData);
+            float[][] normalizedData = model.logNormalize(originalData);
             double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
             int nClusters = getNumberOfClusters(groundTruth);
             long preTime = System.currentTimeMillis() - preTime1;

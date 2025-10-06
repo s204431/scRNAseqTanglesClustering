@@ -53,7 +53,6 @@ import visualization.test.TestEditPanel;
 
 public class Model {
     private double[][] hvgData;
-    private double[][] projectedData;
     private ScRNAseqDataset dataset;
     private int seed;
     private int[] groundTruth;
@@ -73,8 +72,8 @@ public class Model {
 
         String labelFilePath = observedFilePath.replace("observed_counts", "labels");
 
-        Tuple<double[][], int[]> data = loadData(observedFilePath, labelFilePath);
-        double[][] originalData = data.x;
+        Tuple<float[][], int[]> data = loadData(observedFilePath, labelFilePath);
+        float[][] originalData = data.x;
         groundTruth = data.y;
         shuffledGroundTruth = groundTruth.clone();
 
@@ -113,11 +112,11 @@ public class Model {
 
     // Fisher-Yayes shuffle to limit space usage
     // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
-    public void shuffleArray(double[][] array, int seed) {
+    public void shuffleArray(float[][] array, int seed) {
         Random rand = new Random(seed);
         for (int i = array.length - 1; i > 0; i--) {
             int j = rand.nextInt(i + 1);
-            double[] temp = array[i];
+            float[] temp = array[i];
             array[i] = array[j];
             array[j] = temp;
         }
@@ -451,7 +450,7 @@ public class Model {
         return tsne(encoded.toDoubleMatrix(), nComponents);
     }
 
-    public Tuple<double[][], int[]> loadData(String observedFilePath, String labelsFilePath) {
+    public Tuple<float[][], int[]> loadData(String observedFilePath, String labelsFilePath) {
         if (observedFilePath.endsWith(".csv")) {
             return new Tuple<>(readCSV(observedFilePath), loadGroundTruthCSV(labelsFilePath));
         }
@@ -463,7 +462,7 @@ public class Model {
     }
 
     public int[] loadGroundTruthCSV(String filePath) {
-        double[][] temp = readCSV(filePath);
+        float[][] temp = readCSV(filePath);
         if (temp == null) {
             return null;
         }
@@ -474,7 +473,7 @@ public class Model {
         return gt;
     }
 
-    public double[][] highlyVariableGenes(double[][] data, int nTopGenes) {
+    public double[][] highlyVariableGenes(float[][] data, int nTopGenes) {
         int nGenes = data[0].length;
         int nCells = data.length;
 
@@ -517,7 +516,7 @@ public class Model {
         return newData;
     }
 
-    public double[][] highlyVariableGenes2(double[][] data, int nTopGenes) {
+    public double[][] highlyVariableGenes2(float[][] data, int nTopGenes) {
         double[] dispersions = new double[data[0].length];
         double[] means = new double[data[0].length];
         Integer[] indices = new Integer[data[0].length];
@@ -601,11 +600,11 @@ public class Model {
         return newData;
     }
 
-    public double[][] logNormalize(double[][] data) {
+    public float[][] logNormalize(float[][] data) {
         int nZeros = 0;
         for (int i = 0; i < data.length; i++) {
             for (int j = 0; j < data[i].length; j++) {
-                data[i][j] = Math.log(1.0 + data[i][j]);
+                data[i][j] = (float)Math.log(1.0 + data[i][j]);
                 if (data[i][j] == 0.0) {
                     nZeros++;
                 }
@@ -616,8 +615,8 @@ public class Model {
         return data;
     }
 
-    public double[][] readCSV(String filePath) {
-        ArrayList<double[]> rows = new ArrayList<>();
+    public float[][] readCSV(String filePath) {
+        ArrayList<float[]> rows = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
@@ -631,14 +630,14 @@ public class Model {
                 // Skip first value in the row
                 if (stringValues.length <= 1) continue; // skip row if no data after first value
 
-                double[] values = new double[stringValues.length - 1];
+                float[] values = new float[stringValues.length - 1];
                 for (int i = 1; i < stringValues.length; i++) { // start from index 1
                     String cleaned = stringValues[i].replaceAll("\"", "").trim();
 
                     if (cleaned.isEmpty()) {
                         values[i - 1] = 0; // empty cell → 0
                     } else {
-                        values[i - 1] = Double.parseDouble(cleaned);
+                        values[i - 1] = Float.parseFloat(cleaned);
                     }
                 }
                 rows.add(values);
@@ -652,7 +651,7 @@ public class Model {
         }
 
         // Convert ArrayList<int[]> to int[][]
-        double[][] data = new double[rows.size()][];
+        float[][] data = new float[rows.size()][];
         for (int i = 0; i < rows.size(); i++) {
             data[i] = rows.get(i);
         }
@@ -660,7 +659,7 @@ public class Model {
         return data;
     }
 
-    public Tuple<double[][], int[]> readH5AD(String filePath) {
+    public Tuple<float[][], int[]> readH5AD(String filePath) {
         File file = new File(filePath);
         try (HdfFile hdfFile = new HdfFile(file)) {
             Group xGroup = (Group) hdfFile.getChildren().get("X");
@@ -675,7 +674,7 @@ public class Model {
             int nRows = indptr.length - 1;
             int nCols = Arrays.stream(indices).max().orElse(-1) + 1;
 
-            double[][] dense = new double[nRows][nCols];
+            float[][] dense = new float[nRows][nCols];
 
             for (int row = 0; row < nRows; row++) {
                 int start = indptr[row];
@@ -715,10 +714,6 @@ public class Model {
 
     public int[] getShuffledGroundTruth() {
         return shuffledGroundTruth;
-    }
-
-    public double[][] getProjectedData() {
-        return projectedData;
     }
 
     public double[][] getHvgData() {
