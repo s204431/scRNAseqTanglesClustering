@@ -18,6 +18,7 @@ public final class Config {
     private double psi;
     private boolean autoComputeA;
     private boolean autoComputePsi;
+    private boolean tuneParameters;
     private boolean removeRedundant;
     private int splitSize;
     private int tsneComponents;
@@ -33,6 +34,7 @@ public final class Config {
         this.aFactor = 0.667;
         this.psi = 0;
         setAutoCompute(true, true);
+        setTuneParameters(false);
         setRemoveRedundant(false);
         setDimensionReductionParameters(1000, 5);
     }
@@ -48,6 +50,7 @@ public final class Config {
         this.aFactor = 0.667;
         this.psi = 0;
         setAutoCompute(false, false);
+        setTuneParameters(false);
         setRemoveRedundant(false);
         setDimensionReductionParameters(1000, 5);
     }
@@ -71,6 +74,7 @@ public final class Config {
         this.aFactor = aFactor;
         this.psi = psi;
         setAutoCompute(false, false);
+        setTuneParameters(false);
         setRemoveRedundant(false);
         setDimensionReductionParameters(1000, 5);
     }
@@ -78,6 +82,10 @@ public final class Config {
     public void setAutoCompute(boolean a, boolean psi) {
         this.autoComputeA = a;
         this.autoComputePsi = psi;
+    }
+
+    public void setTuneParameters(boolean tuneParameters) {
+        this.tuneParameters = tuneParameters;
     }
 
     public void setDimensionReductionParameters(int splitSize, int tsneComponents) {
@@ -145,6 +153,10 @@ public final class Config {
         return autoComputePsi;
     }
 
+    public boolean isTuneParameters() {
+        return tuneParameters;
+    }
+
     public int getSplitSize() {
         return splitSize;
     }
@@ -167,6 +179,7 @@ public final class Config {
         A_FACTOR_INDEX,
         AUTO_COMPUTE_A_INDEX,
         AUTO_COMPUTE_PSI_INDEX,
+        TUNE_PARAMETERS,
         REMOVE_REDUNDANT_CUTS_INDEX,
         SPLIT_SIZE_INDEX,
         TSNE_COMPONENTS_INDEX
@@ -185,6 +198,7 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()] = "a_factor";
         CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] = "auto_compute_a";
         CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] = "auto_compute_psi";
+        CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] = "split_size";
         CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] = "tsne_components";
@@ -225,6 +239,7 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()] + ":" + formatValue(aFactor));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] + ":" + formatValue(autoComputeA));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] + ":" + formatValue(autoComputePsi));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundant));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] + ":" + formatValue(splitSize));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] + ":" + formatValue(tsneComponents));
@@ -247,6 +262,7 @@ public final class Config {
         double psi = 0;
         boolean autoComputeA = false;
         boolean autoComputePsi = false;
+        boolean tuneParameters = false;
         boolean removeRedundant = false;
         int splitSize = 0;
         int tsneComponents = 0;
@@ -271,6 +287,7 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()])) aFactor = Double.parseDouble(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()])) autoComputeA = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()])) autoComputePsi = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundant = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()])) splitSize = Integer.parseInt(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()])) tsneComponents = Integer.parseInt(value);
@@ -297,6 +314,7 @@ public final class Config {
                 aFactor,
                 psi);
         newConfig.setAutoCompute(autoComputeA, autoComputePsi);
+        newConfig.setTuneParameters(tuneParameters);
         newConfig.setRemoveRedundant(removeRedundant);
         newConfig.setDimensionReductionParameters(splitSize, tsneComponents);
         return newConfig;
@@ -315,6 +333,7 @@ public final class Config {
                 "Factor a: " + aFactor + "\n" +
                 "Auto Compute a: " + autoComputeA + "\n" +
                 "Auto Compute psi: " + autoComputePsi + "\n" +
+                "Tune Parameters: " + tuneParameters + "\n" +
                 "Remove Redundant Cuts: " + removeRedundant + "\n" +
                 "Split Size: " + splitSize + "\n" +
                 "t-SNE Components: " + tsneComponents;

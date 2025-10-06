@@ -52,7 +52,8 @@ public class View {
 
     public void performClustering(Config config) {
         ScRNAseqDataset dataSet = model.getDataset();
-        model.cluster(dataSet, config);
+        if (config.isTuneParameters()) model.clusterAuto(dataSet, config);
+        else model.clusterAndReturn(dataSet, config);
         showClustering(model.getHardClustering());
     }
 

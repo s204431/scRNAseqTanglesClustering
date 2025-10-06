@@ -49,6 +49,7 @@ public class ParameterPanel extends JPanel {
     private JCheckBox autoComputePsiCheckBox;
     private JTextField aField;
     private JTextField psiField;
+    private JCheckBox parameterTuningCheckBox;
     private JButton clusterButton;
     private JButton pythonClusterButton;
 
@@ -171,6 +172,10 @@ public class ParameterPanel extends JPanel {
         psiComponent.add(psiField, BorderLayout.EAST);
         addRow(psiComponent, autoComputePsiCheckBox);
 
+        parameterTuningCheckBox = new JCheckBox("Tune Parameters");
+        parameterTuningCheckBox.setSelected(false);
+        addRow(new JLabel(""), parameterTuningCheckBox);
+
         if (dataPanel) {
             clusterButton = new JButton("Cluster Tangles");
             pythonClusterButton = new JButton("Cluster Scanpy");
@@ -274,43 +279,11 @@ public class ParameterPanel extends JPanel {
     }
 
     private void clusterAction(ActionEvent e) {
-        int a;
-        double psi;
-        try {
-            if (autoComputeACheckBox.isSelected()) {
-                a = (int)((view.points.length/20.0)*0.7);
-            }
-            else {
-                a = Integer.parseInt(aField.getText());
-            }
-            psi = Double.parseDouble(psiField.getText());
-        } catch (NumberFormatException ignore) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Parameter a must be an integer and ψ must be a double",
-                    "Invalid parameters",
-                    JOptionPane.WARNING_MESSAGE
-            );
+        Config config = getConfig(false);
+        if (config == null) {
+            System.out.println("Error in Parameter Panel (cluster): Config is null");
             return;
         }
-
-        int hvg;
-        int splitSize;
-        int tsneComponents;
-        try {
-            splitSize = Integer.parseInt(splitSizeField.getText());
-            tsneComponents = Integer.parseInt(tsneComponentsField.getText());
-        } catch (NumberFormatException ignore) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Highly variable genes, split size and TSNE components must be integers.",
-                    "Invalid parameters",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
-        }
-
-        Config config = getConfig(a, 0.0, psi, splitSize, tsneComponents);
 
         view.performClustering(config);
         view.drawTangleSearchTree();
@@ -319,55 +292,7 @@ public class ParameterPanel extends JPanel {
         cutNumberField.setText("0");
     }
 
-    private Config getConfig(int a, double aFactor, double psi, int splitSize, int tsneComponents) {
-        Config config = new Config(consistencyCheckbox.isSelected(),
-                wernerModificationCheckbox.isSelected(),
-                useCacheCheckBox.isSelected(),
-                (String) cutGeneratorDropdown.getSelectedItem(),
-                (String) highLevelCostFunctionDropdown.getSelectedItem(),
-                (String) lowLevelCostFunctionDropdown.getSelectedItem(),
-                a,
-                aFactor,
-                psi);
-        config.setAutoCompute(autoComputeACheckBox.isSelected(), autoComputePsiCheckBox.isSelected());
-        config.setDimensionReductionParameters(splitSize, tsneComponents);
-        config.setRemoveRedundant(removeRedundantCheckBox.isSelected());
-        return config;
-    }
-
     private void testAction(ActionEvent e) {
-        double aFactor;
-        double psi;
-        try {
-            aFactor = Double.parseDouble(aField.getText());
-            if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("a should be a factor between 0 and 1");
-            psi = Double.parseDouble(psiField.getText());
-        } catch (NumberFormatException ignore) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Parameter a must be a double between 0 and 1, and ψ must be a double",
-                    "Invalid parameters",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
-        }
-
-        int hvg;
-        int splitSize;
-        int tsneComponents;
-        try {
-            splitSize = Integer.parseInt(splitSizeField.getText());
-            tsneComponents = Integer.parseInt(tsneComponentsField.getText());
-        } catch (NumberFormatException ignore) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Highly variable genes, split size and TSNE components must be integers.",
-                    "Invalid parameters",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
-        }
-
         int runs;
         try {
             runs = Integer.parseInt(runNumberField.getText());
@@ -381,8 +306,83 @@ public class ParameterPanel extends JPanel {
             return;
         }
 
-        Config config = getConfig(0, aFactor, psi, splitSize, tsneComponents);
+        Config config = getConfig(true);
+        if (config == null) {
+            System.out.println("Error in Parameter Panel (testing): Config is null");
+            return;
+        }
+
         view.runTestSetWithUI(config, runs, pythonCheckBox.isSelected());
+    }
+
+    private Config getConfig(boolean testing) {
+        int a = 0;
+        double aFactor = 0.0;
+        double psi;
+
+        if (!testing) {
+            try {
+                if (autoComputeACheckBox.isSelected()) {
+                    a = (int) ((view.points.length / 20.0) * 0.7);
+                } else {
+                    a = Integer.parseInt(aField.getText());
+                }
+                psi = Double.parseDouble(psiField.getText());
+            } catch (NumberFormatException ignore) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Parameter a must be an integer and ψ must be a double",
+                        "Invalid parameters",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return null;
+            }
+
+        } else {
+            try {
+                aFactor = Double.parseDouble(aField.getText());
+                if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("a should be a factor between 0 and 1");
+                psi = Double.parseDouble(psiField.getText());
+            } catch (NumberFormatException ignore) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Parameter a must be a double between 0 and 1, and ψ must be a double",
+                        "Invalid parameters",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return null;
+            }
+        }
+
+        int splitSize;
+        int tsneComponents;
+        try {
+            splitSize = Integer.parseInt(splitSizeField.getText());
+            tsneComponents = Integer.parseInt(tsneComponentsField.getText());
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Split size and TSNE components must be integers.",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return null;
+        }
+
+        Config config = new Config(consistencyCheckbox.isSelected(),
+                wernerModificationCheckbox.isSelected(),
+                useCacheCheckBox.isSelected(),
+                (String) cutGeneratorDropdown.getSelectedItem(),
+                (String) highLevelCostFunctionDropdown.getSelectedItem(),
+                (String) lowLevelCostFunctionDropdown.getSelectedItem(),
+                a,
+                aFactor,
+                psi);
+        config.setAutoCompute(autoComputeACheckBox.isSelected(), autoComputePsiCheckBox.isSelected());
+        config.setTuneParameters(parameterTuningCheckBox.isSelected());
+        config.setDimensionReductionParameters(splitSize, tsneComponents);
+        config.setRemoveRedundant(removeRedundantCheckBox.isSelected());
+        return config;
     }
 
     private void stepCutCounter(int step) {

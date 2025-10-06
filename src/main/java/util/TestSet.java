@@ -225,9 +225,12 @@ public class TestSet {
                     }
                     Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.isUseCache(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), a, config.getaFactor(), config.getPsi());
                     newConfig.setAutoCompute(config.isAutoComputeA(), config.isAutoComputePsi());
+                    newConfig.setTuneParameters(config.isTuneParameters());
+                    newConfig.setRemoveRedundant(config.isRemoveRedundant());
                     newConfig.setDimensionReductionParameters(config.getSplitSize(), config.getTsneComponents());
 
-                    int[] hardClustering = model.clusterAndReturn(dataset, newConfig);
+                    boolean tuneParameters = config.isTuneParameters();
+                    int[] hardClustering = tuneParameters ? model.clusterAuto(dataset, newConfig) : model.clusterAndReturn(dataset, newConfig);
                     averageTimes[testIndex][configIndex] += (preTime + (System.currentTimeMillis() - time1)) / 1000.0;
 
                     double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);

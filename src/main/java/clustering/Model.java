@@ -258,6 +258,11 @@ public class Model {
         tangleClusterer.removeRedundantCuts = prev4;
 
         hardClustering = tangleClusterer.getHardClustering();
+        double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
+        double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
+        System.out.println(NMIScore);
+        System.out.println(randIndex);
+
         return hardClustering;
     }
 
