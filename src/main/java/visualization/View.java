@@ -55,7 +55,7 @@ public class View {
     public void performClustering(Config config) {
         ScRNAseqDataset dataSet = model.getDataset();
         if (config.isTuneParameters()) model.clusterAuto(dataSet, config);
-        else model.clusterAndReturn(dataSet, config);
+        else model.cluster(dataSet, config);
         showClustering(model.getHardClustering());
     }
 
@@ -64,7 +64,6 @@ public class View {
             return;
         }
 
-        TestEditPanel.TestProgressManager progressManager = window.prepareUIForTesting();
         File[] selectedTestFiles = window.getSelectedTestFiles();
         if (selectedTestFiles == null || selectedTestFiles.length == 0) {
             System.out.println("No test files were selected.");
@@ -72,11 +71,19 @@ public class View {
         }
 
         File[] selectedConfigFiles = window.getSelectedConfigFiles();
+
+        String[] titles = new String[selectedConfigFiles.length + 2];
         Config[] configs = new Config[selectedConfigFiles.length + 1];  // Make space for user defined configurations
+        titles[0] = "Tangles";
         configs[0] = config;
         for (int i = 0; i < selectedConfigFiles.length; i++) {
-            configs[i+1] = Config.loadConfiguration(selectedConfigFiles[i].getName());
+            String fileName = selectedConfigFiles[i].getName();
+            titles[i + 1] = fileName.replace(".txt", "");
+            configs[i + 1] = Config.loadConfiguration(fileName);
         }
+        titles[selectedConfigFiles.length + 1] = "Scanpy";
+
+        TestEditPanel.TestProgressManager progressManager = window.prepareUIForTesting(titles);
 
         testThread = new Thread(() -> {
             try {

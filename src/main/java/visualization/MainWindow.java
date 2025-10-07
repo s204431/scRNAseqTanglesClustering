@@ -155,8 +155,9 @@ public class MainWindow extends JFrame {
         return testEditPanel.getSelectedConfigFiles();
     }
 
-    public TestEditPanel.TestProgressManager prepareUIForTesting() {
+    public TestEditPanel.TestProgressManager prepareUIForTesting(String[] titles) {
         TestEditPanel.TestProgressManager out = testEditPanel.initializeTestProgressManager();
+        out.setTitles(titles);
         testEditPanel.startTimer();
         testResultPanel.initializeResultsTable();
         return out;

@@ -6,6 +6,7 @@ import smile.data.vector.IntVector;
 import smile.plot.swing.Canvas;
 import smile.plot.swing.Figure;
 import smile.plot.swing.ScatterPlot;
+import util.Config;
 import util.GlobalConstants;
 import visualization.View;
 
@@ -146,6 +147,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         canvas.putClientProperty("title", title);
         canvas.putClientProperty("index", attachmentIndex++);
         canvas.putClientProperty("clusters", clusters);
+        canvas.putClientProperty("config", view.getCurrentConfigurations());
     }
 
     public void addClosableTab(String title, Component comp) {
@@ -221,8 +223,12 @@ public class ScatterPlotPanel extends JTabbedPane {
             if (idx < 2) return;
 
             Canvas c = (Canvas) getComponentAt(idx);
+            String title = (String) c.getClientProperty("title");
+            if (title.equals(CUT_TITLE)) return;
+
             int index = (int) c.getClientProperty("index");
             view.loadAndDrawTrees(index);
+            view.loadConfig((Config) c.getClientProperty("config"));
         });
     }
 

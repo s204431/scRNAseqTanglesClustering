@@ -109,7 +109,7 @@ public class TestGraphPanel extends JPanel {
         for (int i = 0; i < nTangleResults + 1; i++) {
             boolean isTangle = i < nTangleResults;
 
-            l[i] = isTangle ? "Tangle " + (i + 1) : "Python";
+            l[i] = testProgressManager.getTitle(i);
             legends[i] = new Legend(l[i], colors[i]);
         }
 
@@ -200,9 +200,9 @@ public class TestGraphPanel extends JPanel {
         int rows = showTimeCheckBox.isSelected() ? 3 : 2;
         plotPanel.setLayout(new GridLayout(rows, 1, 5, 5));
 
-        BarPlot nmiPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
-        BarPlot randPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
-        BarPlot timePlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"Tangle", "Python"});
+        BarPlot nmiPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"", ""});
+        BarPlot randPlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"", ""});
+        BarPlot timePlot = BarPlot.of(new double[][]{{0}, {0}}, new String[]{"", ""});
 
         Figure nmiFig = nmiPlot.figure();
         Figure randFig = randPlot.figure();

@@ -108,7 +108,7 @@ public class ParameterPanel extends JPanel {
 
         tsneComponentsField = new JTextField(5);
         tsneComponentsField.setText("5");
-        addRow("TSNE components", tsneComponentsField);
+        addRow("t-SNE Components", tsneComponentsField);
     }
 
     private void buildAlgorithmSection() {

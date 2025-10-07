@@ -131,7 +131,7 @@ public class TestResultPanel extends JPanel {
     }
 
     private class ResultsTable extends AbstractTableModel {
-        private static String[] COL_NAMES = new String[] { "Tangle 1", "Python" };
+        private static String[] COL_NAMES = new String[] { "", "" };
 
         public static final int HEADER_ROWS = 4;
         public static final int ROW_OFFSET = 4;
@@ -160,8 +160,8 @@ public class TestResultPanel extends JPanel {
 
             COL_NAMES = new String[rowSize + 1];
             for (int i = 1; i < rowSize + 1; i++) {
-                boolean isTangle = i < rowSize;
-                COL_NAMES[i] = isTangle ? ("Tangle " + i) : "Python";
+                if (testProgressManager == null) COL_NAMES[i] = "";
+                else COL_NAMES[i] = testProgressManager.getTitle(i - 1);
             }
             COL_NAMES[0] = "Description";
 

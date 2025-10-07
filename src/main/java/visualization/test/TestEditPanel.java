@@ -242,6 +242,8 @@ public class TestEditPanel extends JPanel {
         private int size;
         private int configs;
 
+        private String[] titles;
+
         private AtomicReferenceArray<AtomicBoolean[]> tangleFinished;
         private AtomicBoolean[] pythonFinished;
 
@@ -271,6 +273,10 @@ public class TestEditPanel extends JPanel {
             pythonTimes[i].set(time);
             pythonNMI[i].set(nmi);
             pythonRandIndex[i].set(randIndex);
+        }
+
+        public void setTitles(String[] titles) {
+            this.titles = titles;
         }
 
         public boolean getTangleStatus(int configIndex, int i) {
@@ -311,6 +317,11 @@ public class TestEditPanel extends JPanel {
 
         public int getConfigsSize() {
             return configs;
+        }
+
+        public String getTitle(int i) {
+            if (titles == null) return "";
+            return titles[i];
         }
 
         public void reset(int size, int configurations) {
