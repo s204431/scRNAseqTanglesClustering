@@ -136,7 +136,7 @@ public class TestGraphPanel extends JPanel {
         double[] maxBounds = new double[] { xMax, yMax };
 
         double maxTime = 0;
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < barPlotTimes.length; i++) {
             for (int j = 0; j < barPlotTimes[i].length; j++) {
                 maxTime = Math.max(maxTime, barPlotTimes[i][j]);
             }

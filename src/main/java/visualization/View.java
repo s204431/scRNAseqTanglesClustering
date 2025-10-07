@@ -227,4 +227,8 @@ public class View {
     public void loadConfig(Config config) {
         window.loadConfig(config);
     }
+
+    public void updateStatisticsPanel(int[] clustering) {
+        window.showClusteringDetails(clustering);
+    }
 }

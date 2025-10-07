@@ -221,9 +221,16 @@ public class ScatterPlotPanel extends JTabbedPane {
     private void addSelectionChangeListener() {
         addChangeListener(e -> {
             int idx = getSelectedIndex();
-            if (idx < 2) return;
+            if (idx < 1) return;
 
             Canvas c = (Canvas) getComponentAt(idx);
+
+            // Show clustering information in statistics panel
+            int[] clustering = (int[]) c.getClientProperty("clusters");
+            view.updateStatisticsPanel(clustering);
+
+            if (idx < 2) return;
+
             String title = (String) c.getClientProperty("title");
             if (title.equals(CUT_TITLE)) return;
             else if (title.equals(SCANPY_TITLE)) {
@@ -231,6 +238,7 @@ public class ScatterPlotPanel extends JTabbedPane {
                 return;
             }
 
+            // Draw tangle search trees and load the tangle configuration
             int index = (int) c.getClientProperty("index");
             view.loadAndDrawTrees(index);
             view.loadConfig((Config) c.getClientProperty("config"));

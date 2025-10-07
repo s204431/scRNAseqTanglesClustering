@@ -116,7 +116,8 @@ public class TestSet {
                 ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
                 int a = (int)(((double)dataset.data.length/nClusters)*0.667);
-                Config config = new Config(a);
+                Config config = new Config();
+                config.setA(a);
                 int[] hardClustering = model.clusterAndReturn(dataset, config);
                 double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
                 double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
@@ -223,11 +224,8 @@ public class TestSet {
                     } else {
                         a = (int) (((double) dataset.data.length / nClusters) * config.getaFactor());
                     }
-                    Config newConfig = new Config(config.isUseAlternateConsistencyCheck(), config.isUseWernerModification(), config.isUseCache(), config.getCutGeneratorName(), config.getHighLevelCostFunctionName(), config.getLowLevelCostFunctionName(), a, config.getaFactor(), config.getPsi());
-                    newConfig.setAutoCompute(config.isAutoComputeA(), config.isAutoComputePsi());
-                    newConfig.setTuneParameters(config.isTuneParameters());
-                    newConfig.setRemoveRedundant(config.isRemoveRedundant());
-                    newConfig.setDimensionReductionParameters(config.getSplitSize(), config.getTsneComponents());
+                    Config newConfig = new Config(config);
+                    newConfig.setA(a);
 
                     boolean tuneParameters = config.isTuneParameters();
                     int[] hardClustering = tuneParameters ? model.clusterAuto(dataset, newConfig) : model.clusterAndReturn(dataset, newConfig);

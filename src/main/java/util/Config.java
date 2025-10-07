@@ -7,12 +7,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class Config {
-    private final boolean useAlternateConsistencyCheck;
-    private final boolean useWernerModification;
-    private final boolean useCache;
-    private final String cutGeneratorName;
-    private final String highLevelCostFunctionName;
-    private final String lowLevelCostFunctionName;
+    private boolean useAlternateConsistencyCheck;
+    private boolean useWernerModification;
+    private boolean useCache;
+    private String cutGeneratorName;
+    private String highLevelCostFunctionName;
+    private String lowLevelCostFunctionName;
     private int a;
     private double aFactor;
     private double psi;
@@ -41,23 +41,6 @@ public final class Config {
         setDimensionReductionParameters(1000, 5);
     }
 
-    public Config(int a) {
-        this.useAlternateConsistencyCheck = true;
-        this.useWernerModification = true;
-        this.useCache = true;
-        this.cutGeneratorName = "Default";
-        this.highLevelCostFunctionName = "Default";
-        this.lowLevelCostFunctionName = "Default";
-        this.a = a;
-        this.aFactor = 0.667;
-        this.psi = 0;
-        setAutoCompute(false, false);
-        setTuneParameters(false);
-        setUseFastVersion(false);
-        setRemoveRedundant(false);
-        setDimensionReductionParameters(1000, 5);
-    }
-
     public Config(boolean useAlternateConsistencyCheck,
                   boolean useWernerModification,
                   boolean useCache,
@@ -66,7 +49,14 @@ public final class Config {
                   String lowLevelCostFunctionName,
                   int a,
                   double aFactor,
-                  double psi) {
+                  double psi,
+                  boolean autoComputeA,
+                  boolean autoComputePsi,
+                  boolean tuneParameters,
+                  boolean useFastVersion,
+                  boolean removeRedundant,
+                  int splitSize,
+                  int tsneComponents) {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         this.useWernerModification = useWernerModification;
         this.useCache = useCache;
@@ -76,11 +66,32 @@ public final class Config {
         this.a = a;
         this.aFactor = aFactor;
         this.psi = psi;
-        setAutoCompute(false, false);
-        setTuneParameters(false);
-        setUseFastVersion(false);
-        setRemoveRedundant(false);
-        setDimensionReductionParameters(1000, 5);
+        this.autoComputeA = autoComputeA;
+        this.autoComputePsi = autoComputePsi;
+        this.tuneParameters = tuneParameters;
+        this.useFastVersion = useFastVersion;
+        this.removeRedundant = removeRedundant;
+        this.splitSize = splitSize;
+        this.tsneComponents = tsneComponents;
+    }
+
+    public Config(Config config) {
+        this.useAlternateConsistencyCheck = config.useAlternateConsistencyCheck;
+        this.useWernerModification = config.useWernerModification;
+        this.useCache = config.useCache;
+        this.cutGeneratorName = config.cutGeneratorName;
+        this.highLevelCostFunctionName = config.highLevelCostFunctionName;
+        this.lowLevelCostFunctionName = config.lowLevelCostFunctionName;
+        this.a = config.a;
+        this.aFactor = config.aFactor;
+        this.psi = config.psi;
+        this.autoComputeA = config.autoComputeA;
+        this.autoComputePsi = config.autoComputePsi;
+        this.tuneParameters = config.tuneParameters;
+        this.useFastVersion = config.useFastVersion;
+        this.removeRedundant = config.removeRedundant;
+        this.splitSize = config.splitSize;
+        this.tsneComponents = config.tsneComponents;
     }
 
     public void setAutoCompute(boolean a, boolean psi) {
@@ -100,83 +111,6 @@ public final class Config {
         this.splitSize = splitSize;
         this.tsneComponents = tsneComponents;
     }
-
-    public void setA(int a) {
-        this.a = a;
-    }
-
-    public void setPsi(double psi) {
-        this.psi = psi;
-    }
-
-    public void setRemoveRedundant(boolean remove) {
-        this.removeRedundant = remove;
-    }
-
-    public boolean isUseAlternateConsistencyCheck() {
-        return useAlternateConsistencyCheck;
-    }
-
-    public boolean isUseWernerModification() {
-        return useWernerModification;
-    }
-
-    public boolean isUseCache() {
-        return useCache;
-    }
-
-    public boolean isRemoveRedundant() {
-        return removeRedundant;
-    }
-
-    public String getCutGeneratorName() {
-        return cutGeneratorName;
-    }
-
-    public String getHighLevelCostFunctionName() {
-        return highLevelCostFunctionName;
-    }
-
-    public String getLowLevelCostFunctionName() {
-        return lowLevelCostFunctionName;
-    }
-
-    public int getA() {
-        return a;
-    }
-
-    public double getaFactor() {
-        return aFactor;
-    }
-
-    public double getPsi() {
-        return psi;
-    }
-
-    public boolean isAutoComputeA() {
-        return autoComputeA;
-    }
-
-    public boolean isAutoComputePsi() {
-        return autoComputePsi;
-    }
-
-    public boolean isTuneParameters() {
-        return tuneParameters;
-    }
-
-    public boolean isUseFastVersion() {
-        return useFastVersion;
-    }
-
-    public int getSplitSize() {
-        return splitSize;
-    }
-
-    public int getTsneComponents() {
-        return tsneComponents;
-    }
-
 
     // =========== Helpers for saving and loading config files ===========
     private enum ConfigIndices {
@@ -321,20 +255,23 @@ public final class Config {
             e.printStackTrace();
         }
 
-        Config newConfig = new Config(useAlternateConsistencyCheck,
-                useWernerModification,
-                useCache,
-                cutGeneratorName,
-                highLevelCostFunctionName,
-                lowLevelCostFunctionName,
-                a,
-                aFactor,
-                psi);
-        newConfig.setAutoCompute(autoComputeA, autoComputePsi);
-        newConfig.setTuneParameters(tuneParameters);
-        newConfig.setUseFastVersion(useFastVersion);
-        newConfig.setRemoveRedundant(removeRedundant);
-        newConfig.setDimensionReductionParameters(splitSize, tsneComponents);
+        Config newConfig = new Config();
+        newConfig.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
+        newConfig.useWernerModification = useWernerModification;
+        newConfig.useCache = useCache;
+        newConfig.cutGeneratorName = cutGeneratorName;
+        newConfig.highLevelCostFunctionName = highLevelCostFunctionName;
+        newConfig.lowLevelCostFunctionName = lowLevelCostFunctionName;
+        newConfig.a = a;
+        newConfig.aFactor = aFactor;
+        newConfig.psi = psi;
+        newConfig.autoComputeA = autoComputeA;
+        newConfig.autoComputePsi = autoComputePsi;
+        newConfig.tuneParameters = tuneParameters;
+        newConfig.useFastVersion = useFastVersion;
+        newConfig.removeRedundant = removeRedundant;
+        newConfig.splitSize = splitSize;
+        newConfig.tsneComponents = tsneComponents;
         return newConfig;
     }
 
@@ -356,5 +293,125 @@ public final class Config {
                 "Remove Redundant Cuts: " + removeRedundant + "\n" +
                 "Split Size: " + splitSize + "\n" +
                 "t-SNE Components: " + tsneComponents;
+    }
+
+    public boolean isUseAlternateConsistencyCheck() {
+        return useAlternateConsistencyCheck;
+    }
+
+    public void setUseAlternateConsistencyCheck(boolean useAlternateConsistencyCheck) {
+        this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
+    }
+
+    public boolean isUseWernerModification() {
+        return useWernerModification;
+    }
+
+    public void setUseWernerModification(boolean useWernerModification) {
+        this.useWernerModification = useWernerModification;
+    }
+
+    public boolean isUseCache() {
+        return useCache;
+    }
+
+    public void setUseCache(boolean useCache) {
+        this.useCache = useCache;
+    }
+
+    public String getCutGeneratorName() {
+        return cutGeneratorName;
+    }
+
+    public void setCutGeneratorName(String cutGeneratorName) {
+        this.cutGeneratorName = cutGeneratorName;
+    }
+
+    public String getHighLevelCostFunctionName() {
+        return highLevelCostFunctionName;
+    }
+
+    public void setHighLevelCostFunctionName(String highLevelCostFunctionName) {
+        this.highLevelCostFunctionName = highLevelCostFunctionName;
+    }
+
+    public String getLowLevelCostFunctionName() {
+        return lowLevelCostFunctionName;
+    }
+
+    public void setLowLevelCostFunctionName(String lowLevelCostFunctionName) {
+        this.lowLevelCostFunctionName = lowLevelCostFunctionName;
+    }
+
+    public int getA() {
+        return a;
+    }
+
+    public void setA(int a) {
+        this.a = a;
+    }
+
+    public double getaFactor() {
+        return aFactor;
+    }
+
+    public void setaFactor(double aFactor) {
+        this.aFactor = aFactor;
+    }
+
+    public double getPsi() {
+        return psi;
+    }
+
+    public void setPsi(double psi) {
+        this.psi = psi;
+    }
+
+    public boolean isAutoComputeA() {
+        return autoComputeA;
+    }
+
+    public void setAutoComputeA(boolean autoComputeA) {
+        this.autoComputeA = autoComputeA;
+    }
+
+    public boolean isAutoComputePsi() {
+        return autoComputePsi;
+    }
+
+    public void setAutoComputePsi(boolean autoComputePsi) {
+        this.autoComputePsi = autoComputePsi;
+    }
+
+    public boolean isTuneParameters() {
+        return tuneParameters;
+    }
+
+    public boolean isUseFastVersion() {
+        return useFastVersion;
+    }
+
+    public boolean isRemoveRedundant() {
+        return removeRedundant;
+    }
+
+    public void setRemoveRedundant(boolean removeRedundant) {
+        this.removeRedundant = removeRedundant;
+    }
+
+    public int getSplitSize() {
+        return splitSize;
+    }
+
+    public void setSplitSize(int splitSize) {
+        this.splitSize = splitSize;
+    }
+
+    public int getTsneComponents() {
+        return tsneComponents;
+    }
+
+    public void setTsneComponents(int tsneComponents) {
+        this.tsneComponents = tsneComponents;
     }
 }

@@ -387,7 +387,8 @@ public class ParameterPanel extends JPanel {
             return null;
         }
 
-        Config config = new Config(consistencyCheckbox.isSelected(),
+        return new Config(
+                consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
                 useCacheCheckBox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
@@ -395,13 +396,15 @@ public class ParameterPanel extends JPanel {
                 (String) lowLevelCostFunctionDropdown.getSelectedItem(),
                 a,
                 aFactor,
-                psi);
-        config.setAutoCompute(autoComputeACheckBox.isSelected(), autoComputePsiCheckBox.isSelected());
-        config.setTuneParameters(useParameterTuning);
-        config.setUseFastVersion(fastVersionCheckBox.isSelected());
-        config.setDimensionReductionParameters(splitSize, tsneComponents);
-        config.setRemoveRedundant(removeRedundantCheckBox.isSelected());
-        return config;
+                psi,
+                autoComputeACheckBox.isSelected(),
+                autoComputePsiCheckBox.isSelected(),
+                useParameterTuning,
+                fastVersionCheckBox.isSelected(),
+                removeRedundantCheckBox.isSelected(),
+                splitSize,
+                tsneComponents
+        );
     }
 
     public void setConfig(Config config) {
@@ -423,6 +426,7 @@ public class ParameterPanel extends JPanel {
         autoComputeACheckBox.setSelected(config.isAutoComputeA());
         autoComputePsiCheckBox.setSelected(config.isAutoComputePsi());
         parameterTuningCheckBox.setSelected(config.isTuneParameters());
+        fastVersionCheckBox.setSelected(config.isUseFastVersion());
         splitSizeField.setText(Integer.toString(config.getSplitSize()));
         tsneComponentsField.setText(Integer.toString(config.getTsneComponents()));
 

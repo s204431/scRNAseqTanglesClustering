@@ -173,7 +173,7 @@ public class MainWindow extends JFrame {
     }
 
     public void showInformation(ScRNAseqDataset dataSet) {
-        statsPanel.showInformation(dataSet);
+        statsPanel.showDataSetInformation(dataSet);
     }
 
     public void stopTesting() {
@@ -214,5 +214,9 @@ public class MainWindow extends JFrame {
         } else {
             testParameterPanel.setConfig(config);
         }
+    }
+
+    public void showClusteringDetails(int[] clustering) {
+        statsPanel.updateClusteringStats(clustering);
     }
 }
