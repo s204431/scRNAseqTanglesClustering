@@ -121,9 +121,11 @@ public class CutGenerators {
         catch (Exception e) {
 
         }*/
-        double[][] reducedPoints = useFastVersion ? Model.svd(dataPoints, nComponents) : Model.tsne(dataPoints, nComponents);
-        for (int i = a; i < dataPoints.length; i *= 2) {
-            bitSets.add(getInitialCutsKNN(reducedPoints, i));
+        if (!useFastVersion) {
+            double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
+            for (int i = a; i < dataPoints.length; i *= 2) {
+                bitSets.add(getInitialCutsKNN(reducedPoints, i));
+            }
         }
         /*try {
             bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
@@ -131,7 +133,7 @@ public class CutGenerators {
         catch (Exception e) {
 
         }*/
-        reducedPoints = Model.svd(dataPoints, nComponents);
+        double[][] reducedPoints = Model.svd(dataPoints, nComponents);
         for (int i = a; i < dataPoints.length; i *= 2) {
             bitSets.add(getInitialCutsKNN(reducedPoints, i));
         }
