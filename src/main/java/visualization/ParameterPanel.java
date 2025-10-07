@@ -1,6 +1,7 @@
 package visualization;
 
 import clustering.TangleClusterer;
+import elki.itemsetmining.Itemset;
 import main.Main;
 import util.BitSet;
 import util.Config;
@@ -43,13 +44,14 @@ public class ParameterPanel extends JPanel {
     private JComboBox<String> cutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
     private JComboBox<String> lowLevelCostFunctionDropdown;
+    private JCheckBox fastVersionCheckBox;
+    private JCheckBox parameterTuningCheckBox;
 
     // Cluster section components
     private JCheckBox autoComputeACheckBox;
     private JCheckBox autoComputePsiCheckBox;
     private JTextField aField;
     private JTextField psiField;
-    private JCheckBox parameterTuningCheckBox;
     private JButton clusterButton;
     private JButton pythonClusterButton;
 
@@ -174,7 +176,10 @@ public class ParameterPanel extends JPanel {
 
         parameterTuningCheckBox = new JCheckBox("Tune Parameters");
         parameterTuningCheckBox.setSelected(false);
-        addRow(new JLabel(""), parameterTuningCheckBox);
+
+        fastVersionCheckBox = new JCheckBox("Fast Version");
+        fastVersionCheckBox.setSelected(false);
+        addRow(fastVersionCheckBox, parameterTuningCheckBox);
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster Tangles");
@@ -243,6 +248,15 @@ public class ParameterPanel extends JPanel {
             psiField.setEnabled(!isChecked);
         });
 
+        parameterTuningCheckBox.addItemListener(e -> {
+            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+            aField.setEditable(!isChecked);
+            aField.setEnabled(!isChecked);
+            psiField.setEditable(!isChecked);
+            psiField.setEnabled(!isChecked);
+            autoComputeACheckBox.setEnabled(!isChecked);
+            autoComputePsiCheckBox.setEnabled(!isChecked);
+        });
 
 
         // ==================== Text Field Logic ==================== //
@@ -316,11 +330,12 @@ public class ParameterPanel extends JPanel {
     }
 
     public Config getConfig(boolean testing) {
+        boolean useParameterTuning = parameterTuningCheckBox.isSelected();
+
         int a = 0;
         double aFactor = 0.0;
-        double psi;
-
-        if (!testing) {
+        double psi = 0;
+        if (!testing && !useParameterTuning) {
             try {
                 if (autoComputeACheckBox.isSelected()) {
                     a = (int) ((view.points.length / 20.0) * 0.7);
@@ -338,7 +353,7 @@ public class ParameterPanel extends JPanel {
                 return null;
             }
 
-        } else {
+        } else if (testing && !useParameterTuning) {
             try {
                 aFactor = Double.parseDouble(aField.getText());
                 if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("a should be a factor between 0 and 1");
@@ -379,7 +394,7 @@ public class ParameterPanel extends JPanel {
                 aFactor,
                 psi);
         config.setAutoCompute(autoComputeACheckBox.isSelected(), autoComputePsiCheckBox.isSelected());
-        config.setTuneParameters(parameterTuningCheckBox.isSelected());
+        config.setTuneParameters(useParameterTuning);
         config.setDimensionReductionParameters(splitSize, tsneComponents);
         config.setRemoveRedundant(removeRedundantCheckBox.isSelected());
         return config;

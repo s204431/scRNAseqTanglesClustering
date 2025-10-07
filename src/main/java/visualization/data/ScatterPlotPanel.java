@@ -23,6 +23,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     private static final String POINTS_TITLE = "Points";
     private static final String GROUND_TRUTH_TITLE = "Ground Truth";
     private static final String CUT_TITLE = "Cut";
+    private static final String SCANPY_TITLE = "Scanpy";
 
     private static final int POINTS_IDX = 0;
     private static final int GROUND_TRUTH_IDX = 1;
@@ -72,7 +73,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     }
 
     public void drawClusters(double[][] points, int[] clusters, boolean tangle) {
-        String title = "Scanpy";
+        String title = SCANPY_TITLE;
         if (tangle) {
             title = "Tangle " + (++tangleCounter);
         }
@@ -225,6 +226,10 @@ public class ScatterPlotPanel extends JTabbedPane {
             Canvas c = (Canvas) getComponentAt(idx);
             String title = (String) c.getClientProperty("title");
             if (title.equals(CUT_TITLE)) return;
+            else if (title.equals(SCANPY_TITLE)) {
+                view.removeTrees();
+                return;
+            }
 
             int index = (int) c.getClientProperty("index");
             view.loadAndDrawTrees(index);

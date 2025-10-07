@@ -112,7 +112,7 @@ public class TangleTreePanel extends JPanel {
         clusterIndexToTrees.put(clusterIndex, new TangleSearchTree[] { originalTree, splitPruned, condensed });
         clusterIndexToCuts.put(clusterIndex, cuts.clone());
         clusterIndexToCutCosts.put(clusterIndex, cutCosts.clone());
-        clusterIndexToBranchCosts.put(clusterIndex, new ArrayList<>(branchCosts));
+        clusterIndexToBranchCosts.put(clusterIndex, branchCosts == null ? null : new ArrayList<>(branchCosts));
 
         drawTrees(originalTree, splitPruned, condensed);
     }
