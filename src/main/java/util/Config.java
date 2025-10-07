@@ -19,6 +19,7 @@ public final class Config {
     private boolean autoComputeA;
     private boolean autoComputePsi;
     private boolean tuneParameters;
+    private boolean useFastVersion;
     private boolean removeRedundant;
     private int splitSize;
     private int tsneComponents;
@@ -35,6 +36,7 @@ public final class Config {
         this.psi = 0;
         setAutoCompute(true, true);
         setTuneParameters(false);
+        setUseFastVersion(false);
         setRemoveRedundant(false);
         setDimensionReductionParameters(1000, 5);
     }
@@ -51,6 +53,7 @@ public final class Config {
         this.psi = 0;
         setAutoCompute(false, false);
         setTuneParameters(false);
+        setUseFastVersion(false);
         setRemoveRedundant(false);
         setDimensionReductionParameters(1000, 5);
     }
@@ -75,6 +78,7 @@ public final class Config {
         this.psi = psi;
         setAutoCompute(false, false);
         setTuneParameters(false);
+        setUseFastVersion(false);
         setRemoveRedundant(false);
         setDimensionReductionParameters(1000, 5);
     }
@@ -86,6 +90,10 @@ public final class Config {
 
     public void setTuneParameters(boolean tuneParameters) {
         this.tuneParameters = tuneParameters;
+    }
+
+    public void setUseFastVersion(boolean useFastVersion) {
+        this.useFastVersion = useFastVersion;
     }
 
     public void setDimensionReductionParameters(int splitSize, int tsneComponents) {
@@ -157,6 +165,10 @@ public final class Config {
         return tuneParameters;
     }
 
+    public boolean isUseFastVersion() {
+        return useFastVersion;
+    }
+
     public int getSplitSize() {
         return splitSize;
     }
@@ -180,6 +192,7 @@ public final class Config {
         AUTO_COMPUTE_A_INDEX,
         AUTO_COMPUTE_PSI_INDEX,
         TUNE_PARAMETERS,
+        FAST_VERSION,
         REMOVE_REDUNDANT_CUTS_INDEX,
         SPLIT_SIZE_INDEX,
         TSNE_COMPONENTS_INDEX
@@ -199,6 +212,7 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] = "auto_compute_a";
         CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] = "auto_compute_psi";
         CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
+        CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()] = "use_fast_version";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] = "split_size";
         CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] = "tsne_components";
@@ -240,6 +254,7 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] + ":" + formatValue(autoComputeA));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] + ":" + formatValue(autoComputePsi));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()] + ":" + formatValue(useFastVersion));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundant));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] + ":" + formatValue(splitSize));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] + ":" + formatValue(tsneComponents));
@@ -263,6 +278,7 @@ public final class Config {
         boolean autoComputeA = false;
         boolean autoComputePsi = false;
         boolean tuneParameters = false;
+        boolean useFastVersion = false;
         boolean removeRedundant = false;
         int splitSize = 0;
         int tsneComponents = 0;
@@ -288,6 +304,7 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()])) autoComputeA = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()])) autoComputePsi = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()])) useFastVersion = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundant = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()])) splitSize = Integer.parseInt(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()])) tsneComponents = Integer.parseInt(value);
@@ -315,6 +332,7 @@ public final class Config {
                 psi);
         newConfig.setAutoCompute(autoComputeA, autoComputePsi);
         newConfig.setTuneParameters(tuneParameters);
+        newConfig.setUseFastVersion(useFastVersion);
         newConfig.setRemoveRedundant(removeRedundant);
         newConfig.setDimensionReductionParameters(splitSize, tsneComponents);
         return newConfig;
@@ -334,6 +352,7 @@ public final class Config {
                 "Auto Compute a: " + autoComputeA + "\n" +
                 "Auto Compute psi: " + autoComputePsi + "\n" +
                 "Tune Parameters: " + tuneParameters + "\n" +
+                "Use Fast Version" + useFastVersion + "\n" +
                 "Remove Redundant Cuts: " + removeRedundant + "\n" +
                 "Split Size: " + splitSize + "\n" +
                 "t-SNE Components: " + tsneComponents;

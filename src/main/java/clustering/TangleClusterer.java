@@ -46,13 +46,14 @@ public class TangleClusterer {
         boolean useCache = config.isUseCache();
         int splitSize = config.getSplitSize();
         int tsneComponents = config.getTsneComponents();
+        boolean useFastVersion = config.isUseFastVersion();
 
         splitCosts = new ArrayList<>();
         costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
         dataset.setA(a);
-        BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator);
-        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
+        BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator, useFastVersion);
+        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
@@ -176,6 +177,7 @@ public class TangleClusterer {
         boolean useCache = config.isUseCache();
         int splitSize = config.getSplitSize();
         int tsneComponents = config.getTsneComponents();
+        boolean useFastVersion = config.isUseFastVersion();
 
         //Costs for each branch ID (in order of initial cuts).
         List<double[]> branchCosts = new ArrayList<>();
@@ -274,7 +276,7 @@ public class TangleClusterer {
                             newDataset.setCostFunctions(costFunctions);
                             costFunctions.setMask(childNode.intersection);
                             newDataset.setInitialCuts(newCuts);
-                            double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
+                            double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
                             branchCosts.add(newCosts);
 
                             //Reorder cuts and costs based on the cost order for the parent branch
@@ -360,6 +362,7 @@ public class TangleClusterer {
         boolean useCache = config.isUseCache();
         int splitSize = config.getSplitSize();
         int tsneComponents = config.getTsneComponents();
+        boolean useFastVersion = config.isUseFastVersion();
 
         //Hashset containing every cut that was added to the tree
         List<HashSet<Integer>> branchUsedCuts = new ArrayList<>();
@@ -483,7 +486,7 @@ public class TangleClusterer {
                             newDataset.setCostFunctions(costFunctions);
                             costFunctions.setMask(childNode.intersection);
                             newDataset.setInitialCuts(newCuts);
-                            double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
+                            double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
                             branchCosts.add(newCosts);
 
                             //Reorder cuts and costs based on the cost order for the parent branch

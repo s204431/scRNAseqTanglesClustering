@@ -269,6 +269,7 @@ public class Model {
         boolean useCache = config.isUseCache();
         int splitSize = config.getSplitSize();
         int tsneComponents = config.getTsneComponents();
+        boolean useFastVersion = config.isUseFastVersion();
 
         int maxClusters = 10;
 
@@ -279,8 +280,8 @@ public class Model {
         dataset.setA(minA);
         CostFunctions costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
-        BitSet[] initialCuts = dataset.getInitialCuts(initialCutsGenerator);
-        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents);
+        BitSet[] initialCuts = dataset.getInitialCuts(initialCutsGenerator, useFastVersion);
+        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;

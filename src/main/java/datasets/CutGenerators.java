@@ -16,7 +16,7 @@ public class CutGenerators {
     public double[] cutCosts; //For local means only
 
 
-    public BitSet[] splitCutGenerator(double[][] dataPoints, int a) {
+    public BitSet[] splitCutGenerator(double[][] dataPoints, int a, boolean useFastVersion) {
         int splitSize = 1000;
         int nSplits = (int)Math.ceil(dataPoints[0].length/(double)splitSize);
 
@@ -68,6 +68,7 @@ public class CutGenerators {
             runnables[i] = new SplitParallelRunner();
             runnables[i].data = splits.get(i);
             runnables[i].a = a;
+            runnables[i].useFastVersion = useFastVersion;
             threads[i] = new Thread(runnables[i]);
             threads[i].start();
         }
@@ -95,13 +96,15 @@ public class CutGenerators {
         public BitSet[] result;
         public double[][] data;
         public int a;
+        public boolean useFastVersion;
+
         @Override
         public void run() {
-            result = combinedCutGenerator(data, a);
+            result = combinedCutGenerator(data, a, useFastVersion);
         }
     }
 
-    public BitSet[] combinedCutGenerator(double[][] dataPoints, int a) {
+    public BitSet[] combinedCutGenerator(double[][] dataPoints, int a, boolean useFastVersion) {
 
         //dataPoints = Model.pca(dataPoints, 100);
 
@@ -109,7 +112,7 @@ public class CutGenerators {
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
-        try {
+        /*try {
             double[][] reducedPoints = Model.pca(dataPoints, nComponents);
             for (int i = a; i < dataPoints.length; i *= 2) {
                 bitSets.add(getInitialCutsKNN(reducedPoints, i));
@@ -117,8 +120,8 @@ public class CutGenerators {
         }
         catch (Exception e) {
 
-        }
-        double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
+        }*/
+        double[][] reducedPoints = useFastVersion ? Model.svd(dataPoints, nComponents) : Model.tsne(dataPoints, nComponents);
         for (int i = a; i < dataPoints.length; i *= 2) {
             bitSets.add(getInitialCutsKNN(reducedPoints, i));
         }

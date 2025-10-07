@@ -29,7 +29,7 @@ public class ScRNAseqDataset {
         this.costFunctions = costFunctions;
     }
 
-    public BitSet[] getInitialCuts(String initialCutGenerator) {
+    public BitSet[] getInitialCuts(String initialCutGenerator, boolean useFastVersion) {
         if (a == 0) {
             System.out.println("Variable for a is not chosen yet or is 0.");
             return null;
@@ -49,25 +49,25 @@ public class ScRNAseqDataset {
                 break;
 
             default:
-                initialCuts = cutGenerators.splitCutGenerator(data, a);
+                initialCuts = cutGenerators.splitCutGenerator(data, a, useFastVersion);
                 break;
         }
 
         return initialCuts;
     }
 
-    public double[] getCutCosts(String highLevelCostFunction, String lowLevelCostFunction, boolean useCache, int splitSize, int tsneComponents) {
+    public double[] getCutCosts(String highLevelCostFunction, String lowLevelCostFunction, boolean useCache, int splitSize, int tsneComponents, boolean useFastVersion) {
         switch (highLevelCostFunction) {
             case GlobalConstants.HIGH_LEVEL_COST_FUNCTION_BEST_SPLIT:
-                cutCosts = costFunctions.bestFirstCostFunction(data, initialCuts, lowLevelCostFunction, useCache, splitSize, tsneComponents);
+                cutCosts = costFunctions.bestFirstCostFunction(data, initialCuts, lowLevelCostFunction, useCache, splitSize, tsneComponents, useFastVersion);
                 break;
 
             case GlobalConstants.HIGH_LEVEL_COST_FUNCTION_AVERAGE:
-                cutCosts = costFunctions.averageCostFunction(data, initialCuts, lowLevelCostFunction, useCache, splitSize, tsneComponents);
+                cutCosts = costFunctions.averageCostFunction(data, initialCuts, lowLevelCostFunction, useCache, splitSize, tsneComponents, useFastVersion);
                 break;
 
             default:
-                cutCosts = costFunctions.singleCostFunction(data, initialCuts, lowLevelCostFunction, useCache, tsneComponents);
+                cutCosts = costFunctions.singleCostFunction(data, initialCuts, lowLevelCostFunction, useCache, tsneComponents, useFastVersion);
                 break;
         }
 

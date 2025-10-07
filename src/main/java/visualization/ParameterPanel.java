@@ -254,7 +254,9 @@ public class ParameterPanel extends JPanel {
             aField.setEnabled(!isChecked);
             psiField.setEditable(!isChecked);
             psiField.setEnabled(!isChecked);
+            autoComputeACheckBox.setSelected(false);
             autoComputeACheckBox.setEnabled(!isChecked);
+            autoComputePsiCheckBox.setSelected(false);
             autoComputePsiCheckBox.setEnabled(!isChecked);
         });
 
@@ -341,12 +343,13 @@ public class ParameterPanel extends JPanel {
                     a = (int) ((view.points.length / 20.0) * 0.7);
                 } else {
                     a = Integer.parseInt(aField.getText());
+                    if (a <= 0) throw new NumberFormatException("Parameter a is 0");
                 }
                 psi = Double.parseDouble(psiField.getText());
             } catch (NumberFormatException ignore) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Parameter a must be an integer and ψ must be a double",
+                        "Parameter a must be an integer greater than 0 and ψ must be a double",
                         "Invalid parameters",
                         JOptionPane.WARNING_MESSAGE
                 );
@@ -395,6 +398,7 @@ public class ParameterPanel extends JPanel {
                 psi);
         config.setAutoCompute(autoComputeACheckBox.isSelected(), autoComputePsiCheckBox.isSelected());
         config.setTuneParameters(useParameterTuning);
+        config.setUseFastVersion(fastVersionCheckBox.isSelected());
         config.setDimensionReductionParameters(splitSize, tsneComponents);
         config.setRemoveRedundant(removeRedundantCheckBox.isSelected());
         return config;
