@@ -155,7 +155,7 @@ public class Model {
         return Math.sqrt(length);
     }
 
-    public static double silhuetteScore(double[][] data, int[] labels) {
+    public static double silhouetteScore(double[][] data, int[] labels) {
         int n = data.length;
         double[] silhouettes = new double[n];
 
@@ -208,6 +208,56 @@ public class Model {
             total += s;
         }
         return total / n;
+    }
+
+
+    public static double daviesBouldinIndex(double[][] data, int[] labels) {
+        int k = -1;
+        for (int i = 0; i < labels.length; i++) {
+            k = Math.max(k, labels[i]);
+        }
+        k++; //Assuming zero-indexed labels
+
+        double[][] centroids = new double[k][data[0].length];
+        int[] counts = new int[k];
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++) {
+                centroids[labels[i]][j] += data[i][j];
+            }
+            counts[labels[i]]++;
+        }
+        for (int i = 0; i < k; i++) {
+            for (int j = 0; j < centroids[i].length; j++) {
+                centroids[i][j] /= counts[i];
+            }
+        }
+
+        double[] intraClusterDistances = new double[k];
+        for (int i = 0; i < data.length; i++) {
+            intraClusterDistances[labels[i]] += getDistance(data[i], centroids[labels[i]]);
+        }
+        for (int i = 0; i < k; i++) {
+            intraClusterDistances[i] /= counts[i];
+        }
+
+        double dbi = 0.0;
+        int nNonEmpty = 0;
+        for (int i = 0; i < k; i++) {
+            if (counts[i] == 0) {
+                continue;
+            }
+            nNonEmpty++;
+            double maxVal = -1;
+            for (int j = 0; j < k; j++) {
+                if (i != j && counts[j] > 0) {
+                    double val = (intraClusterDistances[i] + intraClusterDistances[j])/getDistance(centroids[i], centroids[j]);
+                    maxVal = Math.max(maxVal, val);
+                }
+            }
+            dbi += maxVal;
+        }
+        dbi /= nNonEmpty;
+        return dbi;
     }
 
     public void cluster(ScRNAseqDataset dataset, Config config) {
@@ -275,7 +325,15 @@ public class Model {
 
         int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.667), 1);
 
-        double[][] reducedPoints = tsne(dataset.data, tsneComponents);
+
+        double[][] reducedPoints;
+
+        if (config.isUseFastVersion()) {
+            reducedPoints = svd(dataset.data, tsneComponents);
+        }
+        else {
+            reducedPoints = tsne(dataset.data, tsneComponents);
+        }
 
         dataset.setA(minA);
         CostFunctions costFunctions = new CostFunctions();
@@ -304,14 +362,14 @@ public class Model {
 
                 //System.out.println(NMIScore);
                 //System.out.println(randIndex);
-                double silhuetteScore = silhuetteScore(reducedPoints, hardClustering);
-                if (silhuetteScore < 1.0 && silhuetteScore > bestSilhuetteScore) {
-                    bestSilhuetteScore = silhuetteScore;
+                double silhouetteScore = silhouetteScore(reducedPoints, hardClustering);
+                if (silhouetteScore < 1.0 && silhouetteScore > bestSilhuetteScore) {
+                    bestSilhuetteScore = silhouetteScore;
                     bestHardClustering = hardClustering;
                     bestA = a2;
                     bestPsi = psi;
                 }
-                //System.out.println(silhuetteScore);
+                //System.out.println(silhouetteScore);
             }
         }
 
