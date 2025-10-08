@@ -193,6 +193,8 @@ public class Main {
             String message = filePath;
             writer.write(message);
             writer.newLine();
+            writer.write('0'); //Whether to use tuning (0 is off, 1 is on)
+            writer.newLine();
             writer.flush();
 
             // Read response from Python
