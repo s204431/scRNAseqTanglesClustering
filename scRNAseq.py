@@ -5,10 +5,15 @@ import matplotlib.pyplot as plt
 import sys
 import json
 import time
+import numpy as np
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 
 input_str = sys.stdin.readline().strip()
+use_tuning = int(sys.stdin.readline().strip()) == 1
+#use_tuning = False
 
-#adata = sc.read("data/Ear_TSP1_30_version2d_10X_smartseq_scvi_Nov122024.h5ad", index_col=0)
+#adata = sc.read("data/Kidney_observed_counts.h5ad", index_col=0)
+
 
 if input_str.endswith(".h5ad"):
     adata = sc.read(input_str, index_col=0)
@@ -38,16 +43,33 @@ sc.pp.neighbors(adata)
 
 #sc.tl.umap(adata)
 
-# Using the igraph implementation and a fixed number of iterations can be significantly faster, especially for larger datasets
-sc.tl.leiden(adata, flavor="igraph", n_iterations=2)
+best_score = -1
 
+if use_tuning: #Tune parameters
+    for resolution in np.arange(0.1, 2.1, 0.1):
+        # Using the igraph implementation and a fixed number of iterations can be significantly faster, especially for larger datasets
+        sc.tl.leiden(adata, flavor="igraph", n_iterations=-1, resolution=resolution)
+        if len(np.unique(adata.obs["leiden"])) >= 2:
+            silhouette = silhouette_score(adata.obsm['X_pca'], adata.obs["leiden"])
+            #davies_bouldin = davies_bouldin_score(adata.obsm['X_pca'], adata.obs["leiden"])
+            #print(silhouette)
+            if silhouette > best_score:
+                best_score = silhouette
+                clusters = adata.obs["leiden"]
+                best_resolution = resolution
+else: #Use default parameters
+    sc.tl.leiden(adata, flavor="igraph", n_iterations=-1, resolution=1)
+    clusters = adata.obs["leiden"]
+
+    
 #sc.pl.umap(adata, color=["leiden"])
 
 end_time = time.time()
-clusters = adata.obs["leiden"]
-
+#clusters = adata.obs["leiden"]
 print(json.dumps(clusters.tolist()))
 print(end_time - start_time)
+#print(best_resolution)
+#print(best_score)
 
 
 
