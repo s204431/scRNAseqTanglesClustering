@@ -150,9 +150,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     }
 
     public void removeAllTabs() {
-        while (getTabCount() > 0) {
-            remove(0);
-        }
+        removeAll();
         tangleCounter = 0;
     }
 
