@@ -314,6 +314,64 @@ public class CutGenerators {
         return dataPoints;
     }
 
+    public BitSet[] getInitialCutsDistanceBetweenMeans(double[][] dataPoints, int a) {
+        List<BitSet> cuts = new ArrayList<>();
+        double[][] copy = new double[dataPoints.length][dataPoints[0].length];
+        int[] originalIndices = new int[dataPoints.length];
+        for (int i = 0; i < dataPoints.length; i++) {
+            originalIndices[i] = i;
+            System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
+        }
+        for (int i = 0; i < dataPoints[0].length; i++) {
+            mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
+            BitSet currentBitSet = new BitSet(dataPoints.length);
+            currentBitSet.setAll();
+            cuts.add(currentBitSet);
+            BitSet accumulated = new BitSet(dataPoints.length);
+            accumulated.setAll();
+            int cutIndex = 0;
+            for (int j = 0; j < dataPoints.length; j++) {
+                accumulated.remove(originalIndices[j]);
+                if (j <= cutIndex) {
+                    currentBitSet.remove(originalIndices[j]);
+                }
+                if (j > 0 && j % (a/precision) == 0) {
+                    if (dataPoints.length - j <= (a/precision) - 1) {
+                        break;
+                    }
+                    currentBitSet = new BitSet(dataPoints.length);
+                    currentBitSet.unionWith(accumulated);
+                    cuts.add(currentBitSet);
+                    //Find where to put the cut.
+                    double sum1 = 0.0;
+                    double sum2 = 0.0;
+                    int count1 = 0;
+                    int count2 = 0;
+                    for (int k = j+1; k < j+a/precision; k++) {
+                        sum2 += copy[k][i];
+                        count2++;
+                    }
+                    double bestDensity = -1;
+                    for (int k = j+1; k < j+a/precision-1; k++) {
+                        sum2 -= copy[k][i];
+                        sum1 += copy[k][i];
+                        count2--;
+                        count1++;
+                        if (count1 > 0 && count2 > 0 && (sum2/count2) - (sum1/count1) > bestDensity) {
+                            bestDensity = (sum2/count2) - (sum1/count1);
+                            cutIndex = k;
+                        }
+                    }
+                }
+            }
+        }
+        BitSet[] result = new BitSet[cuts.size()];
+        for (int i = 0; i < cuts.size(); i++) {
+            result[i] = cuts.get(i);
+        }
+        return result;
+    }
+
     //Original initial cut generator using simple axis parallel cuts with specific amount of points between them.
     public BitSet[] getInitialCutsSimple(double[][] dataPoints, int a) {
         List<BitSet> cuts = new ArrayList<>();

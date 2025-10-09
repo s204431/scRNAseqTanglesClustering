@@ -8,10 +8,7 @@ import util.BitSet;
 import util.Tuple;
 import datasets.ScRNAseqDataset;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class TangleClusterer {
 
@@ -684,6 +681,49 @@ public class TangleClusterer {
                 count++;
             }
         }
+        double[] newCosts = new double[count];
+        BitSet[] newInitialCuts = new BitSet[count];
+        int index = 0;
+        for (int i = 0; i < initialCuts.length; i++) {
+            if (!toBeRemoved[i]) {
+                newCosts[index] = costs[i];
+                newInitialCuts[index] = initialCuts[i];
+                index++;
+            }
+        }
+        return new Tuple<>(newInitialCuts, newCosts);
+    }
+
+    public static Tuple<BitSet[], double[]> removeRedundantCuts2(BitSet[] initialCuts, double[] costs, double factor) {
+        int maxCutsToKeep = -1;
+        Integer[] sortedIndices = new Integer[costs.length]; //Sorted by costs
+        for (int i = 0; i < costs.length; i++) {
+            sortedIndices[i] = i;
+        }
+
+        Arrays.sort(sortedIndices, Comparator.comparingDouble(i -> costs[i]));
+
+        boolean[] toBeRemoved = new boolean[initialCuts.length]; //true indicates that the corresponding cut should be removed.
+        List<Integer> keptCuts = new ArrayList<>(); //Indices of all cuts that we will keep
+        for (int i = 0; i < sortedIndices.length; i++) {
+            if (maxCutsToKeep > 0 && keptCuts.size() >= maxCutsToKeep) {
+                toBeRemoved[sortedIndices[i]] = true;
+                continue;
+            }
+            BitSet cut = initialCuts[sortedIndices[i]];
+            for (int j = keptCuts.size()-1; j >= 0; j--) {
+                int otherIndex = keptCuts.get(j);
+                if (BitSet.XNor(cut, initialCuts[otherIndex]) > cut.size()*factor || BitSet.XOR(cut, initialCuts[otherIndex]) > cut.size()*factor) {
+                    toBeRemoved[sortedIndices[i]] = true;
+                    break;
+                }
+            }
+            if (!toBeRemoved[sortedIndices[i]]) {
+                keptCuts.add(sortedIndices[i]);
+            }
+        }
+
+        int count = keptCuts.size();
         double[] newCosts = new double[count];
         BitSet[] newInitialCuts = new BitSet[count];
         int index = 0;
