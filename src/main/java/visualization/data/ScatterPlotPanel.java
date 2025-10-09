@@ -12,18 +12,30 @@ import visualization.View;
 
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.nio.file.Files;
 
 public class ScatterPlotPanel extends JTabbedPane {
     private View view;
 
+    // Tab titles
     private static final String POINTS_TITLE = "Points";
     private static final String GROUND_TRUTH_TITLE = "Ground Truth";
     private static final String CUT_TITLE = "Cut";
     private static final String SCANPY_TITLE = "Scanpy";
+
+    // Property titles
+    private static final String PROPERTY_TITLE = "title";
+    private static final String INDEX_TITLE = "index";
+    private static final String HARD_CLUSTER_TITLE = "clusters";
+    private static final String SOFT_CLUSTER_TITLE = "soft_clustering";
+    private static final String CONFIG_TITLE = "config";
+
 
     private static final int POINTS_IDX = 0;
     private static final int GROUND_TRUTH_IDX = 1;
@@ -145,10 +157,10 @@ public class ScatterPlotPanel extends JTabbedPane {
     }
 
     private void attachTabData(Canvas canvas, String title, int[] clusters) {
-        canvas.putClientProperty("title", title);
-        canvas.putClientProperty("index", attachmentIndex++);
-        canvas.putClientProperty("clusters", clusters);
-        canvas.putClientProperty("config", view.getCurrentConfigurations());
+        canvas.putClientProperty(PROPERTY_TITLE, title);
+        canvas.putClientProperty(INDEX_TITLE, attachmentIndex++);
+        canvas.putClientProperty(HARD_CLUSTER_TITLE, clusters);
+        canvas.putClientProperty(CONFIG_TITLE, view.getCurrentConfigurations());
     }
 
     public void addClosableTab(String title, Component comp) {
@@ -174,8 +186,8 @@ public class ScatterPlotPanel extends JTabbedPane {
             int i = indexOfTabComponent(p);
             if (i != -1) {
                 Canvas c = (Canvas) getComponentAt(i);
-                int clusterIndex = (int) c.getClientProperty("index");
-                String t = (String) c.getClientProperty("title");
+                int clusterIndex = (int) c.getClientProperty(INDEX_TITLE);
+                String t = (String) c.getClientProperty(PROPERTY_TITLE);
                 if (!t.equals(CUT_TITLE)) view.removeTree(clusterIndex);
                 removeTabAt(i);
             }
@@ -221,17 +233,18 @@ public class ScatterPlotPanel extends JTabbedPane {
     private void addSelectionChangeListener() {
         addChangeListener(e -> {
             int idx = getSelectedIndex();
-            if (idx < 1) return;
+            if (idx < 0) return;
 
             Canvas c = (Canvas) getComponentAt(idx);
 
             // Show clustering information in statistics panel
-            int[] clustering = (int[]) c.getClientProperty("clusters");
-            view.updateStatisticsPanel(clustering);
+            int[] clustering = (int[]) c.getClientProperty(HARD_CLUSTER_TITLE);
+            int clusterIndex = (int) c.getClientProperty(INDEX_TITLE);
+            view.updateStatisticsPanel(clusterIndex, clustering);
 
             if (idx < 2) return;
 
-            String title = (String) c.getClientProperty("title");
+            String title = (String) c.getClientProperty(PROPERTY_TITLE);
             if (title.equals(CUT_TITLE)) return;
             else if (title.equals(SCANPY_TITLE)) {
                 view.removeTrees();
@@ -239,9 +252,8 @@ public class ScatterPlotPanel extends JTabbedPane {
             }
 
             // Draw tangle search trees and load the tangle configuration
-            int index = (int) c.getClientProperty("index");
-            view.loadAndDrawTrees(index);
-            view.loadConfig((Config) c.getClientProperty("config"));
+            view.loadAndDrawTrees(clusterIndex);
+            view.loadConfig((Config) c.getClientProperty(CONFIG_TITLE));
         });
     }
 
@@ -254,8 +266,8 @@ public class ScatterPlotPanel extends JTabbedPane {
                 setSelectedIndex(idx);
 
                 Canvas c = (Canvas) getComponentAt(idx);
-                String title = (String) c.getClientProperty("title");
-                int[] clusters = (int[]) c.getClientProperty("clusters");
+                String title = (String) c.getClientProperty(PROPERTY_TITLE);
+                int[] clusters = (int[]) c.getClientProperty(HARD_CLUSTER_TITLE);
 
                 JPopupMenu menu = new JPopupMenu();
 
@@ -264,14 +276,14 @@ public class ScatterPlotPanel extends JTabbedPane {
                 menu.add(savePlotPng);
 
                 if (!title.equals(POINTS_TITLE)) {
-                    JMenuItem saveHardClustering = new JMenuItem("Save hard clustering...");
+                    JMenuItem saveHardClustering = new JMenuItem("Export hard clustering to CSV...");
                     saveHardClustering.addActionListener(ee -> saveHardClusteringAsCsv(clusters));
                     menu.add(saveHardClustering);
                 }
 
                 if (!title.equals(POINTS_TITLE) && !title.equals(GROUND_TRUTH_TITLE)) {
-                    JMenuItem saveSoftClustering = new JMenuItem("Save soft clustering...");
-                    saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv());
+                    JMenuItem saveSoftClustering = new JMenuItem("Export soft clustering to CSV...");
+                    saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv(null));
                     menu.add(saveSoftClustering);
                 }
 
@@ -285,7 +297,7 @@ public class ScatterPlotPanel extends JTabbedPane {
 
     private void exportTabAsPNG(Canvas canvas, String title) {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Export plot as PNG");
+        chooser.setDialogTitle("Export plot to PNG");
         chooser.setSelectedFile(new java.io.File(title + ".png"));
         chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("PNG files", "png"));
 
@@ -305,11 +317,95 @@ public class ScatterPlotPanel extends JTabbedPane {
         }
     }
 
-    private void saveHardClusteringAsCsv(int[] clusters) {
+    private void saveHardClusteringAsCsv(int[] clustering) {
+        int[] labels = view.unshuffleClustering(clustering);
+        if (labels == null || labels.length == 0) {
+            System.out.println("Error when saving hard clustering in ScatterPlotPanel: Clustering is null");
+            return;
+        }
 
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save hard clustering as CSV");
+        fileChooser.setSelectedFile(new File("labels.csv"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("CSV files", "csv"));
+        if (fileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        // Add extension if user did not
+        File file = fileChooser.getSelectedFile();
+        if (!file.getName().endsWith(".csv")) file = new File(file.getParentFile(), file.getName() + ".csv");
+
+        // Have user confirm overwrite if file exists
+        if (file.exists()) {
+            int overwrite = JOptionPane.showConfirmDialog(this, "File already exists. Do you want to override the existing file?", "Overwrite", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (overwrite != JOptionPane.YES_OPTION) return;
+        }
+
+        // Write file
+        try (BufferedWriter out = Files.newBufferedWriter(file.toPath())) {
+            out.write("cell,cluster");
+            out.newLine();
+            for (int i = 0; i < labels.length; i++) {
+                out.write(i + "," + labels[i]);
+                out.newLine();
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error when writing hard clustering to CSV in ScatterPlotPanel");
+            e.printStackTrace();
+            return;
+        }
+
+        System.out.println("Saved hard clustering:\n" + file.getAbsolutePath());
     }
 
-    private void saveSoftClusteringAsCsv() {
+    private void saveSoftClusteringAsCsv(double[][] softClustering) {
+        double[][] probabilities = view.unshuffleClustering(softClustering);
+        if (probabilities == null || probabilities.length == 0) {
+            System.out.println("Error when saving soft clustering in ScatterPlotPanel: Clustering is null");
+            return;
+        }
 
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save soft clustering as CSV");
+        fileChooser.setSelectedFile(new File("soft_clustering.csv"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("CSV files", "csv"));
+        if (fileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+        // Add extension if user did not
+        File file = fileChooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".csv")) file = new File(file.getParentFile(), file.getName() + ".csv");
+
+        // Have user confirm overwrite if file exists
+        if (file.exists()) {
+            int overwrite = JOptionPane.showConfirmDialog(this, "File already exists. Do you want to override the existing file?", "Overwrite", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (overwrite != JOptionPane.YES_OPTION) return;
+        }
+
+        // Write file
+        try (BufferedWriter out = Files.newBufferedWriter(file.toPath())) {
+
+            // Header
+            out.write("cell");
+            for (int i = 1; i <= probabilities[0].length; i++) {
+                out.write(",cluster_" + i);
+            }
+            out.newLine();
+
+            for (int i = 0; i < probabilities.length; i++) {
+                out.write(i+"");
+                for (int j = 0; j < probabilities[0].length; j++) {
+                    out.write(",");
+                    out.write(Double.toString(probabilities[i][j]));
+                }
+                out.newLine();
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error when writing soft clustering to CSV in ScatterPlotPanel");
+            e.printStackTrace();
+            return;
+        }
+
+        System.out.println("Saved soft clustering:\n" + file.getAbsolutePath());
     }
 }

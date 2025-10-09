@@ -3,9 +3,12 @@ package visualization;
 import clustering.Model;
 import datasets.ScRNAseqDataset;
 import main.Main;
+import smile.validation.metric.AdjustedRandIndex;
+import smile.validation.metric.NormalizedMutualInformation;
 import util.Monitor;
 import util.BitSet;
 import util.Config;
+import util.Tuple;
 import visualization.test.TestEditPanel;
 
 import javax.swing.*;
@@ -228,7 +231,29 @@ public class View {
         window.loadConfig(config);
     }
 
-    public void updateStatisticsPanel(int[] clustering) {
-        window.showClusteringDetails(clustering);
+    public void updateStatisticsPanel(int clusterIndex, int[] clustering) {
+        window.showClusteringDetails(clusterIndex, clustering);
+    }
+
+    public Tuple<Double, Double> getClusteringQuality(int[] clustering) {
+        double nmi = NormalizedMutualInformation.joint(clustering, model.getShuffledGroundTruth());
+        double randIndex = AdjustedRandIndex.of(model.getShuffledGroundTruth(), clustering);
+        return new Tuple<>(nmi, randIndex);
+    }
+
+    public double getSilhouetteScore(int[] clustering) {
+        return Model.silhouetteScore(points, clustering);
+    }
+
+    public double getDavisBouldin(int[] clustering) {
+        return Model.daviesBouldinIndex(points, clustering);
+    }
+
+    public int[] unshuffleClustering(int[] clustering) {
+        return model.computeUnShuffledArray(clustering, model.getSeed());
+    }
+
+    public double[][] unshuffleClustering(double[][] clustering) {
+        return model.computeUnShuffledArray(clustering, model.getSeed());
     }
 }

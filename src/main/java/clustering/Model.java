@@ -133,6 +133,32 @@ public class Model {
         }
     }
 
+    public int[] computeUnShuffledArray(int[] shuffledArray, int seed) {
+        int n = shuffledArray.length;
+        int[] unShuffledArray = new int[n];
+        int[] indices = new int[n];
+        for (int i = 0; i < n; i++) indices[i] = i;
+
+        shuffleArray(indices, seed);
+        for (int i = 0; i < n; i++) {
+            unShuffledArray[indices[i]] = shuffledArray[i];
+        }
+        return unShuffledArray;
+    }
+
+    public double[][] computeUnShuffledArray(double[][] shuffledArray, int seed) {
+        int n = shuffledArray.length;
+        double[][] unShuffledArray = new double[n][shuffledArray[0].length];
+        int[] indices = new int[n];
+        for (int i = 0; i < n; i++) indices[i] = i;
+
+        shuffleArray(indices, seed);
+        for (int i = 0; i < n; i++) {
+            unShuffledArray[indices[i]] = shuffledArray[i];
+        }
+        return unShuffledArray;
+    }
+
     public void runTestset() {
         TestSet testSet = new TestSet(this, "data/testset");
         testSet.run(10, true);

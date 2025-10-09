@@ -1,14 +1,18 @@
 package visualization.data;
 
+import clustering.TangleSearchTree;
 import datasets.ScRNAseqDataset;
+import util.Tuple;
 import visualization.View;
 
+import java.util.*;
 import javax.swing.*;
 import java.awt.*;
-import java.text.DecimalFormat;
-import java.util.Map;
 
 public class StatisticsPanel extends JScrollPane {
+    private static final int HEIGHT_INDEX = -1;
+    private static final int SPLIT_COUNT_INDEX = -2;
+
     private final View view;
 
     // ==== outer grid now two columns ====
@@ -36,9 +40,9 @@ public class StatisticsPanel extends JScrollPane {
 
         // Sections
         dataSection = new Section("Data Set");
+        performanceSection = new Section("Performance");
         clusteringSection = new Section("Clustering");
         tangleSection = new Section("Tangles");
-        performanceSection = new Section("Performance");
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0; gbc.gridy = 0;
@@ -49,13 +53,10 @@ public class StatisticsPanel extends JScrollPane {
         content.add(tools, gbc);
         tools.add(copyButton);
 
-        // Left column
-        addSection(dataSection,   0, 1);
-        addSection(clusteringSection, 0, 2);
-
-        // Right column
-        addSection(tangleSection,     1, 1);
-        addSection(performanceSection,1, 2);
+        addSection(dataSection,   1, 0);
+        addSection(performanceSection,     1, 1);
+        addSection(clusteringSection, 2, 0);
+        addSection(tangleSection,2, 1);
 
         // Filler to push content to top
         gbc = new GridBagConstraints();
@@ -67,7 +68,7 @@ public class StatisticsPanel extends JScrollPane {
         getVerticalScrollBar().setUnitIncrement(16);
     }
 
-    private void addSection(Section s, int col, int row) {
+    private void addSection(Section s, int row, int col) {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = col;
         gbc.gridy = row;
@@ -92,31 +93,123 @@ public class StatisticsPanel extends JScrollPane {
     }
 
     public void updateClusteringStats(int[] clustering) {
-        int k = (clustering == null) ? 0 : distinctCount(clustering);
-        clusteringSection.clear()
-                .put("Clusters", (k == 0) ? "-" : Integer.toString(k))
-                .render();
+        if (clustering == null) {
+            updatePerformance(0, 0);
+            clusteringSection.clear().render();
+            return;
+        }
+
+        clusteringSection.clear();
+
+        Tuple<Double, Double> result = view.getClusteringQuality(clustering);
+        updatePerformance(result.x, result.y);
+
+        HashMap<Integer, Integer> clusterMap = computeClusterMapping(clustering);
+
+        int clusters = clusterMap.size();
+        double silhouetteScore = view.getSilhouetteScore(clustering);
+        double daviesBouldinIndex = view.getDavisBouldin(clustering);
+        clusteringSection.put("Number of clusters", (clusters == 0) ? "-" : Integer.toString(clusters))
+                .put("Silhouette Score", format(silhouetteScore))
+                .put("Davies-Bouldin Index", format(daviesBouldinIndex))
+                .put(" ", " ")
+                .put("Cluster and cell count:", "");
+
+        for (int c : clusterMap.keySet()) {
+            clusteringSection.put("Cluster " + c, clusterMap.get(c)+"");
+        }
+
+        clusteringSection.render();
     }
 
-    public void updateTangleStats(int cuts) {
-        tangleSection.clear()
-                .put("Number of Cuts", Integer.toString(cuts))
-                .render();
+    public void updateTangleStats(TangleSearchTree[] trees) {
+        if (trees == null){
+            tangleSection.clear().render();
+            return;
+        }
+
+        tangleSection.clear();
+
+        TangleSearchTree original = trees[0];
+        TangleSearchTree splitPruned = trees[1];
+        TangleSearchTree condensed = trees[2];
+
+        addTreeInfo(original, "Original", "");
+        addTreeInfo(splitPruned, "Split pruned", " ");
+        addTreeInfo(condensed, "Condensed", "  ");
+
+        tangleSection.render();
     }
 
-    public void updatePerformance(double time, double nmi, double randIndex) {
+    public void addTreeInfo(TangleSearchTree tree, String treeName, String id) {
+        if (tree == null) return;
+
+        HashMap<Integer, Integer> cutCountMap = computeCutCountMap(tree);
+
+        int nodesSum = 0;
+        int distinctCuts = 0;
+        for (var entry : cutCountMap.entrySet()){
+            if (entry.getKey() == HEIGHT_INDEX || entry.getKey() == SPLIT_COUNT_INDEX) continue;
+            nodesSum += entry.getValue();
+            distinctCuts++;
+        }
+        int treeHeight = cutCountMap.get(HEIGHT_INDEX);
+        int splitCount = cutCountMap.get(SPLIT_COUNT_INDEX);
+
+        tangleSection.put(treeName + " tangle search tree:", "")
+                .put("Nodes" + id, nodesSum+"")
+                .put("Tree height" + id, treeHeight+"")
+                .put("Distinct cuts" + id, distinctCuts+"")
+                .put("Split cuts" + id, splitCount+"")
+                .put(" " + id, " ");
+    }
+
+    public void updatePerformance(double nmi, double randIndex) {
         performanceSection.clear()
-                .put("Time (ms)", "" + time)
-                .put("NMI Score", "" + nmi)
-                .put("Rand Index Score", "" + randIndex)
+                .put("NMI Score", format(nmi))
+                .put("Rand Index Score", format(randIndex))
                 .render();
     }
 
-    private int distinctCount(int[] arr) {
-        if (arr == null || arr.length == 0) return 0;
-        java.util.BitSet seen = new java.util.BitSet();
-        for (int v : arr) if (v >= 0) seen.set(v);
-        return seen.cardinality();
+    private String format(double value) {
+        if (value == 0) return "-";
+        int decimals = 3;
+        double factor = Math.pow(10, decimals);
+        return Double.toString((double)Math.round(value * (factor)) / factor);
+    }
+
+    private HashMap<Integer, Integer> computeClusterMapping(int[] clusters) {
+        HashMap<Integer, Integer> countsMap = new HashMap<>();
+        for (int c : clusters) {
+            int count = countsMap.getOrDefault(c, 0);
+            countsMap.put(c, count + 1);
+        }
+
+        return countsMap;
+    }
+
+    private HashMap<Integer, Integer> computeCutCountMap(TangleSearchTree tree) {
+        if (tree == null) return null;
+
+        HashMap<Integer, Integer> cutCountMap = new HashMap<>();
+        computeDistinctCutsRecursive(tree.getRoot(), cutCountMap, 0);
+        return cutCountMap;
+    }
+
+    private void computeDistinctCutsRecursive(TangleSearchTree.Node node, HashMap<Integer, Integer> map, int height) {
+        if (node == null) return;
+
+        int idx = node.originalOrientation;
+        map.put(idx, 1 + map.getOrDefault(idx, 0));
+
+        int prevHeight = map.getOrDefault(HEIGHT_INDEX, 0);
+        if (height > prevHeight) map.put(HEIGHT_INDEX, height);
+
+        // Split node
+        if (node.leftChild != null && node.rightChild != null) map.put(SPLIT_COUNT_INDEX, 1 + map.getOrDefault(SPLIT_COUNT_INDEX, 0));
+
+        computeDistinctCutsRecursive(node.leftChild, map, height + 1);
+        computeDistinctCutsRecursive(node.rightChild, map, height + 1);
     }
 
     private void copyAllToClipboard() {
@@ -138,11 +231,11 @@ public class StatisticsPanel extends JScrollPane {
     }
 
     private static final class Section extends JPanel {
-        private final java.util.Map<String, String> data = new java.util.LinkedHashMap<>();
+        private final Map<String, String> data = new LinkedHashMap<>();
         private final JPanel grid = new JPanel(new GridBagLayout());
         private final GridBagConstraints gbc = new GridBagConstraints();
 
-        Section(String title) {
+        private Section(String title) {
             setLayout(new BorderLayout());
             setBorder(BorderFactory.createTitledBorder(
                     BorderFactory.createCompoundBorder(
@@ -161,15 +254,15 @@ public class StatisticsPanel extends JScrollPane {
             gbc.weightx = 0;
         }
 
-        Section clear() {
+        private Section clear() {
             data.clear(); return this;
         }
 
-        Section put(String key, String value) {
+        private Section put(String key, String value) {
             data.put(key, value); return this;
         }
 
-        void render() {
+        private void render() {
             grid.removeAll();
             int row = 0;
 

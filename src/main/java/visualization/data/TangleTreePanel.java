@@ -292,6 +292,10 @@ public class TangleTreePanel extends JPanel {
         sortedCutCosts = costsSorted;
     }
 
+    public TangleSearchTree[] getTrees(int clusterIndex) {
+        return clusterIndexToTrees.get(clusterIndex);
+    }
+
     private void resetHistoryVariables() {
         idToNodeName.clear();
         idToEdgeName.clear();

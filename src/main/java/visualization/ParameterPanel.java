@@ -250,14 +250,14 @@ public class ParameterPanel extends JPanel {
 
         parameterTuningCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            aField.setEditable(!isChecked);
-            aField.setEnabled(!isChecked);
-            psiField.setEditable(!isChecked);
-            psiField.setEnabled(!isChecked);
             autoComputeACheckBox.setSelected(false);
             autoComputeACheckBox.setEnabled(!isChecked);
             autoComputePsiCheckBox.setSelected(false);
             autoComputePsiCheckBox.setEnabled(!isChecked);
+            aField.setEditable(!isChecked);
+            aField.setEnabled(!isChecked);
+            psiField.setEditable(!isChecked);
+            psiField.setEnabled(!isChecked);
         });
 
 
