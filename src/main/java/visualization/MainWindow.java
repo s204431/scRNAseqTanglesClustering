@@ -8,6 +8,7 @@ import visualization.data.StatisticsPanel;
 import visualization.data.TangleTreePanel;
 import visualization.test.TestEditPanel;
 import visualization.test.TestGraphPanel;
+import visualization.test.TestProgressManager;
 import visualization.test.TestResultPanel;
 
 import javax.swing.*;
@@ -16,8 +17,6 @@ import java.awt.*;
 import java.io.File;
 
 public class MainWindow extends JFrame {
-    private View view;
-
     public static final Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
     public static final String DATA_VIEW = "data";
     public static final String TEST_VIEW = "test";
@@ -38,10 +37,10 @@ public class MainWindow extends JFrame {
 
     private String currentView;
 
+    private final JProgressBar testProgressBar = new JProgressBar(0, 100);
+
     public MainWindow(View view) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        this.view = view;
 
         this.topPanel = new TopPanel(view);
         this.scatterPanel = new ScatterPlotPanel(view);
@@ -67,8 +66,12 @@ public class MainWindow extends JFrame {
         temp.add(topPanel);
         temp.add(Box.createRigidArea(new Dimension(0,5)));
 
+        testProgressBar.setStringPainted(true);
+        testProgressBar.setVisible(false);
+
         root.add(temp, BorderLayout.NORTH);
         root.add(cards, BorderLayout.CENTER);
+        root.add(testProgressBar, BorderLayout.SOUTH);
 
         setContentPane(root);
         setVisible(true);
@@ -156,26 +159,58 @@ public class MainWindow extends JFrame {
         return testEditPanel.getSelectedConfigFiles();
     }
 
-    public TestEditPanel.TestProgressManager prepareUIForTesting(String[] titles) {
-        TestEditPanel.TestProgressManager out = testEditPanel.initializeTestProgressManager();
-        out.setTitles(titles);
-        testEditPanel.startTimer();
+    public TestProgressManager prepareUIForTesting(String[] titles) {
+        TestProgressManager testProgressManager = testEditPanel.initializeTestProgressManager();
+        testProgressManager.setTitles(titles);
+
+        addTestProgressListener(testProgressManager);
+
         testResultPanel.initializeResultsTable();
-        return out;
+        return testProgressManager;
     }
 
-    public void visualizeTestResults(int i, int j) {
-        testGraphPanel.drawPlots(i, j);
-        testResultPanel.drawResultsTable(i, j);
+    public void stopTesting() {
+        testEditPanel.stopTesting();
+        testParameterPanel.stopTesting();
+
+        testProgressBar.setVisible(false);
+        testProgressBar.setValue(0);
+    }
+
+    public void addTestProgressListener(TestProgressManager testProgressManager) {
+        testProgressBar.setVisible(true);
+
+        TestProgressManager.Listener listener = new TestProgressManager.Listener() {
+            @Override
+            public void onTangleFinished(int configIndex, int testIndex, double time, double nmi, double randIndex) {
+                int progress = testProgressManager.getProgress();
+                testProgressBar.setValue(progress);
+            }
+
+            @Override
+            public void onPythonFinished(int testIndex, double time, double nmi, double randIndex) {
+                int progress = testProgressManager.getProgress();
+                testProgressBar.setValue(progress);
+            }
+
+            @Override
+            public void onRunFinished() {
+                int progress = testProgressManager.getProgress();
+                testProgressBar.setValue(progress);
+            }
+
+            @Override
+            public void onAllFinished() {
+                int progress = testProgressManager.getProgress();
+                testProgressBar.setValue(progress);
+                testProgressManager.removeListener(this);
+            }
+        };
+        testProgressManager.addListener(listener);
     }
 
     public void showInformation(ScRNAseqDataset dataSet) {
         statsPanel.showDataSetInformation(dataSet);
-    }
-
-    public void stopTesting() {
-        testEditPanel.stopTimer();
-        testParameterPanel.stopTesting();
     }
 
     public void removeScatterTabs() {

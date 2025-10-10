@@ -5,7 +5,7 @@ import datasets.ScRNAseqDataset;
 import main.Main;
 import smile.validation.metric.AdjustedRandIndex;
 import smile.validation.metric.NormalizedMutualInformation;
-import visualization.test.TestEditPanel;
+import visualization.test.TestProgressManager;
 
 import java.io.File;
 import java.util.HashSet;
@@ -25,8 +25,6 @@ public class TestSet {
     public double[] NMIPythonResults;
     public double[] randIndexPythonResults;
     public double[] pythonTimes;
-
-    public AtomicBoolean stopTesting = new AtomicBoolean(false);
 
     public TestSet(Model model, String directoryPath) {
         this.model = model;
@@ -180,12 +178,14 @@ public class TestSet {
     public void runWIthUI(Config[] configs,
                           int nRunsPerDataset,
                           boolean runPython,
-                          TestEditPanel.TestProgressManager progressManager) {
+                          TestProgressManager progressManager) {
 
         System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
 
         int nTests = observedPaths.length;
         int nConfigs = configs.length;
+
+        progressManager.initializeProgress(nTests, nConfigs, nRunsPerDataset);
 
         double[][] averageNMIScores = new double[nTests][nConfigs];
         double[][] averageRandIndexScores = new double[nTests][nConfigs];
@@ -196,7 +196,7 @@ public class TestSet {
         double[] pythonTimes = new double[nTests];
 
         for (int testIndex = 0; testIndex < nTests; testIndex++) {
-            if (stopTesting.get()) return;
+            if (progressManager.testingStopped()) return;
 
             String observedFilePath = observedPaths[testIndex];
             String labelFilePath = labelsPaths[testIndex];
@@ -220,7 +220,7 @@ public class TestSet {
                 Config config = configs[configIndex];
 
                 for (int run = 0; run < nRunsPerDataset; run++) {
-                    if (stopTesting.get()) return;
+                    if (progressManager.testingStopped()) return;
 
                     long time1 = System.currentTimeMillis();
                     ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
@@ -242,13 +242,14 @@ public class TestSet {
                     double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
                     averageNMIScores[testIndex][configIndex] += NMI;
                     averageRandIndexScores[testIndex][configIndex] += randIndex;
+
+                    progressManager.markTangleSingleRunFinished();
                 }
 
                 averageNMIScores[testIndex][configIndex] /= nRunsPerDataset;
                 averageRandIndexScores[testIndex][configIndex] /= nRunsPerDataset;
                 averageTimes[testIndex][configIndex] /= nRunsPerDataset;
                 progressManager.markTangleFinished(configIndex, testIndex, averageTimes[testIndex][configIndex], averageNMIScores[testIndex][configIndex], averageRandIndexScores[testIndex][configIndex]);
-                if (!runPython) progressManager.markPythonFinished(testIndex, 0, 0, 0);
                 System.out.println("Average results for dataset " + observedPaths[testIndex].replace("observed_counts_", "") + " for config file " + (configIndex + 1));
                 System.out.println("NMI score: " + averageNMIScores[testIndex][configIndex]);
                 System.out.println("Rand Index score: " + averageRandIndexScores[testIndex][configIndex]);
@@ -268,6 +269,8 @@ public class TestSet {
                 System.out.println("Rand index python: " + randIndexPython);
                 System.out.println("Python time: " + pythonResult.y);
                 System.out.println();
+            } else {
+                progressManager.markPythonFinished(testIndex, 0, 0, 0);
             }
         }
 
@@ -307,6 +310,7 @@ public class TestSet {
             System.out.println("Python Average Time: " + pythonAverageTime);
         }
 
+        progressManager.fireAllFinished();
     }
 
     private int getNumberOfClusters(int[] clustering) {

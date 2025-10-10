@@ -9,7 +9,6 @@ import util.Monitor;
 import util.BitSet;
 import util.Config;
 import util.Tuple;
-import visualization.test.TestEditPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +16,7 @@ import java.io.File;
 import java.util.List;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import visualization.test.TestProgressManager;
 
 public class View {
     private Model model;
@@ -28,6 +28,8 @@ public class View {
 
     private Thread loaderThread;
     private Thread testThread;
+
+    private TestProgressManager testProgressManager;
 
     public View(Model model) {
         this.model = model;
@@ -86,13 +88,12 @@ public class View {
         }
         titles[selectedConfigFiles.length + 1] = "Scanpy";
 
-        TestEditPanel.TestProgressManager progressManager = window.prepareUIForTesting(titles);
+        testProgressManager = window.prepareUIForTesting(titles);
 
         testThread = new Thread(() -> {
             try {
-                model.runTestset(selectedTestFiles, configs, runs, compareWithStandardPipeline, progressManager);
+                model.runTestset(selectedTestFiles, configs, runs, compareWithStandardPipeline, testProgressManager);
             } catch (Throwable t) {
-                System.out.println("Testing thread threw an exception in View:");
                 t.printStackTrace();
             } finally {
                 SwingUtilities.invokeLater(window::stopTesting);
@@ -183,10 +184,6 @@ public class View {
         window.showTestSet(selectedDirs);
     }
 
-    public void visualizeTestResults(int i, int j) {
-        window.visualizeTestResults(i, j);
-    }
-
 
     public void changeView(String viewName) {
         window.changeView(viewName);
@@ -201,9 +198,8 @@ public class View {
     }
 
     public void stopTestingThread() {
-        if (testThread != null && testThread.isAlive()) {
-            //testThread.interrupt();
-            model.stopTesting();
+        if (testProgressManager != null) {
+            testProgressManager.setStopTesting(true);
         }
     }
 

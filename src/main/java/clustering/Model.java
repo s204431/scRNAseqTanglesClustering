@@ -47,7 +47,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import visualization.test.TestEditPanel;
+import visualization.test.TestProgressManager;
 
 
 public class Model {
@@ -169,7 +169,7 @@ public class Model {
                            Config[] configs,
                            int runs,
                            boolean compareWithStandardPipeline,
-                           TestEditPanel.TestProgressManager progressManager) {
+                           TestProgressManager progressManager) {
         runningTestSet = new TestSet(this, selectedFiles);
         runningTestSet.runWIthUI(configs, runs, compareWithStandardPipeline, progressManager);
         runningTestSet = null;
@@ -844,11 +844,6 @@ public class Model {
 
     public double[][] getSoftClustering() {
         return softClustering;
-    }
-
-    public void stopTesting() {
-        if (runningTestSet == null) return;
-        runningTestSet.stopTesting.set(true);
     }
 
 }

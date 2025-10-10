@@ -218,7 +218,7 @@ public class ParameterPanel extends JPanel {
         runNumberField.setText("1");
         addRow("<html>Number of runs<br>on each test</html>", runNumberField);
 
-        pythonCheckBox = new JCheckBox("<html>Compare With<br>Standard<br>Pipeline</html>");
+        pythonCheckBox = new JCheckBox("<html>Compare With<br>Scanpy</html>");
         testButton = new JButton("Run Tests");
         addRow(testButton, pythonCheckBox);
     }

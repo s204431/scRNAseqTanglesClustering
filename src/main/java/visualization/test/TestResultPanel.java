@@ -1,6 +1,5 @@
 package visualization.test;
 
-import org.bytedeco.javacpp.indexer.ShortRawIndexer;
 import visualization.View;
 
 import javax.swing.*;
@@ -13,14 +12,29 @@ import java.util.List;
 
 public class TestResultPanel extends JPanel {
     private View view;
-    private TestEditPanel.TestProgressManager testProgressManager;
+    private TestProgressManager testProgressManager;
+    private TestProgressManager.Listener testProgressListener;
+
     private ResultsTable resultsTable = new ResultsTable(0, 3);
     private JTable table = new JTable(resultsTable);
 
-    public TestResultPanel(View view, TestEditPanel.TestProgressManager testProgressManager) {
+    public TestResultPanel(View view, TestProgressManager testProgressManager) {
+        setLayout(new BorderLayout());
+
         this.view = view;
         this.testProgressManager = testProgressManager;
-        setLayout(new BorderLayout());
+        testProgressListener = new TestProgressManager.Listener() {
+            @Override
+            public void onTangleFinished(int configIndex, int testIndex, double time, double nmi, double randIndex) {
+                drawResultsTable(testIndex);
+            }
+
+            @Override
+            public void onPythonFinished(int testIndex, double time, double nmi, double randIndex) {
+                drawResultsTable(testIndex);
+            }
+        };
+        testProgressManager.addListener(testProgressListener);
 
         table.setRowSelectionAllowed(false);
         addTableCellRenderer();
@@ -57,8 +71,8 @@ public class TestResultPanel extends JPanel {
         });
     }
 
-    public void drawResultsTable(int low, int high) {
-        int nTests = high - low + 1;
+    public void drawResultsTable(int testIndex) {
+        int nTests = testIndex + 1;
         int nConfigs = testProgressManager.getConfigsSize();
 
         boolean[] missingValues = new boolean[nConfigs + 1];

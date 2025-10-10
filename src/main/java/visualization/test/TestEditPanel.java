@@ -1,6 +1,5 @@
 package visualization.test;
 
-import org.nd4j.common.primitives.AtomicDouble;
 import visualization.View;
 
 import javax.swing.*;
@@ -12,14 +11,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.awt.*;
 import java.io.File;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class TestEditPanel extends JPanel {
+    public static final Color LIGHT_GREEN = new Color(200, 240, 200);
+    public static final Color LIGHT_YELLOW = new Color(255, 240, 200);
+
     private View view;
 
-    private javax.swing.Timer timer;
     private final TestProgressManager testProgressManager = new TestProgressManager();
+    TestProgressManager.Listener testProgressListener = new TestProgressManager.Listener() {
+        @Override
+        public void onTangleFinished(int configIndex, int testIndex, double time, double nmi, double randIndex) {
+            SwingUtilities.invokeLater(() -> updateResults());
+        }
+        @Override
+        public void onPythonFinished(int testIndex, double time, double nmi, double randIndex) {
+            SwingUtilities.invokeLater(() -> updateResults());
+        }
+        @Override
+        public void onAllFinished() {
+            SwingUtilities.invokeLater(() -> {
+                updateResults();
+                editableTestTable.resetRowStatus();
+            });
+        }
+    };
+
     private int[] testRowsPending;
     private int[] configRowsPending;
 
@@ -33,6 +50,8 @@ public class TestEditPanel extends JPanel {
 
     public TestEditPanel(View view) {
         this.view = view;
+        testProgressManager.addListener(testProgressListener);
+
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         addTableWithToolbar(editableTestTable, testEditTable, testEditScrollPane, "Choose tests to run");
@@ -123,10 +142,10 @@ public class TestEditPanel extends JPanel {
         return editableTestTable.getSelectedFiles();
     }
 
+    // NOTE THAT THIS METHOD DOES MUCH UNNECESSARY WORK AFTER ADDING LISTENERS TO TestProgressManager CLASS...
+    // TODO: MAKE METHOD MORE EFFICIENT
     public void updateResults() {
-        boolean testingFinished = true;
-
-        for (int testIndex = 0; testIndex < testProgressManager.getSize(); testIndex++) {
+          for (int testIndex = 0; testIndex < testProgressManager.getSize(); testIndex++) {
             int testRow = testRowsPending[testIndex];
             TestStatus testStatus = editableTestTable.getStatus(testRow);
             boolean currentTestFinished = true;
@@ -134,25 +153,13 @@ public class TestEditPanel extends JPanel {
             // Tangle configurations
             for (int configIndex = 0; configIndex < testProgressManager.getConfigsSize(); configIndex++) {
                 if (!testProgressManager.getTangleStatus(configIndex, testIndex)) {
-                    testingFinished = false;
                     currentTestFinished = false;
-                } else {
-                    if (testStatus != TestStatus.FINISHED) {
-                        // New test has finished
-                        view.visualizeTestResults(0, testIndex);
-                    }
                 }
             }
 
             // Python
             if (!testProgressManager.getPythonStatus(testIndex)) {
-                testingFinished = false;
                 currentTestFinished = false;
-            } else {
-                if (testStatus != TestStatus.FINISHED) {
-                    // New test has finished
-                    view.visualizeTestResults(0, testIndex);
-                }
             }
 
             // Color test table
@@ -162,28 +169,11 @@ public class TestEditPanel extends JPanel {
                 editableTestTable.setStatus(testRow, TestStatus.PENDING);
             }
         }
-
-        if (testingFinished) {
-            editableTestTable.resetRowStatus();
-        }
     }
 
-    public void startTimer() {
-        timer = new Timer(500, e -> updateResults());
-        timer.setInitialDelay(0);
-        timer.setCoalesce(true);
-        timer.start();
-    }
-
-    public void stopTimer() {
+    public void stopTesting() {
+        updateResults();
         editableTestTable.resetRowStatus();
-
-        if (timer == null) {
-            return;
-        }
-
-        timer.stop();
-        timer = null;
     }
 
     private JTable createModifiedJTable(EditableTable editableTable) {
@@ -198,11 +188,11 @@ public class TestEditPanel extends JPanel {
                 if (!isRowSelected(row)) {
                     switch (status) {
                         case FINISHED:
-                            c.setBackground(new Color(198, 239, 206)); // light green
+                            c.setBackground(LIGHT_GREEN); // Bright green
                             c.setForeground(Color.BLACK);
                             break;
                         case PENDING:
-                            c.setBackground(new Color(255, 242, 204)); // light yellow
+                            c.setBackground(LIGHT_YELLOW); // Bright yellow
                             c.setForeground(Color.BLACK);
                             break;
                         default:
@@ -223,138 +213,17 @@ public class TestEditPanel extends JPanel {
         return newJTable;
     }
 
-    public TestEditPanel.TestProgressManager initializeTestProgressManager() {
+    public TestProgressManager initializeTestProgressManager() {
         testRowsPending = editableTestTable.getSelectedRows();
         configRowsPending = editableConfigTable.getSelectedRows();
         testProgressManager.reset(testRowsPending.length, configRowsPending.length + 1);
+        updateResults();
         return testProgressManager;
     }
 
     public TestProgressManager getTestProgressManager() {
         return testProgressManager;
     }
-
-    public static class TestProgressManager {
-        private int size;
-        private int configs;
-
-        private String[] titles;
-
-        private AtomicReferenceArray<AtomicBoolean[]> tangleFinished;
-        private AtomicBoolean[] pythonFinished;
-
-        private AtomicReferenceArray<AtomicDouble[]> tangleTimes;
-        private AtomicDouble[] pythonTimes;
-
-        private AtomicReferenceArray<AtomicDouble[]> tangleNMI;
-        private AtomicDouble[] pythonNMI;
-
-        private AtomicReferenceArray<AtomicDouble[]> tangleRandIndex;
-        private AtomicDouble[] pythonRandIndex;
-
-        public TestProgressManager() {
-            reset(0, 0);
-        }
-
-        public void markTangleFinished(int configIndex, int i, double time, double nmi, double randIndex) {
-            System.out.println("Size: " + this.size + " Configs: " + this.configs);
-            tangleFinished.get(configIndex)[i].set(true);
-            tangleTimes.get(configIndex)[i].set(time);
-            tangleNMI.get(configIndex)[i].set(nmi);
-            tangleRandIndex.get(configIndex)[i].set(randIndex);
-        }
-
-        public void markPythonFinished(int i, double time, double nmi, double randIndex) {
-            pythonFinished[i].set(true);
-            pythonTimes[i].set(time);
-            pythonNMI[i].set(nmi);
-            pythonRandIndex[i].set(randIndex);
-        }
-
-        public void setTitles(String[] titles) {
-            this.titles = titles;
-        }
-
-        public boolean getTangleStatus(int configIndex, int i) {
-            return tangleFinished.get(configIndex)[i].get();
-        }
-
-        public double getTangleTime(int configIndex, int i) {
-            return tangleTimes.get(configIndex)[i].get();
-        }
-
-        public double getTangleNMI(int configIndex, int i) {
-            return tangleNMI.get(configIndex)[i].get();
-        }
-
-        public double getTangleRandIndex(int configIndex, int i) {
-            return tangleRandIndex.get(configIndex)[i].get();
-        }
-
-        public boolean getPythonStatus(int i) {
-            return pythonFinished[i].get();
-        }
-
-        public double getPythonTime(int i) {
-            return pythonTimes[i].get();
-        }
-
-        public double getPythonNMI(int i) {
-            return pythonNMI[i].get();
-        }
-
-        public double getPythonRandIdx(int i) {
-            return pythonRandIndex[i].get();
-        }
-
-        public int getSize() {
-            return size;
-        }
-
-        public int getConfigsSize() {
-            return configs;
-        }
-
-        public String getTitle(int i) {
-            if (titles == null) return "";
-            return titles[i];
-        }
-
-        public void reset(int size, int configurations) {
-            this.size = size;
-            this.configs = configurations;
-
-            tangleFinished = new AtomicReferenceArray<>(configurations);
-            tangleTimes = new AtomicReferenceArray<>(configurations);
-            tangleNMI = new AtomicReferenceArray<>(configurations);
-            tangleRandIndex = new AtomicReferenceArray<>(configurations);
-            for (int i = 0; i < configurations; i++) {
-                tangleFinished.set(i, new AtomicBoolean[size]);
-                tangleTimes.set(i, new AtomicDouble[size]);
-                tangleNMI.set(i, new AtomicDouble[size]);
-                tangleRandIndex.set(i, new AtomicDouble[size]);
-                for (int j = 0; j < size; j++) {
-                    tangleFinished.get(i)[j] = new AtomicBoolean(false);
-                    tangleTimes.get(i)[j] = new AtomicDouble();
-                    tangleNMI.get(i)[j] = new AtomicDouble();
-                    tangleRandIndex.get(i)[j] = new AtomicDouble();
-                }
-            }
-
-            pythonFinished = new AtomicBoolean[size];
-            pythonTimes = new AtomicDouble[size];
-            pythonNMI = new AtomicDouble[size];
-            pythonRandIndex = new AtomicDouble[size];
-            for (int i = 0; i < size; i++) {
-                pythonFinished[i] = new AtomicBoolean(false);
-                pythonTimes[i] = new AtomicDouble();
-                pythonNMI[i] = new AtomicDouble();
-                pythonRandIndex[i] = new AtomicDouble();
-            }
-        }
-    }
-
-
 
     private enum TestStatus { DEFAULT, PENDING, FINISHED };
 
