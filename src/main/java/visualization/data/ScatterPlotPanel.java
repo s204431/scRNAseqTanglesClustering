@@ -157,6 +157,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     private void attachTabData(Canvas canvas, String title, int[] clusters) {
         canvas.putClientProperty(PROPERTY_TITLE, title);
         canvas.putClientProperty(INDEX_TITLE, attachmentIndex++);
+        canvas.putClientProperty(SOFT_CLUSTER_TITLE, view.getSoftClustering());
         canvas.putClientProperty(HARD_CLUSTER_TITLE, clusters);
         canvas.putClientProperty(CONFIG_TITLE, view.getCurrentConfigurations());
     }
@@ -265,6 +266,7 @@ public class ScatterPlotPanel extends JTabbedPane {
 
                 Canvas c = (Canvas) getComponentAt(idx);
                 String title = (String) c.getClientProperty(PROPERTY_TITLE);
+                double[][] softClusters = (double[][]) c.getClientProperty(SOFT_CLUSTER_TITLE);
                 int[] clusters = (int[]) c.getClientProperty(HARD_CLUSTER_TITLE);
 
                 JPopupMenu menu = new JPopupMenu();
@@ -281,7 +283,7 @@ public class ScatterPlotPanel extends JTabbedPane {
 
                 if (!title.equals(POINTS_TITLE) && !title.equals(GROUND_TRUTH_TITLE)) {
                     JMenuItem saveSoftClustering = new JMenuItem("Export soft clustering to CSV...");
-                    saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv(null));
+                    saveSoftClustering.addActionListener(ee -> saveSoftClusteringAsCsv(softClusters));
                     menu.add(saveSoftClustering);
                 }
 
@@ -357,11 +359,12 @@ public class ScatterPlotPanel extends JTabbedPane {
     }
 
     private void saveSoftClusteringAsCsv(double[][] softClustering) {
-        double[][] probabilities = view.unshuffleClustering(softClustering);
-        if (probabilities == null || probabilities.length == 0) {
+        if (softClustering == null || softClustering.length == 0) {
             System.out.println("Error when saving soft clustering in ScatterPlotPanel: Clustering is null");
             return;
         }
+
+        double[][] probabilities = view.unshuffleClustering(softClustering);
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save soft clustering as CSV");

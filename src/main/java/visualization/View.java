@@ -63,7 +63,7 @@ public class View {
     }
 
     public void runTestSetWithUI(Config config, int runs, boolean compareWithStandardPipeline) {
-        if (window.testIsRunning() || testThread != null) {
+        if (testThread != null && testThread.isAlive()) {
             return;
         }
 
@@ -92,9 +92,10 @@ public class View {
             try {
                 model.runTestset(selectedTestFiles, configs, runs, compareWithStandardPipeline, progressManager);
             } catch (Throwable t) {
+                System.out.println("Testing thread threw an exception in View:");
                 t.printStackTrace();
             } finally {
-                stopTesting();
+                SwingUtilities.invokeLater(window::stopTesting);
                 testThread = null;
             }
         });
@@ -199,12 +200,11 @@ public class View {
         return monitor.getBranchCosts();
     }
 
-    public void stopTesting() {
+    public void stopTestingThread() {
         if (testThread != null && testThread.isAlive()) {
-            testThread.interrupt();
+            //testThread.interrupt();
+            model.stopTesting();
         }
-
-        SwingUtilities.invokeLater(window::stopTesting);
     }
 
     public String getCurrentFilePath() {
@@ -255,5 +255,9 @@ public class View {
 
     public double[][] unshuffleClustering(double[][] clustering) {
         return model.computeUnShuffledArray(clustering, model.getSeed());
+    }
+
+    public double[][] getSoftClustering() {
+        return model.getSoftClustering();
     }
 }

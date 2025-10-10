@@ -164,10 +164,6 @@ public class MainWindow extends JFrame {
         return out;
     }
 
-    public boolean testIsRunning() {
-        return testEditPanel.isRunning();
-    }
-
     public void visualizeTestResults(int i, int j) {
         testGraphPanel.drawPlots(i, j);
         testResultPanel.drawResultsTable(i, j);
@@ -179,6 +175,7 @@ public class MainWindow extends JFrame {
 
     public void stopTesting() {
         testEditPanel.stopTimer();
+        testParameterPanel.stopTesting();
     }
 
     public void removeScatterTabs() {

@@ -115,10 +115,6 @@ public class TestEditPanel extends JPanel {
         scrollPane.revalidate();
     }
 
-    public boolean isRunning() {
-        return timer != null;
-    }
-
     public File[] getSelectedConfigFiles() {
         return editableConfigTable.getSelectedFiles();
     }
@@ -180,7 +176,7 @@ public class TestEditPanel extends JPanel {
     }
 
     public void stopTimer() {
-        updateResults();
+        editableTestTable.resetRowStatus();
 
         if (timer == null) {
             return;

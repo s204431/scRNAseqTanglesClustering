@@ -10,6 +10,7 @@ import visualization.test.TestEditPanel;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestSet {
 
@@ -24,6 +25,8 @@ public class TestSet {
     public double[] NMIPythonResults;
     public double[] randIndexPythonResults;
     public double[] pythonTimes;
+
+    public AtomicBoolean stopTesting = new AtomicBoolean(false);
 
     public TestSet(Model model, String directoryPath) {
         this.model = model;
@@ -193,6 +196,8 @@ public class TestSet {
         double[] pythonTimes = new double[nTests];
 
         for (int testIndex = 0; testIndex < nTests; testIndex++) {
+            if (stopTesting.get()) return;
+
             String observedFilePath = observedPaths[testIndex];
             String labelFilePath = labelsPaths[testIndex];
             Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath, dirPath + "/" + labelFilePath);
@@ -215,6 +220,8 @@ public class TestSet {
                 Config config = configs[configIndex];
 
                 for (int run = 0; run < nRunsPerDataset; run++) {
+                    if (stopTesting.get()) return;
+
                     long time1 = System.currentTimeMillis();
                     ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
@@ -309,6 +316,4 @@ public class TestSet {
         }
         return uniques.size();
     }
-
-
 }

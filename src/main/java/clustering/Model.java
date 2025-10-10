@@ -17,8 +17,6 @@ import elki.distance.minkowski.EuclideanDistance;
 import io.jhdf.HdfFile;
 import io.jhdf.api.Dataset;
 import io.jhdf.api.Group;
-import io.jhdf.api.Node;
-import org.ejml.simple.SimpleMatrix;
 import util.Monitor;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
@@ -58,7 +56,10 @@ public class Model {
     private int seed;
     private int[] groundTruth;
     private int[] shuffledGroundTruth;
+    private double[][] softClustering;
     private int[] hardClustering;
+
+    private TestSet runningTestSet;
 
     private Monitor monitor;
 
@@ -169,8 +170,9 @@ public class Model {
                            int runs,
                            boolean compareWithStandardPipeline,
                            TestEditPanel.TestProgressManager progressManager) {
-        TestSet testSet = new TestSet(this, selectedFiles);
-        testSet.runWIthUI(configs, runs, compareWithStandardPipeline, progressManager);
+        runningTestSet = new TestSet(this, selectedFiles);
+        runningTestSet.runWIthUI(configs, runs, compareWithStandardPipeline, progressManager);
+        runningTestSet = null;
     }
 
     public static double getDistance(double[] point1, double[] point2) {
@@ -306,6 +308,7 @@ public class Model {
         tangleClusterer.autoLimitSplitCosts = prev3;
         tangleClusterer.removeRedundantCuts = prev4;
 
+        softClustering = tangleClusterer.getSoftClustering();
         hardClustering = tangleClusterer.getHardClustering();
         double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
         double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
@@ -333,6 +336,7 @@ public class Model {
         tangleClusterer.autoLimitSplitCosts = prev3;
         tangleClusterer.removeRedundantCuts = prev4;
 
+        softClustering = tangleClusterer.getSoftClustering();
         hardClustering = tangleClusterer.getHardClustering();
 
         return hardClustering;
@@ -371,6 +375,7 @@ public class Model {
         costs = redundancyRemoved.y;
         monitor.setDataset(dataset);
 
+        double[][] bestSoftClustering = null;
         int[] bestHardClustering = null;
         double bestSilhuetteScore = -1;
         int bestA = -1;
@@ -382,6 +387,7 @@ public class Model {
                 config.setA(a2);
                 config.setPsi(psi);
                 tangleClusterer.generateClusters(dataset, config, initialCuts, costs, costFunctions);
+                softClustering = tangleClusterer.getSoftClustering();
                 hardClustering = tangleClusterer.getHardClustering();
                 //double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
                 //double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
@@ -391,6 +397,7 @@ public class Model {
                 double silhouetteScore = silhouetteScore(reducedPoints, hardClustering);
                 if (silhouetteScore < 1.0 && silhouetteScore > bestSilhuetteScore) {
                     bestSilhuetteScore = silhouetteScore;
+                    bestSoftClustering = softClustering;
                     bestHardClustering = hardClustering;
                     bestA = a2;
                     bestPsi = psi;
@@ -399,6 +406,7 @@ public class Model {
             }
         }
 
+        softClustering = bestSoftClustering;
         hardClustering = bestHardClustering;
 
         //double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
@@ -832,6 +840,15 @@ public class Model {
     public void setMonitor(Monitor monitor) {
         this.monitor = monitor;
         tangleClusterer.setMonitor(monitor);
+    }
+
+    public double[][] getSoftClustering() {
+        return softClustering;
+    }
+
+    public void stopTesting() {
+        if (runningTestSet == null) return;
+        runningTestSet.stopTesting.set(true);
     }
 
 }

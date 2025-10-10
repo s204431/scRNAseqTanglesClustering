@@ -1,7 +1,6 @@
 package visualization;
 
 import clustering.TangleClusterer;
-import elki.itemsetmining.Itemset;
 import main.Main;
 import util.BitSet;
 import util.Config;
@@ -67,6 +66,8 @@ public class ParameterPanel extends JPanel {
     private JButton testButton;
 
     private final boolean dataPanel;
+
+    private boolean runningTests = false;
 
     public ParameterPanel(View view, boolean dataPanel) {
         this.view = view;
@@ -309,6 +310,11 @@ public class ParameterPanel extends JPanel {
     }
 
     private void testAction(ActionEvent e) {
+        if (runningTests) {
+            view.stopTestingThread();
+            return;
+        }
+
         int runs;
         try {
             runs = Integer.parseInt(runNumberField.getText());
@@ -328,6 +334,8 @@ public class ParameterPanel extends JPanel {
             return;
         }
 
+        testButton.setText("Stop");
+        runningTests = true;
         view.runTestSetWithUI(config, runs, pythonCheckBox.isSelected());
     }
 
@@ -432,6 +440,11 @@ public class ParameterPanel extends JPanel {
 
         revalidate();
         repaint();
+    }
+
+    public void stopTesting() {
+        testButton.setText("Run Tests");
+        runningTests = false;
     }
 
     private void selectDropdown(JComboBox<String> combo, String value) {
