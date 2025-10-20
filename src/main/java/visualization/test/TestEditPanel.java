@@ -216,7 +216,8 @@ public class TestEditPanel extends JPanel {
     public TestProgressManager initializeTestProgressManager() {
         testRowsPending = editableTestTable.getSelectedRows();
         configRowsPending = editableConfigTable.getSelectedRows();
-        testProgressManager.reset(testRowsPending.length, configRowsPending.length + 1);
+        // In case no configs were chosen, we use user-defined configs
+        testProgressManager.reset(testRowsPending.length, configRowsPending.length == 0 ? 1 : configRowsPending.length);
         updateResults();
         return testProgressManager;
     }

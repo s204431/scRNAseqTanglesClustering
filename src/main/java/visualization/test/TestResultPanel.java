@@ -130,7 +130,7 @@ public class TestResultPanel extends JPanel {
 
     public void initializeResultsTable() {
         int size = testProgressManager.getSize();
-        int rowSize = testProgressManager.getConfigsSize() + 1;
+        int rowSize = testProgressManager.getConfigsSize();
         resultsTable = new ResultsTable(size, rowSize);
         table.setModel(resultsTable);
         resizeViewportToRows(size*4 + 4);
@@ -173,7 +173,7 @@ public class TestResultPanel extends JPanel {
             this.rowSize = rowSize + 1;
 
             COL_NAMES = new String[rowSize + 1];
-            for (int i = 1; i < rowSize + 1; i++) {
+            for (int i = 1; i <= rowSize; i++) {
                 if (testProgressManager == null) COL_NAMES[i] = "";
                 else COL_NAMES[i] = testProgressManager.getTitle(i - 1);
             }
