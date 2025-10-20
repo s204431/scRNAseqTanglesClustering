@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 public final class Config {
     private boolean useAlternateConsistencyCheck;
     private boolean useWernerModification;
+    private boolean useSplitFirst;
+    private boolean useEarlyStop;
     private boolean useCache;
     private String cutGeneratorName;
     private String highLevelCostFunctionName;
@@ -27,6 +29,8 @@ public final class Config {
     public Config() {
         this.useAlternateConsistencyCheck = true;
         this.useWernerModification = true;
+        this.useSplitFirst = true;
+        this.useEarlyStop = false;
         this.useCache = true;
         this.cutGeneratorName = "Default";
         this.highLevelCostFunctionName = "Default";
@@ -43,6 +47,8 @@ public final class Config {
 
     public Config(boolean useAlternateConsistencyCheck,
                   boolean useWernerModification,
+                  boolean useSplitFirst,
+                  boolean useEarlyStop,
                   boolean useCache,
                   String cutGeneratorName,
                   String highLevelCostFunctionName,
@@ -59,6 +65,8 @@ public final class Config {
                   int tsneComponents) {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         this.useWernerModification = useWernerModification;
+        this.useSplitFirst = useSplitFirst;
+        this.useEarlyStop = useEarlyStop;
         this.useCache = useCache;
         this.cutGeneratorName = cutGeneratorName;
         this.highLevelCostFunctionName = highLevelCostFunctionName;
@@ -78,6 +86,8 @@ public final class Config {
     public Config(Config config) {
         this.useAlternateConsistencyCheck = config.useAlternateConsistencyCheck;
         this.useWernerModification = config.useWernerModification;
+        this.useSplitFirst = config.useSplitFirst;
+        this.useEarlyStop = config.useEarlyStop;
         this.useCache = config.useCache;
         this.cutGeneratorName = config.cutGeneratorName;
         this.highLevelCostFunctionName = config.highLevelCostFunctionName;
@@ -116,6 +126,8 @@ public final class Config {
     private enum ConfigIndices {
         ALTERNATE_CONSISTENCY_CHECK_INDEX,
         WERNER_MODIFICATION_INDEX,
+        SPLIT_FIRST_INDEX,
+        EARLY_STOP_INDEX,
         CACHE_INDEX,
         CUT_GENERATOR_INDEX,
         HIGH_LEVEL_COST_FUNCTION_INDEX,
@@ -135,7 +147,9 @@ public final class Config {
     private static final String[] CONFIG_DESCRIPTIONS = new String[ConfigIndices.values().length];
     static {
         CONFIG_DESCRIPTIONS[ConfigIndices.ALTERNATE_CONSISTENCY_CHECK_INDEX.ordinal()] = "use_alternate_consistency_check";
-        CONFIG_DESCRIPTIONS[ConfigIndices.WERNER_MODIFICATION_INDEX.ordinal()] = "cse_werner_modification";
+        CONFIG_DESCRIPTIONS[ConfigIndices.WERNER_MODIFICATION_INDEX.ordinal()] = "use_werner_modification";
+        CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_FIRST_INDEX.ordinal()] = "use_split_first";
+        CONFIG_DESCRIPTIONS[ConfigIndices.EARLY_STOP_INDEX.ordinal()] = "use_early_stop";
         CONFIG_DESCRIPTIONS[ConfigIndices.CACHE_INDEX.ordinal()] = "use_cache";
         CONFIG_DESCRIPTIONS[ConfigIndices.CUT_GENERATOR_INDEX.ordinal()] = "cut_generator";
         CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_COST_FUNCTION_INDEX.ordinal()] = "high_level_cost_function";
@@ -178,6 +192,8 @@ public final class Config {
             try (PrintWriter writer = new PrintWriter(configPath.toFile(), StandardCharsets.UTF_8)) {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.ALTERNATE_CONSISTENCY_CHECK_INDEX.ordinal()] + ":" + formatValue(useAlternateConsistencyCheck));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.WERNER_MODIFICATION_INDEX.ordinal()] + ":" + formatValue(useWernerModification));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_FIRST_INDEX.ordinal()] + ":" + formatValue(useSplitFirst));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.EARLY_STOP_INDEX.ordinal()] + ":" + formatValue(useEarlyStop));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.CACHE_INDEX.ordinal()] + ":" + formatValue(useCache));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(cutGeneratorName));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(highLevelCostFunctionName));
@@ -202,6 +218,8 @@ public final class Config {
     public static Config loadConfiguration(String fileName) {
         boolean useAlternateConsistencyCheck = false;
         boolean useWernerModification = false;
+        boolean useSplitFirst = false;
+        boolean useEarlyStop = false;
         boolean useCache = false;
         String cutGeneratorName = "Default";
         String highLevelCostFunctionName = "Default";
@@ -228,6 +246,8 @@ public final class Config {
 
                 if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.ALTERNATE_CONSISTENCY_CHECK_INDEX.ordinal()])) useAlternateConsistencyCheck = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.WERNER_MODIFICATION_INDEX.ordinal()])) useWernerModification = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_FIRST_INDEX.ordinal()])) useSplitFirst = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.EARLY_STOP_INDEX.ordinal()])) useEarlyStop = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.CACHE_INDEX.ordinal()])) useCache = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.CUT_GENERATOR_INDEX.ordinal()])) cutGeneratorName = value;
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_COST_FUNCTION_INDEX.ordinal()])) highLevelCostFunctionName = value;
@@ -258,6 +278,8 @@ public final class Config {
         Config newConfig = new Config();
         newConfig.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         newConfig.useWernerModification = useWernerModification;
+        newConfig.useSplitFirst = useSplitFirst;
+        newConfig.useEarlyStop = useEarlyStop;
         newConfig.useCache = useCache;
         newConfig.cutGeneratorName = cutGeneratorName;
         newConfig.highLevelCostFunctionName = highLevelCostFunctionName;
@@ -279,6 +301,8 @@ public final class Config {
     public String toString() {
         return "Use Alternate Consistency Check: " + useAlternateConsistencyCheck + "\n" +
                 "Use Werner Modification: " + useWernerModification + "\n" +
+                "Use Split First: " + useSplitFirst + "\n" +
+                "Use Early Stop: " + useEarlyStop + "\n" +
                 "Use Cache: " + useCache + "\n" +
                 "Cut Generator: " + cutGeneratorName + "\n" +
                 "High Level Cost Function: " + highLevelCostFunctionName + "\n" +
@@ -309,6 +333,22 @@ public final class Config {
 
     public void setUseWernerModification(boolean useWernerModification) {
         this.useWernerModification = useWernerModification;
+    }
+
+    public boolean isUseSplitFirst() {
+        return useSplitFirst;
+    }
+
+    public void setUseSplitFirst(boolean useSplitFirst) {
+        this.useSplitFirst = useSplitFirst;
+    }
+
+    public boolean isUseEarlyStop() {
+        return useEarlyStop;
+    }
+
+    public void setUseEarlyStop(boolean useEarlyStop) {
+        this.useEarlyStop = useEarlyStop;
     }
 
     public boolean isUseCache() {

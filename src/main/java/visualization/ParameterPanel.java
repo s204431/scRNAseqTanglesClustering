@@ -38,6 +38,8 @@ public class ParameterPanel extends JPanel {
     // Algorithm section components
     private JCheckBox consistencyCheckbox;
     private JCheckBox wernerModificationCheckbox;
+    private JCheckBox useSplitFirstCheckbox;
+    private JCheckBox useEarlyStopCheckbox;
     private JCheckBox useCacheCheckBox;
     private JCheckBox removeRedundantCheckBox;
     private JComboBox<String> cutGeneratorDropdown;
@@ -131,10 +133,15 @@ public class ParameterPanel extends JPanel {
         wernerModificationCheckbox.setSelected(true);
         addRow(consistencyCheckbox, wernerModificationCheckbox);
 
-        useCacheCheckBox = new JCheckBox("Use Cache");
-        useCacheCheckBox.setSelected(true);
+        useSplitFirstCheckbox = new JCheckBox("Split First");
+        useEarlyStopCheckbox = new JCheckBox("Early Stop");
+        useSplitFirstCheckbox.setSelected(true);
+        useEarlyStopCheckbox.setSelected(false);
+        addRow(useSplitFirstCheckbox, useEarlyStopCheckbox);
 
+        useCacheCheckBox = new JCheckBox("Use Cache");
         removeRedundantCheckBox = new JCheckBox("<html>Remove Cuts<br>Iteratively</html>");
+        useCacheCheckBox.setSelected(true);
         removeRedundantCheckBox.setSelected(false);
         addRow(useCacheCheckBox, removeRedundantCheckBox);
 
@@ -398,6 +405,8 @@ public class ParameterPanel extends JPanel {
         return new Config(
                 consistencyCheckbox.isSelected(),
                 wernerModificationCheckbox.isSelected(),
+                useSplitFirstCheckbox.isSelected(),
+                useEarlyStopCheckbox.isSelected(),
                 useCacheCheckBox.isSelected(),
                 (String) cutGeneratorDropdown.getSelectedItem(),
                 (String) highLevelCostFunctionDropdown.getSelectedItem(),
@@ -418,6 +427,8 @@ public class ParameterPanel extends JPanel {
     public void setConfig(Config config) {
         consistencyCheckbox.setSelected(config.isUseAlternateConsistencyCheck());
         wernerModificationCheckbox.setSelected(config.isUseWernerModification());
+        useSplitFirstCheckbox.setSelected(config.isUseSplitFirst());
+        useEarlyStopCheckbox.setSelected(config.isUseEarlyStop());
         useCacheCheckBox.setSelected(config.isUseCache());
         removeRedundantCheckBox.setSelected(config.isRemoveRedundant());
 

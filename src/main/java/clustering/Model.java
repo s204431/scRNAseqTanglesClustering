@@ -291,22 +291,28 @@ public class Model {
     public void cluster(ScRNAseqDataset dataset, Config config) {
         monitor.setDataset(dataset);
 
+        boolean prev0 = TangleClusterer.earlyStop;
         boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
         boolean prev2 = tangleClusterer.useOscarWerner;
-        boolean prev3 = tangleClusterer.autoLimitSplitCosts;
-        boolean prev4 = tangleClusterer.removeRedundantCuts;
+        boolean prev3 = tangleClusterer.useSplitFirst;
+        boolean prev4 = tangleClusterer.autoLimitSplitCosts;
+        boolean prev5 = tangleClusterer.removeRedundantCuts;
 
+        TangleClusterer.earlyStop = config.isUseEarlyStop();
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
+        tangleClusterer.useSplitFirst = config.isUseSplitFirst();
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
         tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
 
         tangleClusterer.generateClusters(dataset, config);
 
+        TangleClusterer.earlyStop = prev0;
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
-        tangleClusterer.autoLimitSplitCosts = prev3;
-        tangleClusterer.removeRedundantCuts = prev4;
+        tangleClusterer.useSplitFirst = prev3;
+        tangleClusterer.autoLimitSplitCosts = prev4;
+        tangleClusterer.removeRedundantCuts = prev5;
 
         softClustering = tangleClusterer.getSoftClustering();
         hardClustering = tangleClusterer.getHardClustering();
@@ -319,22 +325,28 @@ public class Model {
     public int[] clusterAndReturn(ScRNAseqDataset dataset, Config config) {
         monitor.setDataset(dataset);
 
+        boolean prev0 = TangleClusterer.earlyStop;
         boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
         boolean prev2 = tangleClusterer.useOscarWerner;
-        boolean prev3 = tangleClusterer.autoLimitSplitCosts;
-        boolean prev4 = tangleClusterer.removeRedundantCuts;
+        boolean prev3 = tangleClusterer.useSplitFirst;
+        boolean prev4 = tangleClusterer.autoLimitSplitCosts;
+        boolean prev5 = tangleClusterer.removeRedundantCuts;
 
+        TangleClusterer.earlyStop = config.isUseEarlyStop();
         tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         tangleClusterer.useOscarWerner = config.isUseWernerModification();
+        tangleClusterer.useSplitFirst = config.isUseSplitFirst();
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
         tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
 
         tangleClusterer.generateClusters(dataset, config);
 
+        TangleClusterer.earlyStop = prev0;
         tangleClusterer.useAlternateConsistencyCheck = prev1;
         tangleClusterer.useOscarWerner = prev2;
-        tangleClusterer.autoLimitSplitCosts = prev3;
-        tangleClusterer.removeRedundantCuts = prev4;
+        tangleClusterer.useSplitFirst = prev3;
+        tangleClusterer.autoLimitSplitCosts = prev4;
+        tangleClusterer.removeRedundantCuts = prev5;
 
         softClustering = tangleClusterer.getSoftClustering();
         hardClustering = tangleClusterer.getHardClustering();

@@ -1,5 +1,13 @@
 package visualization.data;
 
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RectangleInsets;
 import smile.data.DataFrame;
 import smile.data.vector.DoubleVector;
 import smile.data.vector.IntVector;
@@ -10,7 +18,8 @@ import util.Config;
 import util.GlobalConstants;
 import visualization.View;
 
-
+import java.awt.geom.Ellipse2D;
+import java.util.*;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
@@ -19,6 +28,7 @@ import java.awt.event.MouseEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.List;
 
 public class ScatterPlotPanel extends JTabbedPane {
     private View view;
@@ -84,7 +94,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         drawClusters(points, groundTruth, GROUND_TRUTH_TITLE);
     }
 
-    public void drawClusters(double[][] points, int[] clusters, boolean tangle) {
+    public void drawClusters(double[][] points, int[] clusters, double[][] softClusters, boolean tangle) {
         String title = SCANPY_TITLE;
         if (tangle) {
             title = "Tangle " + (++tangleCounter);
@@ -154,12 +164,12 @@ public class ScatterPlotPanel extends JTabbedPane {
         tangleCounter = 0;
     }
 
-    private void attachTabData(Canvas canvas, String title, int[] clusters) {
-        canvas.putClientProperty(PROPERTY_TITLE, title);
-        canvas.putClientProperty(INDEX_TITLE, attachmentIndex++);
-        canvas.putClientProperty(SOFT_CLUSTER_TITLE, view.getSoftClustering());
-        canvas.putClientProperty(HARD_CLUSTER_TITLE, clusters);
-        canvas.putClientProperty(CONFIG_TITLE, view.getCurrentConfigurations());
+    private void attachTabData(JComponent component, String title, int[] clusters) {
+        component.putClientProperty(PROPERTY_TITLE, title);
+        component.putClientProperty(INDEX_TITLE, attachmentIndex++);
+        component.putClientProperty(SOFT_CLUSTER_TITLE, view.getSoftClustering());
+        component.putClientProperty(HARD_CLUSTER_TITLE, clusters);
+        component.putClientProperty(CONFIG_TITLE, view.getCurrentConfigurations());
     }
 
     public void addClosableTab(String title, Component comp) {
@@ -234,7 +244,7 @@ public class ScatterPlotPanel extends JTabbedPane {
             int idx = getSelectedIndex();
             if (idx < 0) return;
 
-            Canvas c = (Canvas) getComponentAt(idx);
+            JComponent c = (JComponent) getComponentAt(idx);
 
             // Show clustering information in statistics panel
             int[] clustering = (int[]) c.getClientProperty(HARD_CLUSTER_TITLE);

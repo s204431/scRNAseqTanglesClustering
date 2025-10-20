@@ -25,7 +25,7 @@ import java.awt.Shape;
 import java.util.Objects;
 
 public class TestGraphPanel extends JPanel {
-    private static final Color[] COLORS = getColors();
+    private static final Color[] COLORS = getColors(100);
 
     private View view;
 
@@ -138,7 +138,7 @@ public class TestGraphPanel extends JPanel {
                 case RAND -> testProgressManager.getPythonRandIdx(test);
                 case TIME -> testProgressManager.getPythonTime(test);
             };
-            dataSet.addValue(py, pyName, ""+(test + 1));
+            if (py > 0) dataSet.addValue(py, pyName, ""+(test + 1));
         }
 
         JFreeChart chart = ChartFactory.createBarChart(title, xLabel, yLabel, dataSet, PlotOrientation.VERTICAL, true, false, false);
@@ -421,9 +421,7 @@ public class TestGraphPanel extends JPanel {
         plotPanel.repaint();
     }
 
-    private static Color[] getColors() {
-        int a = 100;
-
+    public static Color[] getColors(int a) {
         return new Color[]{
                 new Color(255, 0, 0, a),       // Red (#FF0000)
                 new Color(0, 0, 255, a),       // Blue (#0000FF)

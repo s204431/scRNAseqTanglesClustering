@@ -1,15 +1,18 @@
 use_alternate_consistency_check:true
-cse_werner_modification:true
+use_werner_modification:true
+use_split_first:true
+use_early_stop:false
 use_cache:true
-cut_generator:Split
-high_level_cost_function:Average
-low_level_cost_function:Distance To Mean
-a:35
+cut_generator:Default
+high_level_cost_function:Default
+low_level_cost_function:Default
+a:0
 psi:0.0
-a_factor:0.0
+a_factor:0.667
 auto_compute_a:true
 auto_compute_psi:true
 tune_parameters:false
+use_fast_version:false
 remove_redundant_cuts:false
 split_size:1000
 tsne_components:5

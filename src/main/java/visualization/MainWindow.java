@@ -22,6 +22,8 @@ public class MainWindow extends JFrame {
     public static final String TEST_VIEW = "test";
     public static final String LOADING_VIEW = "loading";
 
+    private View view;
+
     private final JPanel root = new JPanel(new BorderLayout());
     private final JPanel cards = new JPanel(new CardLayout());
 
@@ -41,6 +43,8 @@ public class MainWindow extends JFrame {
 
     public MainWindow(View view) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        this.view = view;
 
         this.topPanel = new TopPanel(view);
         this.scatterPanel = new ScatterPlotPanel(view);
@@ -129,7 +133,7 @@ public class MainWindow extends JFrame {
     }
 
     public void drawClusters(double[][] points, int[] clustering, boolean tangle) {
-        scatterPanel.drawClusters(points, clustering, tangle);
+        scatterPanel.drawClusters(points, clustering, view.getSoftClustering(), tangle);
     }
 
     public void drawGroundTruth(double[][] points, int[] groundTruth) {

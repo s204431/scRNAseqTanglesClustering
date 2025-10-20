@@ -19,6 +19,7 @@ public class TangleClusterer {
     protected static boolean earlyStop = false;
     protected boolean useAlternateConsistencyCheck = false;
     protected boolean useOscarWerner = false;
+    protected boolean useSplitFirst = false;
     protected boolean removeRedundantCuts = false;
     protected boolean autoLimitSplitCosts = false;
 
@@ -54,9 +55,12 @@ public class TangleClusterer {
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
-        TangleSearchTree tree = useOscarWerner ?
-                oscarWerner(initialCuts, costs, dataset.data, config) :
-                generateTangleSearchTree(initialCuts, costs, a, psi);
+        TangleSearchTree tree;
+        if (useOscarWerner) {
+            tree = useSplitFirst ? splitFirst(initialCuts, costs, dataset.data, config) : oscarWerner(initialCuts, costs, dataset.data, config);
+        } else {
+            tree = generateTangleSearchTree(initialCuts, costs, a, psi);
+        }
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
         if (autoLimitSplitCosts) {
@@ -85,7 +89,7 @@ public class TangleClusterer {
         this.costFunctions = costFunctions;
         dataset.setCostFunctions(costFunctions);
         TangleSearchTree tree = useOscarWerner ?
-                oscarWerner(initialCuts, costs, dataset.data, config) :
+                splitFirst(initialCuts, costs, dataset.data, config) :
                 generateTangleSearchTree(initialCuts, costs, a, psi);
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
@@ -165,7 +169,7 @@ public class TangleClusterer {
         return tree;
     }
 
-    private TangleSearchTree oscarWernerOld(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
+    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
         int n = costs.length;
         int a = config.getA();
         double psi = config.getPsi();
@@ -340,7 +344,7 @@ public class TangleClusterer {
                             node.rightChild.cost = cutCost;
                             node = node.rightChild;
                         }
-                    }
+                    } else if (earlyStop) break;    // Early stop if cut was not consistent
                 }
             }
             lowestBranchNodes = newLowestBranchNodes;
@@ -350,7 +354,7 @@ public class TangleClusterer {
         return tree;
     }
 
-    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
+    private TangleSearchTree splitFirst(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
         int n = costs.length;
         int a = config.getA();
         double psi = config.getPsi();
