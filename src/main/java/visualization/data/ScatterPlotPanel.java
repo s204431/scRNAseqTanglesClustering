@@ -78,7 +78,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         xAxis.setAutoRangeIncludesZero(false);
         yAxis.setAutoRangeIncludesZero(false);
 
-        double radiusPx = 2.5;
+        double radiusPx = 3;
         Shape circle = new Ellipse2D.Double(-radiusPx, -radiusPx, 2*radiusPx, 2*radiusPx);
 
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(false, true);
@@ -86,10 +86,10 @@ public class ScatterPlotPanel extends JTabbedPane {
         renderer.setSeriesShapesVisible(0, true);
         renderer.setSeriesShape(0, circle);
 
-        renderer.setSeriesPaint(0, new Color(0, 0, 0, 10));
+        renderer.setSeriesPaint(0, GlobalConstants.COLOR_DARK_GRAY);
         renderer.setUseOutlinePaint(true);
         renderer.setSeriesOutlinePaint(0, Color.BLACK);
-        renderer.setSeriesOutlineStroke(0, new BasicStroke(1.5f));
+        renderer.setSeriesOutlineStroke(0, new BasicStroke(0.75f));
 
         XYPlot plot = new XYPlot(dataset, xAxis, yAxis, renderer);
         plot.setBackgroundPaint(GlobalConstants.COLOR_ALMOST_WHITE);
@@ -157,7 +157,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         xAxis.setAutoRangeIncludesZero(false);
         yAxis.setAutoRangeIncludesZero(false);
 
-        double radiusPx = 2.5;
+        double radiusPx = 3;
         Shape circle = new Ellipse2D.Double(-radiusPx, -radiusPx, 2*radiusPx, 2*radiusPx);
 
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(false, true);
@@ -266,7 +266,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         renderer.setUseOutlinePaint(true);
 
         Paint[] paints = GlobalConstants.CLUSTER_COLORS;
-        double radiusPx = 2.5;
+        double radiusPx = 3;
         Shape circle = new Ellipse2D.Double(-radiusPx, -radiusPx, 2*radiusPx, 2*radiusPx);
         for (int c = 0; c < k; c++) {
             renderer.setSeriesPaint(c, paints[c % paints.length]);

@@ -58,6 +58,7 @@ public class GlobalConstants {
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.KNN.ordinal()] = LOW_LEVEL_COST_FUNCTION_KNN;
     }
 
+    public static final Color COLOR_DARK_GRAY = new Color(150, 150, 150);
     public static final Color COLOR_GRAY = new Color(200, 200, 200);
     public static final Color COLOR_LIGHT_GRAY = new Color(220, 220, 220);
     public static final Color COLOR_VERY_LIGHT_GRAY = new Color(230, 230, 230);
