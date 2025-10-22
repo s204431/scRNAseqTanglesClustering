@@ -62,4 +62,37 @@ public class GlobalConstants {
     public static final Color COLOR_LIGHT_GRAY = new Color(220, 220, 220);
     public static final Color COLOR_VERY_LIGHT_GRAY = new Color(230, 230, 230);
     public static final Color COLOR_ALMOST_WHITE = new Color(245, 245, 245);
+
+    public static Color[] CLUSTER_COLORS = new Color[] {
+            new Color(228, 26, 28),    // Red
+            new Color(55, 126, 184),   // Blue
+            new Color(77, 175, 74),    // Green
+            new Color(152, 78, 163),   // Purple
+            new Color(255, 127, 0),    // Orange
+            new Color(166, 86, 40),    // Brown
+            new Color(247, 129, 191),  // Pink
+            new Color(153, 153, 153),  // Gray
+            new Color(31, 120, 180),   // Deep Blue
+            new Color(51, 160, 44),    // Deep Green
+            new Color(251, 154, 153),  // Light Red
+            new Color(227, 26, 28),    // Crimson
+            new Color(253, 191, 111),  // Light Orange
+            new Color(255, 255, 51),   // Yellow
+            new Color(166, 206, 227),  // Light Blue
+            new Color(178, 223, 138),  // Light Green
+            new Color(202, 178, 214),  // Lavender
+            new Color(255, 255, 153),  // Light Yellow
+            new Color(31, 119, 180),   // Steel Blue
+            new Color(255, 140, 0),    // Dark Orange
+            new Color(44, 160, 44),    // Forest Green
+            new Color(214, 39, 40),    // Strong Red
+            new Color(148, 103, 189),  // Violet
+            new Color(140, 86, 75),    // Clay Brown
+            new Color(227, 119, 194),  // Magenta
+            new Color(127, 127, 127),  // Mid Gray
+            new Color(188, 189, 34),   // Olive
+            new Color(23, 190, 207),   // Cyan-Teal
+            new Color(0, 128, 128),    // Teal
+            new Color(0, 0, 128)       // Navy
+    };
 }

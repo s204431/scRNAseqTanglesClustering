@@ -147,8 +147,13 @@ public class TestGraphPanel extends JPanel {
         plot.setBackgroundPaint(Color.WHITE);
         plot.setRangeGridlinePaint(GlobalConstants.COLOR_GRAY);
         plot.setOutlineVisible(false);
+        plot.getDomainAxis().setLowerMargin(0.02);
+        plot.getDomainAxis().setUpperMargin(0.02);
+        plot.getDomainAxis().setCategoryMargin(0.10);
 
         BarRenderer r = (BarRenderer) plot.getRenderer();
+        r.setItemMargin(0.0);
+        r.setMaximumBarWidth(0.20);
         r.setShadowVisible(false);
         r.setBarPainter(new StandardBarPainter());
         r.setDrawBarOutline(true);

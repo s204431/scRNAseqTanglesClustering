@@ -182,7 +182,7 @@ public class TangleTreePanel extends JPanel {
 
                 String uniqueId = vertex.toString();
                 if (idToNodeName.get(uniqueId).equals("Root")) {
-                    view.showClustering();
+                    // Do Nothing
                     return;
                 }
 
