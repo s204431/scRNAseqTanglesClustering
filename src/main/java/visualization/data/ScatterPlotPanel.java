@@ -39,6 +39,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     private static final String INDEX_TITLE = "index";
     private static final String HARD_CLUSTER_TITLE = "clusters";
     private static final String SOFT_CLUSTER_TITLE = "soft_clustering";
+    private static final String CLUSTER_TIME_TITLE = "cluster_time";
     private static final String CONFIG_TITLE = "config";
 
 
@@ -94,8 +95,8 @@ public class ScatterPlotPanel extends JTabbedPane {
         plot.setBackgroundPaint(GlobalConstants.COLOR_ALMOST_WHITE);
         plot.setDomainGridlinesVisible(true);
         plot.setRangeGridlinesVisible(true);
-        plot.setDomainGridlinePaint(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
-        plot.setRangeGridlinePaint(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
+        plot.setDomainGridlinePaint(GlobalConstants.COLOR_LIGHT_GRAY);
+        plot.setRangeGridlinePaint(GlobalConstants.COLOR_LIGHT_GRAY);
         plot.setAxisOffset(new RectangleInsets(5, 5, 5, 5));
 
         JFreeChart chart = new JFreeChart(null, JFreeChart.DEFAULT_TITLE_FONT, plot, true);
@@ -186,8 +187,8 @@ public class ScatterPlotPanel extends JTabbedPane {
         plot.setBackgroundPaint(GlobalConstants.COLOR_ALMOST_WHITE);
         plot.setDomainGridlinesVisible(true);
         plot.setRangeGridlinesVisible(true);
-        plot.setDomainGridlinePaint(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
-        plot.setRangeGridlinePaint(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
+        plot.setDomainGridlinePaint(GlobalConstants.COLOR_LIGHT_GRAY);
+        plot.setRangeGridlinePaint(GlobalConstants.COLOR_LIGHT_GRAY);
         plot.setAxisOffset(new RectangleInsets(5, 5, 5, 5));
 
         JFreeChart chart = new JFreeChart(null, JFreeChart.DEFAULT_TITLE_FONT, plot, true);
@@ -289,8 +290,8 @@ public class ScatterPlotPanel extends JTabbedPane {
         plot.setBackgroundPaint(GlobalConstants.COLOR_ALMOST_WHITE);
         plot.setDomainGridlinesVisible(true);
         plot.setRangeGridlinesVisible(true);
-        plot.setDomainGridlinePaint(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
-        plot.setRangeGridlinePaint(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
+        plot.setDomainGridlinePaint(GlobalConstants.COLOR_LIGHT_GRAY);
+        plot.setRangeGridlinePaint(GlobalConstants.COLOR_LIGHT_GRAY);
         plot.setAxisOffset(new RectangleInsets(5, 5, 5, 5));
 
         JFreeChart chart = new JFreeChart(null, JFreeChart.DEFAULT_TITLE_FONT, plot, true);
@@ -333,6 +334,8 @@ public class ScatterPlotPanel extends JTabbedPane {
         component.putClientProperty(INDEX_TITLE, attachmentIndex++);
         component.putClientProperty(SOFT_CLUSTER_TITLE, view.getSoftClustering());
         component.putClientProperty(HARD_CLUSTER_TITLE, clusters);
+        long clusteringTime = (title.equals(POINTS_TITLE) || title.equals(CUT_TITLE) || title.equals(GROUND_TRUTH_TITLE)) ? 0 : view.getClusteringTime();
+        component.putClientProperty(CLUSTER_TIME_TITLE, clusteringTime);
         component.putClientProperty(CONFIG_TITLE, view.getCurrentConfigurations());
     }
 
@@ -411,9 +414,10 @@ public class ScatterPlotPanel extends JTabbedPane {
             JComponent c = (JComponent) getComponentAt(idx);
 
             // Show clustering information in statistics panel
-            int[] clustering = (int[]) c.getClientProperty(HARD_CLUSTER_TITLE);
             int clusterIndex = (int) c.getClientProperty(INDEX_TITLE);
-            view.updateStatisticsPanel(clusterIndex, clustering);
+            int[] clustering = (int[]) c.getClientProperty(HARD_CLUSTER_TITLE);
+            long clusterTime = (long) c.getClientProperty(CLUSTER_TIME_TITLE);
+            view.updateStatisticsPanel(clusterIndex, clustering, clusterTime);
 
             if (idx < 2) return;
 

@@ -231,8 +231,8 @@ public class View {
         window.loadConfig(config);
     }
 
-    public void updateStatisticsPanel(int clusterIndex, int[] clustering) {
-        window.showClusteringDetails(clusterIndex, clustering);
+    public void updateStatisticsPanel(int clusterIndex, int[] clustering, long clusterTime) {
+        window.showClusteringDetails(clusterIndex, clustering, clusterTime);
     }
 
     public Tuple<Double, Double> getClusteringQuality(int[] clustering) {
@@ -259,5 +259,9 @@ public class View {
 
     public double[][] getSoftClustering() {
         return model.getSoftClustering();
+    }
+
+    public long getClusteringTime() {
+        return monitor.getClusterTime();
     }
 }

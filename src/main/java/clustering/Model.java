@@ -305,7 +305,9 @@ public class Model {
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
         tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
 
+        monitor.setStartTime(System.currentTimeMillis());
         tangleClusterer.generateClusters(dataset, config);
+        monitor.setEndTime(System.currentTimeMillis());
 
         TangleClusterer.earlyStop = prev0;
         tangleClusterer.useAlternateConsistencyCheck = prev1;
@@ -339,7 +341,9 @@ public class Model {
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
         tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
 
+        monitor.setStartTime(System.currentTimeMillis());
         tangleClusterer.generateClusters(dataset, config);
+        monitor.setEndTime(System.currentTimeMillis());
 
         TangleClusterer.earlyStop = prev0;
         tangleClusterer.useAlternateConsistencyCheck = prev1;

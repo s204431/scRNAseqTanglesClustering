@@ -253,8 +253,8 @@ public class MainWindow extends JFrame {
         }
     }
 
-    public void showClusteringDetails(int clusterIndex, int[] clustering) {
-        statsPanel.updateClusteringStats(clustering);
+    public void showClusteringDetails(int clusterIndex, int[] clustering, long clusterTime) {
+        statsPanel.updateClusteringStats(clustering, clusterTime);
         TangleSearchTree[] trees = tangleTreePanel.getTrees(clusterIndex);
         statsPanel.updateTangleStats(trees);
     }

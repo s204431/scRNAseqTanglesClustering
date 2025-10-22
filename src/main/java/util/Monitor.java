@@ -12,6 +12,8 @@ public class Monitor {
     private TangleSearchTree splitPrunedTree;
     private TangleSearchTree condensedTree;
     private List<double[]> branchCosts;
+    private long startTime;
+    private long endTime;
 
     public void setDataset(ScRNAseqDataset dataset) {
         this.dataset = dataset;
@@ -59,5 +61,17 @@ public class Monitor {
 
     public String getFilePath() {
         return filePath;
+    }
+
+    public void setStartTime(long time) {
+        this.startTime = time;
+    }
+
+    public void setEndTime(long time) {
+        this.endTime = time;
+    }
+
+    public long getClusterTime() {
+        return endTime - startTime;
     }
 }

@@ -15,55 +15,32 @@ public class StatisticsPanel extends JScrollPane {
 
     private final View view;
 
-    // ==== outer grid now two columns ====
-    private final JPanel content; // GridBagLayout
+    private final JPanel content;
 
     private final Section dataSection;
     private final Section clusteringSection;
     private final Section tangleSection;
     private final Section performanceSection;
 
-    private final JButton copyButton;
-
     public StatisticsPanel(View view) {
         this.view = view;
 
         content = new JPanel(new GridBagLayout());
         content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        setViewportView(content);
 
-        // Tools
-        JPanel tools = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        copyButton = new JButton("Copy All");
-        copyButton.setFocusable(false);
-        copyButton.addActionListener(e -> copyAllToClipboard());
+        JPanel topWrapper = new JPanel(new BorderLayout());
+        topWrapper.add(content, BorderLayout.NORTH);
+        setViewportView(topWrapper);
 
-        // Sections
         dataSection = new Section("Data Set");
         performanceSection = new Section("Performance");
         clusteringSection = new Section("Clustering");
         tangleSection = new Section("Tangles");
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        gbc.insets = new Insets(0, 0, 2, 0);
-        content.add(tools, gbc);
-        tools.add(copyButton);
-
-        addSection(dataSection,   1, 0);
-        addSection(performanceSection,     1, 1);
-        addSection(clusteringSection, 2, 0);
-        addSection(tangleSection,2, 1);
-
-        // Filler to push content to top
-        gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 999;
-        gbc.gridwidth = 2;
-        gbc.weighty = 1.0;
-        content.add(Box.createVerticalGlue(), gbc);
+        addSection(dataSection, 0, 0);
+        addSection(performanceSection, 0, 1);
+        addSection(clusteringSection, 1, 0);
+        addSection(tangleSection, 1, 1);
 
         getVerticalScrollBar().setUnitIncrement(16);
     }
@@ -74,7 +51,8 @@ public class StatisticsPanel extends JScrollPane {
         gbc.gridy = row;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 0.5;
-        // Add a small horizontal gutter between columns (right padding on left col)
+        gbc.weighty = 0.0;
+        gbc.anchor = GridBagConstraints.FIRST_LINE_START;
         gbc.insets = (col == 0) ? new Insets(0, 0, 5, 3) : new Insets(0, 3, 5, 0);
         content.add(s, gbc);
     }
@@ -92,24 +70,26 @@ public class StatisticsPanel extends JScrollPane {
                 .render();
     }
 
-    public void updateClusteringStats(int[] clustering) {
+    public void updateClusteringStats(int[] clustering, long clusterTime) {
         if (clustering == null) {
-            updatePerformance(0, 0);
+            updatePerformance(0, 0, 0);
             clusteringSection.clear().render();
             return;
         }
 
         clusteringSection.clear();
 
+        // Performance cell
         Tuple<Double, Double> result = view.getClusteringQuality(clustering);
-        updatePerformance(result.x, result.y);
+        updatePerformance(result.x, result.y, clusterTime);
 
+        // Clustering cell
         HashMap<Integer, Integer> clusterMap = computeClusterMapping(clustering);
-
         int clusters = clusterMap.size();
         double silhouetteScore = view.getSilhouetteScore(clustering);
         double daviesBouldinIndex = view.getDavisBouldin(clustering);
-        clusteringSection.put("Number of clusters", (clusters == 0) ? "-" : Integer.toString(clusters))
+        clusteringSection
+                .put("Number of clusters", (clusters == 0) ? "-" : Integer.toString(clusters))
                 .put("Silhouette Score", format(silhouetteScore))
                 .put("Davies-Bouldin Index", format(daviesBouldinIndex))
                 .put(" ", " ")
@@ -164,8 +144,9 @@ public class StatisticsPanel extends JScrollPane {
                 .put(" " + id, " ");
     }
 
-    public void updatePerformance(double nmi, double randIndex) {
+    public void updatePerformance(double nmi, double randIndex, long clusterTime) {
         performanceSection.clear()
+                .put("Cluster Time (s)", format((double) clusterTime / 1000))
                 .put("NMI Score", format(nmi))
                 .put("Rand Index Score", format(randIndex))
                 .render();
@@ -210,16 +191,6 @@ public class StatisticsPanel extends JScrollPane {
 
         computeDistinctCutsRecursive(node.leftChild, map, height + 1);
         computeDistinctCutsRecursive(node.rightChild, map, height + 1);
-    }
-
-    private void copyAllToClipboard() {
-        StringBuilder sb = new StringBuilder();
-        appendSection(sb, "Data Set", dataSection);
-        appendSection(sb, "Clustering", clusteringSection);
-        appendSection(sb, "Tangles", tangleSection);
-        appendSection(sb, "Performance", performanceSection);
-        Toolkit.getDefaultToolkit().getSystemClipboard()
-                .setContents(new java.awt.datatransfer.StringSelection(sb.toString()), null);
     }
 
     private void appendSection(StringBuilder sb, String title, Section s) {
