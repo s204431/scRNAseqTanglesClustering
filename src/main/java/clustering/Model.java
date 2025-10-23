@@ -305,9 +305,9 @@ public class Model {
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
         tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
 
-        monitor.setStartTime(System.currentTimeMillis());
+        monitor.setClusterStartTime(System.currentTimeMillis());
         tangleClusterer.generateClusters(dataset, config);
-        monitor.setEndTime(System.currentTimeMillis());
+        monitor.setClusterEndTime(System.currentTimeMillis());
 
         TangleClusterer.earlyStop = prev0;
         tangleClusterer.useAlternateConsistencyCheck = prev1;
@@ -341,9 +341,9 @@ public class Model {
         tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
         tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
 
-        monitor.setStartTime(System.currentTimeMillis());
+        monitor.setClusterStartTime(System.currentTimeMillis());
         tangleClusterer.generateClusters(dataset, config);
-        monitor.setEndTime(System.currentTimeMillis());
+        monitor.setClusterEndTime(System.currentTimeMillis());
 
         TangleClusterer.earlyStop = prev0;
         tangleClusterer.useAlternateConsistencyCheck = prev1;
@@ -359,7 +359,8 @@ public class Model {
     }
 
     public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
-        String initialCutsGenerator = config.getCutGeneratorName();
+        String highLevelCutGenerator = config.getHighLevelCutGeneratorName();
+        String lowLevelCutGenerator = config.getLowLevelCutGeneratorName();
         String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
         String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
         boolean useCache = config.isUseCache();
@@ -384,7 +385,7 @@ public class Model {
         dataset.setA(minA);
         CostFunctions costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
-        BitSet[] initialCuts = dataset.getInitialCuts(initialCutsGenerator, useFastVersion);
+        BitSet[] initialCuts = dataset.getInitialCuts(highLevelCutGenerator, lowLevelCutGenerator, useFastVersion);
         double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;

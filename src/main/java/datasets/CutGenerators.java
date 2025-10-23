@@ -4,6 +4,7 @@ import clustering.Model;
 import main.Main;
 import util.BitSet;
 import util.Distance;
+import util.GlobalConstants;
 
 import java.util.*;
 
@@ -16,7 +17,7 @@ public class CutGenerators {
     public double[] cutCosts; //For local means only
 
 
-    public BitSet[] splitCutGenerator(double[][] dataPoints, int a, boolean useFastVersion) {
+    public BitSet[] splitCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, boolean useFastVersion) {
         int splitSize = 1000;
         int nSplits = (int)Math.ceil(dataPoints[0].length/(double)splitSize);
 
@@ -69,6 +70,7 @@ public class CutGenerators {
             runnables[i].data = splits.get(i);
             runnables[i].a = a;
             runnables[i].useFastVersion = useFastVersion;
+            runnables[i].lowLevelCutGenerator = lowLevelCutGenerator;
             threads[i] = new Thread(runnables[i]);
             threads[i].start();
         }
@@ -97,14 +99,15 @@ public class CutGenerators {
         public double[][] data;
         public int a;
         public boolean useFastVersion;
+        public String lowLevelCutGenerator;
 
         @Override
         public void run() {
-            result = combinedCutGenerator(data, a, useFastVersion);
+            result = combinedCutGenerator(data, lowLevelCutGenerator, a, useFastVersion);
         }
     }
 
-    public BitSet[] combinedCutGenerator(double[][] dataPoints, int a, boolean useFastVersion) {
+    public BitSet[] combinedCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, boolean useFastVersion) {
 
         //dataPoints = Model.pca(dataPoints, 100);
 
@@ -124,7 +127,7 @@ public class CutGenerators {
         if (!useFastVersion) {
             double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
             for (int i = a; i < dataPoints.length; i *= 2) {
-                bitSets.add(getInitialCutsKNN(reducedPoints, i));
+                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, i));
             }
         }
         /*try {
@@ -135,10 +138,38 @@ public class CutGenerators {
         }*/
         double[][] reducedPoints = Model.svd(dataPoints, nComponents);
         for (int i = a; i < dataPoints.length; i *= 2) {
-            bitSets.add(getInitialCutsKNN(reducedPoints, i));
+            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, i));
         }
 
         return mergeCuts(bitSets);
+    }
+
+    public BitSet[] singleCutGenerator(double[][] dataPoints, String cutGeneratorName, int a, boolean useFastVersion) {
+        int nComponents = 3;
+        List<BitSet[]> bitsets = new ArrayList<>();
+
+        // T-sne
+        if (!useFastVersion) {
+            double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
+            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a));
+        }
+
+        // PCA
+        double[][] reducedPoints = Model.svd(dataPoints, nComponents);
+        bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a));
+
+        return mergeCuts(bitsets);
+    }
+
+    public BitSet[] runLowLevelCutGenerator(double[][] reducedData, String cutGeneratorName, int a) {
+        return switch (cutGeneratorName) {
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN -> getInitialCutsKNN(reducedData, a);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_SIMPLE -> getInitialCutsSimple(reducedData, a);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_RANGE -> getInitialCutsRange(reducedData, a);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_LOCAL_MEANS -> getInitialCutsLocalMeans(reducedData, a);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_DISTANCE_BETWEEN_MEANS -> getInitialCutsDistanceBetweenMeans(reducedData, a);
+            default -> getInitialCutsKNN(reducedData, a);
+        };
     }
 
     public BitSet[] mergeCuts(List<BitSet[]> bitSets) {

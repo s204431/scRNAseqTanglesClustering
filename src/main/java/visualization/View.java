@@ -264,4 +264,11 @@ public class View {
     public long getClusteringTime() {
         return monitor.getClusterTime();
     }
+
+    public Tuple<int[], Double> getScanpyResult() {
+        monitor.setClusterStartTime(System.currentTimeMillis());
+        Tuple<int[], Double> result = Main.runPython(getCurrentFilePath());
+        monitor.setClusterEndTime(System.currentTimeMillis());
+        return result;
+    }
 }

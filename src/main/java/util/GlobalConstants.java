@@ -3,24 +3,38 @@ package util;
 import java.awt.*;
 
 public class GlobalConstants {
-    public enum CUT_GENERATOR {
+    public enum HIGH_LEVEL_CUT_GENERATOR {
         SPLIT,
-        SIMPLE,
-        RANGE,
-        LOCAL_MEANS
+        NORMAL
     }
-    public static final String CUT_GENERATOR_SPLIT = "Split";
-    public static final String CUT_GENERATOR_SIMPLE = "Simple";
-    public static final String CUT_GENERATOR_RANGE = "Range";
-    public static final String CUT_GENERATOR_LOCAL_MEANS = "Local Means";
-    public static final String[] CUT_GENERATOR_NAMES = new String[CUT_GENERATOR.values().length];
+    public static final String HIGH_LEVEL_CUT_GENERATOR_SPLIT = "Split";
+    public static final String HIGH_LEVEL_CUT_GENERATOR_NORMAL = "Normal";
+    public static final String[] HIGH_LEVEL_CUT_GENERATOR_NAMES = new String[HIGH_LEVEL_CUT_GENERATOR.values().length];
     static {
-        CUT_GENERATOR_NAMES[CUT_GENERATOR.SPLIT.ordinal()] = CUT_GENERATOR_SPLIT;
-        CUT_GENERATOR_NAMES[CUT_GENERATOR.SIMPLE.ordinal()] = CUT_GENERATOR_SIMPLE;
-        CUT_GENERATOR_NAMES[CUT_GENERATOR.RANGE.ordinal()] = CUT_GENERATOR_RANGE;
-        CUT_GENERATOR_NAMES[CUT_GENERATOR.LOCAL_MEANS.ordinal()] = CUT_GENERATOR_LOCAL_MEANS;
+        HIGH_LEVEL_CUT_GENERATOR_NAMES[HIGH_LEVEL_CUT_GENERATOR.SPLIT.ordinal()] = HIGH_LEVEL_CUT_GENERATOR_SPLIT;
+        HIGH_LEVEL_CUT_GENERATOR_NAMES[HIGH_LEVEL_CUT_GENERATOR.NORMAL.ordinal()] = HIGH_LEVEL_CUT_GENERATOR_NORMAL;
     }
 
+    public enum LOW_LEVEL_CUT_GENERATOR {
+        KNN,
+        SIMPLE,
+        RANGE,
+        LOCAL_MEANS,
+        DISTANCE_BETWEEN_MEANS
+    }
+    public static final String LOW_LEVEL_CUT_GENERATOR_KNN = "KNN";
+    public static final String LOW_LEVEL_CUT_GENERATOR_SIMPLE = "Simple";
+    public static final String LOW_LEVEL_CUT_GENERATOR_RANGE = "Range";
+    public static final String LOW_LEVEL_CUT_GENERATOR_LOCAL_MEANS = "Local means";
+    public static final String LOW_LEVEL_CUT_GENERATOR_DISTANCE_BETWEEN_MEANS = "Dist btw Means";
+    public static final String[] LOW_LEVEL_CUT_GENERATOR_NAMES = new String[LOW_LEVEL_CUT_GENERATOR.values().length];
+    static {
+        LOW_LEVEL_CUT_GENERATOR_NAMES[LOW_LEVEL_CUT_GENERATOR.KNN.ordinal()] = LOW_LEVEL_CUT_GENERATOR_KNN;
+        LOW_LEVEL_CUT_GENERATOR_NAMES[LOW_LEVEL_CUT_GENERATOR.SIMPLE.ordinal()] = LOW_LEVEL_CUT_GENERATOR_SIMPLE;
+        LOW_LEVEL_CUT_GENERATOR_NAMES[LOW_LEVEL_CUT_GENERATOR.RANGE.ordinal()] = LOW_LEVEL_CUT_GENERATOR_RANGE;
+        LOW_LEVEL_CUT_GENERATOR_NAMES[LOW_LEVEL_CUT_GENERATOR.LOCAL_MEANS.ordinal()] = LOW_LEVEL_CUT_GENERATOR_LOCAL_MEANS;
+        LOW_LEVEL_CUT_GENERATOR_NAMES[LOW_LEVEL_CUT_GENERATOR.DISTANCE_BETWEEN_MEANS.ordinal()] = LOW_LEVEL_CUT_GENERATOR_DISTANCE_BETWEEN_MEANS;
+    }
 
     public enum HIGH_LEVEL_COST_FUNCTION {
         AVERAGE,
@@ -44,18 +58,18 @@ public class GlobalConstants {
         PAIRWISE_CLOSEST,
         KNN
     }
-    public static final String LOW_LEVEL_COST_FUNCTION_DISTANCE_TO_MEAN = "Distance To Mean";
+    public static final String LOW_LEVEL_COST_FUNCTION_DISTANCE_TO_MEAN = "Dist To Mean";
     public static final String LOW_LEVEL_COST_FUNCTION_PAIRWISE = "Pairwise";
     public static final String LOW_LEVEL_COST_FUNCTION_SHORTEST = "Shortest";
     public static final String LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST = "Pairwise Closest";
     public static final String LOW_LEVEL_COST_FUNCTION_KNN = "KNN";
     public static final String[] LOW_LEVEL_COST_FUNCTION_NAMES = new String[LOW_LEVEL_COST_FUNCTION.values().length];
     static {
+        LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.KNN.ordinal()] = LOW_LEVEL_COST_FUNCTION_KNN;
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.DISTANCE_TO_MEAN.ordinal()] = LOW_LEVEL_COST_FUNCTION_DISTANCE_TO_MEAN;
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.PAIRWISE.ordinal()] = LOW_LEVEL_COST_FUNCTION_PAIRWISE;
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.SHORTEST.ordinal()] = LOW_LEVEL_COST_FUNCTION_SHORTEST;
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.PAIRWISE_CLOSEST.ordinal()] = LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST;
-        LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.KNN.ordinal()] = LOW_LEVEL_COST_FUNCTION_KNN;
     }
 
     public static final Color COLOR_DARK_GRAY = new Color(150, 150, 150);

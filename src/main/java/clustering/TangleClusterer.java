@@ -38,7 +38,8 @@ public class TangleClusterer {
     public void generateClusters(ScRNAseqDataset dataset, Config config) {
         int a = config.getA();
         double psi = config.getPsi();
-        String initialCutGenerator = config.getCutGeneratorName();
+        String highLevelCutGenerator = config.getHighLevelCutGeneratorName();
+        String lowLevelCutGenerator = config.getLowLevelCutGeneratorName();
         String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
         String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
         boolean useCache = config.isUseCache();
@@ -50,7 +51,7 @@ public class TangleClusterer {
         costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
         dataset.setA(a);
-        BitSet[] initialCuts = dataset.getInitialCuts(initialCutGenerator, useFastVersion);
+        BitSet[] initialCuts = dataset.getInitialCuts(highLevelCutGenerator, lowLevelCutGenerator, useFastVersion);
         double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
