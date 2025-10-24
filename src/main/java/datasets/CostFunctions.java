@@ -248,30 +248,14 @@ public class CostFunctions {
     }
 
     public double[] runLowLevelCostFunction(double[][] dataPoints, BitSet[] initialCuts, String costFunctionName) {
-        double[] cutCosts;
-        switch (costFunctionName) {
-
-            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE:
-                cutCosts = pairwiseDistanceCostFunction(dataPoints, initialCuts);
-                break;
-
-            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_SHORTEST:
-                cutCosts = shortestDistanceCostFunction(dataPoints, initialCuts);
-                break;
-
-            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST:
-                cutCosts = pairwiseClosestCostFunction(dataPoints, initialCuts);
-                break;
-
-            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN:
-                cutCosts = knnCostFunction(dataPoints, initialCuts);
-                break;
-
-            default:
-                cutCosts = distanceToMeanCostFunction(dataPoints, initialCuts);
-                break;
-        }
-        return cutCosts;
+        return switch (costFunctionName) {
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE -> pairwiseDistanceCostFunction(dataPoints, initialCuts);
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_SHORTEST -> shortestDistanceCostFunction(dataPoints, initialCuts);
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST -> pairwiseClosestCostFunction(dataPoints, initialCuts);
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN -> knnCostFunction(dataPoints, initialCuts);
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_DISTANCE_TO_MEAN -> distanceToMeanCostFunction(dataPoints, initialCuts);
+            default -> knnCostFunction(dataPoints, initialCuts);
+        };
     }
 
     private List<double[][]> loadFromCache() {

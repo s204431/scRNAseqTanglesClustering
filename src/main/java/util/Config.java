@@ -12,7 +12,8 @@ public final class Config {
     private boolean useSplitFirst;
     private boolean useEarlyStop;
     private boolean useCache;
-    private String cutGeneratorName;
+    private String highLevelCutGeneratorName;
+    private String lowLevelCutGeneratorName;
     private String highLevelCostFunctionName;
     private String lowLevelCostFunctionName;
     private int a;
@@ -32,7 +33,8 @@ public final class Config {
         this.useSplitFirst = true;
         this.useEarlyStop = false;
         this.useCache = true;
-        this.cutGeneratorName = "Default";
+        this.highLevelCutGeneratorName = "Default";
+        this.lowLevelCutGeneratorName = "Default";
         this.highLevelCostFunctionName = "Default";
         this.lowLevelCostFunctionName = "Default";
         this.a = 0;
@@ -50,7 +52,8 @@ public final class Config {
                   boolean useSplitFirst,
                   boolean useEarlyStop,
                   boolean useCache,
-                  String cutGeneratorName,
+                  String highLevelCutGeneratorName,
+                  String lowLevelCutGeneratorName,
                   String highLevelCostFunctionName,
                   String lowLevelCostFunctionName,
                   int a,
@@ -68,7 +71,8 @@ public final class Config {
         this.useSplitFirst = useSplitFirst;
         this.useEarlyStop = useEarlyStop;
         this.useCache = useCache;
-        this.cutGeneratorName = cutGeneratorName;
+        this.highLevelCutGeneratorName = highLevelCutGeneratorName;
+        this.lowLevelCutGeneratorName = lowLevelCutGeneratorName;
         this.highLevelCostFunctionName = highLevelCostFunctionName;
         this.lowLevelCostFunctionName = lowLevelCostFunctionName;
         this.a = a;
@@ -89,7 +93,8 @@ public final class Config {
         this.useSplitFirst = config.useSplitFirst;
         this.useEarlyStop = config.useEarlyStop;
         this.useCache = config.useCache;
-        this.cutGeneratorName = config.cutGeneratorName;
+        this.highLevelCutGeneratorName = config.highLevelCutGeneratorName;
+        this.lowLevelCutGeneratorName = config.lowLevelCutGeneratorName;
         this.highLevelCostFunctionName = config.highLevelCostFunctionName;
         this.lowLevelCostFunctionName = config.lowLevelCostFunctionName;
         this.a = config.a;
@@ -129,7 +134,8 @@ public final class Config {
         SPLIT_FIRST_INDEX,
         EARLY_STOP_INDEX,
         CACHE_INDEX,
-        CUT_GENERATOR_INDEX,
+        HIGH_LEVEL_CUT_GENERATOR_INDEX,
+        LOW_LEVEL_CUT_GENERATOR_INDEX,
         HIGH_LEVEL_COST_FUNCTION_INDEX,
         LOW_LEVEL_COST_FUNCTION_INDEX,
         A_INDEX,
@@ -151,7 +157,8 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_FIRST_INDEX.ordinal()] = "use_split_first";
         CONFIG_DESCRIPTIONS[ConfigIndices.EARLY_STOP_INDEX.ordinal()] = "use_early_stop";
         CONFIG_DESCRIPTIONS[ConfigIndices.CACHE_INDEX.ordinal()] = "use_cache";
-        CONFIG_DESCRIPTIONS[ConfigIndices.CUT_GENERATOR_INDEX.ordinal()] = "cut_generator";
+        CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_CUT_GENERATOR_INDEX.ordinal()] = "high_level_cut_generator";
+        CONFIG_DESCRIPTIONS[ConfigIndices.LOW_LEVEL_CUT_GENERATOR_INDEX.ordinal()] = "low_level_cut_generator";
         CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_COST_FUNCTION_INDEX.ordinal()] = "high_level_cost_function";
         CONFIG_DESCRIPTIONS[ConfigIndices.LOW_LEVEL_COST_FUNCTION_INDEX.ordinal()] = "low_level_cost_function";
         CONFIG_DESCRIPTIONS[ConfigIndices.A_INDEX.ordinal()] = "a";
@@ -195,7 +202,8 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_FIRST_INDEX.ordinal()] + ":" + formatValue(useSplitFirst));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.EARLY_STOP_INDEX.ordinal()] + ":" + formatValue(useEarlyStop));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.CACHE_INDEX.ordinal()] + ":" + formatValue(useCache));
-                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(cutGeneratorName));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(highLevelCutGeneratorName));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.LOW_LEVEL_CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(lowLevelCutGeneratorName));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(highLevelCostFunctionName));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.LOW_LEVEL_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(lowLevelCostFunctionName));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.A_INDEX.ordinal()] + ":" + formatValue(a));
@@ -221,7 +229,8 @@ public final class Config {
         boolean useSplitFirst = false;
         boolean useEarlyStop = false;
         boolean useCache = false;
-        String cutGeneratorName = "Default";
+        String highLevelCutGeneratorName = "Default";
+        String lowLevelCutGeneratorName = "Default";
         String highLevelCostFunctionName = "Default";
         String lowLevelCostFunctionName = "Default";
         int a = 0;
@@ -249,7 +258,8 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_FIRST_INDEX.ordinal()])) useSplitFirst = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.EARLY_STOP_INDEX.ordinal()])) useEarlyStop = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.CACHE_INDEX.ordinal()])) useCache = Boolean.parseBoolean(value);
-                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.CUT_GENERATOR_INDEX.ordinal()])) cutGeneratorName = value;
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_CUT_GENERATOR_INDEX.ordinal()])) highLevelCutGeneratorName = value;
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.LOW_LEVEL_CUT_GENERATOR_INDEX.ordinal()])) lowLevelCutGeneratorName = value;
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.HIGH_LEVEL_COST_FUNCTION_INDEX.ordinal()])) highLevelCostFunctionName = value;
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.LOW_LEVEL_COST_FUNCTION_INDEX.ordinal()])) lowLevelCostFunctionName = value;
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.A_INDEX.ordinal()])) a = Integer.parseInt(value);
@@ -281,7 +291,8 @@ public final class Config {
         newConfig.useSplitFirst = useSplitFirst;
         newConfig.useEarlyStop = useEarlyStop;
         newConfig.useCache = useCache;
-        newConfig.cutGeneratorName = cutGeneratorName;
+        newConfig.highLevelCutGeneratorName = highLevelCutGeneratorName;
+        newConfig.lowLevelCutGeneratorName = lowLevelCutGeneratorName;
         newConfig.highLevelCostFunctionName = highLevelCostFunctionName;
         newConfig.lowLevelCostFunctionName = lowLevelCostFunctionName;
         newConfig.a = a;
@@ -304,7 +315,8 @@ public final class Config {
                 "Use Split First: " + useSplitFirst + "\n" +
                 "Use Early Stop: " + useEarlyStop + "\n" +
                 "Use Cache: " + useCache + "\n" +
-                "Cut Generator: " + cutGeneratorName + "\n" +
+                "High Level Cut Generator: " + highLevelCutGeneratorName + "\n" +
+                "Low Level Cut Generator: " + lowLevelCutGeneratorName + "\n" +
                 "High Level Cost Function: " + highLevelCostFunctionName + "\n" +
                 "Low Level Cost Function: " + lowLevelCostFunctionName + "\n" +
                 "Parameter a: " + a + "\n" +
@@ -359,12 +371,20 @@ public final class Config {
         this.useCache = useCache;
     }
 
-    public String getCutGeneratorName() {
-        return cutGeneratorName;
+    public String getHighLevelCutGeneratorName() {
+        return highLevelCutGeneratorName;
     }
 
-    public void setCutGeneratorName(String cutGeneratorName) {
-        this.cutGeneratorName = cutGeneratorName;
+    public void setHighLevelCutGeneratorName(String cutGeneratorName) {
+        this.highLevelCutGeneratorName = cutGeneratorName;
+    }
+
+    public String getLowLevelCutGeneratorName() {
+        return lowLevelCutGeneratorName;
+    }
+
+    public void setLowLevelCutGeneratorName(String cutGeneratorName) {
+        this.lowLevelCutGeneratorName = cutGeneratorName;
     }
 
     public String getHighLevelCostFunctionName() {

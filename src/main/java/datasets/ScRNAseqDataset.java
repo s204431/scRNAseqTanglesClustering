@@ -29,28 +29,16 @@ public class ScRNAseqDataset {
         this.costFunctions = costFunctions;
     }
 
-    public BitSet[] getInitialCuts(String initialCutGenerator, boolean useFastVersion) {
+    public BitSet[] getInitialCuts(String highLevelCutGenerator, String lowLevelCutGenerator, boolean useFastVersion) {
         if (a == 0) {
             System.out.println("Variable for a is not chosen yet or is 0.");
             return null;
         }
 
-        switch (initialCutGenerator) {
-            case GlobalConstants.CUT_GENERATOR_RANGE:
-                initialCuts = cutGenerators.getInitialCutsRange(data, a);
-                break;
-
-            case GlobalConstants.CUT_GENERATOR_LOCAL_MEANS:
-                initialCuts = cutGenerators.getInitialCutsLocalMeans(data, a);
-                break;
-
-            case GlobalConstants.CUT_GENERATOR_SIMPLE:
-                initialCuts = cutGenerators.getInitialCutsSimple(data, a);
-                break;
-
-            default:
-                initialCuts = cutGenerators.splitCutGenerator(data, a, useFastVersion);
-                break;
+        if (highLevelCutGenerator.equals(GlobalConstants.HIGH_LEVEL_CUT_GENERATOR_NORMAL)) {
+            initialCuts = cutGenerators.singleCutGenerator(data, lowLevelCutGenerator, a, useFastVersion);
+        } else {
+            initialCuts = cutGenerators.splitCutGenerator(data, lowLevelCutGenerator, a, useFastVersion);
         }
 
         return initialCuts;

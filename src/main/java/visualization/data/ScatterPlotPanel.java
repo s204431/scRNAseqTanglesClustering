@@ -42,13 +42,10 @@ public class ScatterPlotPanel extends JTabbedPane {
     private static final String CLUSTER_TIME_TITLE = "cluster_time";
     private static final String CONFIG_TITLE = "config";
 
-
+    // Tab indices for non-user generated tabs
     private static final int POINTS_IDX = 0;
     private static final int GROUND_TRUTH_IDX = 1;
     private static final int CUT_IDX = 2;
-
-    private static final boolean SHOW_GRID = true;
-    private static final char MARK = 'o';
 
     private int attachmentIndex = 0;
     private int tangleCounter = 0;
@@ -118,12 +115,9 @@ public class ScatterPlotPanel extends JTabbedPane {
     }
 
     public void drawClusters(double[][] points, int[] clusters, double[][] softClusters, boolean tangle) {
-        String title = SCANPY_TITLE;
-        if (tangle) {
-            title = "Tangle " + (++tangleCounter);
-        }
+        String title = tangle ? "Tangle" + (++tangleCounter) : SCANPY_TITLE;
 
-        if (softClusters != null) drawSoftClustering(points, clusters, softClusters, title);
+        if (tangle && softClusters != null) drawSoftClustering(points, clusters, softClusters, title);
         else drawClusters(points, clusters, title);
     }
 
@@ -133,21 +127,16 @@ public class ScatterPlotPanel extends JTabbedPane {
             return;
         }
 
-        // Find number of clusters
-        int minClusterIndex = Integer.MAX_VALUE;
+        // Find clusters
         HashSet<Integer> clusterSet = new HashSet<>();
-        for (int c : clusters) {
-            clusterSet.add(c);
-            minClusterIndex = Math.min(minClusterIndex, c);
-        }
-        int k = clusterSet.size();
+        for (int c : clusters) clusterSet.add(c);
 
         // One series per cluster
         XYSeriesCollection dataset = new XYSeriesCollection();
-        for (int c = 0; c < k; c++) {
-            XYSeries s = new XYSeries("Cluster " + (c+1), false, false);
+        for (int c : clusterSet.stream().toList()) {
+            XYSeries s = new XYSeries("Cluster " + c, false, false);
             for (int i = 0; i < points.length; i++) {
-                if (clusters[i] == c + minClusterIndex) s.add(points[i][0], points[i][1], false);
+                if (clusters[i] == c) s.add(points[i][0], points[i][1], false);
             }
             dataset.addSeries(s);
         }
@@ -163,7 +152,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(false, true);
         Paint[] palette = GlobalConstants.CLUSTER_COLORS;
 
-        for (int c = 0; c < k; c++) {
+        for (int c : clusterSet.stream().toList()) {
             renderer.setSeriesLinesVisible(c, false);
             renderer.setSeriesShapesVisible(c, true);
             renderer.setSeriesShape(c, circle);
@@ -238,8 +227,11 @@ public class ScatterPlotPanel extends JTabbedPane {
         XYSeriesCollection dataset = new XYSeriesCollection();
         List<double[]> perSeriesProbs = new ArrayList<>(k);
 
-        for (int c = 0; c < k; c++) {
-            XYSeries series = new XYSeries("Cluster " + (c + 1), false, false);
+        HashSet<Integer> clusterSet = new HashSet<>();
+        for (int c : clustering) clusterSet.add(c);
+
+        for (int c : clusterSet) {
+            XYSeries series = new XYSeries("Cluster " + c, false, false);
 
             // Collect points for this cluster, and the matching probabilities
             List<Double> probsList = new ArrayList<>();
@@ -268,7 +260,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         Paint[] paints = GlobalConstants.CLUSTER_COLORS;
         double radiusPx = 3;
         Shape circle = new Ellipse2D.Double(-radiusPx, -radiusPx, 2*radiusPx, 2*radiusPx);
-        for (int c = 0; c < k; c++) {
+        for (int c : clusterSet) {
             renderer.setSeriesPaint(c, paints[c % paints.length]);
             renderer.setSeriesLinesVisible(c, false);
             renderer.setSeriesShapesVisible(c, true);

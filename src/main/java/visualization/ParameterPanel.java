@@ -1,7 +1,6 @@
 package visualization;
 
 import clustering.TangleClusterer;
-import main.Main;
 import util.BitSet;
 import util.Config;
 import util.GlobalConstants;
@@ -42,7 +41,8 @@ public class ParameterPanel extends JPanel {
     private JCheckBox useEarlyStopCheckbox;
     private JCheckBox useCacheCheckBox;
     private JCheckBox removeRedundantCheckBox;
-    private JComboBox<String> cutGeneratorDropdown;
+    private JComboBox<String> highLevelCutGeneratorDropdown;
+    private JComboBox<String> lowLevelCutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
     private JComboBox<String> lowLevelCostFunctionDropdown;
     private JCheckBox fastVersionCheckBox;
@@ -145,8 +145,11 @@ public class ParameterPanel extends JPanel {
         removeRedundantCheckBox.setSelected(false);
         addRow(useCacheCheckBox, removeRedundantCheckBox);
 
-        cutGeneratorDropdown = new JComboBox<>(GlobalConstants.CUT_GENERATOR_NAMES);
-        addRow("Cut Generator ", cutGeneratorDropdown);
+        highLevelCutGeneratorDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_CUT_GENERATOR_NAMES);
+        addRow("<html>High Level<br> Cut Generator</html>", highLevelCutGeneratorDropdown);
+
+        lowLevelCutGeneratorDropdown = new JComboBox<>(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_NAMES);
+        addRow("<html>Low Level<br> Cut Generator</html>", lowLevelCutGeneratorDropdown);
 
         highLevelCostFunctionDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_COST_FUNCTION_NAMES);
         addRow("<html>High Level<br> Cost Function</html>", highLevelCostFunctionDropdown);
@@ -295,7 +298,7 @@ public class ParameterPanel extends JPanel {
     }
 
     private void pythonClusterAction(ActionEvent e) {
-        Tuple<int[], Double> result = Main.runPython(view.getCurrentFilePath());
+        Tuple<int[], Double> result = view.getScanpyResult();
         if (result == null) return;
 
         view.showClustering(result.x, false);
@@ -408,7 +411,8 @@ public class ParameterPanel extends JPanel {
                 useSplitFirstCheckbox.isSelected(),
                 useEarlyStopCheckbox.isSelected(),
                 useCacheCheckBox.isSelected(),
-                (String) cutGeneratorDropdown.getSelectedItem(),
+                (String) highLevelCutGeneratorDropdown.getSelectedItem(),
+                (String) lowLevelCutGeneratorDropdown.getSelectedItem(),
                 (String) highLevelCostFunctionDropdown.getSelectedItem(),
                 (String) lowLevelCostFunctionDropdown.getSelectedItem(),
                 a,
@@ -432,7 +436,8 @@ public class ParameterPanel extends JPanel {
         useCacheCheckBox.setSelected(config.isUseCache());
         removeRedundantCheckBox.setSelected(config.isRemoveRedundant());
 
-        selectDropdown(cutGeneratorDropdown, config.getCutGeneratorName());
+        selectDropdown(highLevelCutGeneratorDropdown, config.getHighLevelCutGeneratorName());
+        selectDropdown(lowLevelCutGeneratorDropdown, config.getLowLevelCutGeneratorName());
         selectDropdown(highLevelCostFunctionDropdown, config.getHighLevelCostFunctionName());
         selectDropdown(lowLevelCostFunctionDropdown, config.getLowLevelCostFunctionName());
 
