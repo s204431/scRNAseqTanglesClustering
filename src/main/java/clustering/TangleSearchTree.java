@@ -3,6 +3,7 @@ package clustering;
 import util.BitSet;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -321,6 +322,62 @@ public class TangleSearchTree {
         }
     }
 
+    protected void limitSplitCosts(List<Double> splitCostsList, double[][] reducedPoints, boolean tuningActivated) {
+        //Remove all costs below the first cost.
+        List<Double> newSplitCosts = new ArrayList<>();
+        for (int i = 0; i < splitCostsList.size(); i++) {
+            if (splitCostsList.get(i) >= splitCostsList.getFirst()) {
+                newSplitCosts.add(splitCostsList.get(i));
+            }
+        }
+
+        if (newSplitCosts.size() < 2) { //If there is only 0 or 1 split do not limit the cost.
+            return;
+        }
+
+        double[] splitCosts = new double[newSplitCosts.size()];
+        for (int i = 0; i < splitCosts.length; i++) {
+            splitCosts[i] = newSplitCosts.get(i);
+        }
+
+        Arrays.sort(splitCosts);
+
+        if (tuningActivated) {
+            double bestScore = -1.0;
+            double bestSplitCost = 0.0;
+            double scoreSum = 0.0;
+            for (int i = 0; i < splitCosts.length; i++) {
+                double splitCost = splitCosts[i];
+                TangleSearchTree tree = copy();
+                try {
+                    tree.limitSplitCosts(tree.root, splitCost);
+                    tree.condenseTree(0);
+                    tree.contractTree();
+                    tree.calculateSoftClustering();
+                    tree.calculateHardClustering();
+                } catch (NullPointerException e) {
+                    tree.generateDefaultClustering();
+                }
+                double silhouetteScore = Model.silhouetteScore(reducedPoints, tree.hardClustering);
+                if (silhouetteScore >= 1.0) {
+                    silhouetteScore = 0.0;
+                }
+                if (silhouetteScore > bestScore) {
+                    bestScore = silhouetteScore;
+                    bestSplitCost = splitCost;
+                    scoreSum += silhouetteScore;
+                }
+            }
+            System.out.println("Found max split cost: " + bestSplitCost);
+            System.out.println("Silhouette score: " + bestScore);
+            limitSplitCosts(root, bestSplitCost);
+        }
+        else {
+            double maxSplitCost = calculateMaxSplitCost(splitCosts);
+            limitSplitCosts(root, maxSplitCost);
+        }
+    }
+
     protected void limitSplitCosts(Node node, double maxCost) {
 
         // Split node
@@ -363,6 +420,38 @@ public class TangleSearchTree {
         if (node.rightChild != null) {
             limitSplitCosts(node.rightChild, maxCost);
         }
+    }
+
+    //Calculates the maximum split cost to keep based on the mean cost in a window of a certain size.
+    private double calculateMaxSplitCost(double[] splitCosts) {
+        int windowSize = 4;
+
+        double[] sumArray = new double[splitCosts.length]; //Sum of costs in window ending on a given index.
+        sumArray[0] = splitCosts[0];
+        for (int i = 1; i < sumArray.length; i++) {
+            sumArray[i] = sumArray[i-1] + splitCosts[i] - (i-windowSize < 0 ? 0 : splitCosts[i-windowSize]);
+        }
+
+        //Find maximum difference from the mean in a window.
+        double maxDifference = -1;
+        int maxDifferenceIndex = -1;
+
+        double sum = 0.0;
+
+        for (int i = 1; i < sumArray.length; i++) {
+            double mean = sumArray[i-1] / Math.min(i, windowSize);
+            double difference = splitCosts[i] - mean;
+            sum += difference;
+            if (difference > maxDifference) {
+                maxDifference = difference;
+                maxDifferenceIndex = i;
+            }
+        }
+
+        //Return split cost for cut before the max difference;
+        System.out.println("Found max split cost: " + splitCosts[maxDifferenceIndex-1]);
+        System.out.println("Certainty: " + (maxDifference/sum));
+        return splitCosts[maxDifferenceIndex-1];
     }
 
     //Removes internal nodes with exactly one child and removes branches of length "pruneDepth" or lower from the tree.
@@ -503,6 +592,7 @@ public class TangleSearchTree {
     //Returns a copy of the tree with only information used to draw the tree in the GUI
     public TangleSearchTree copy() {
         TangleSearchTree tree = new TangleSearchTree(a, cuts, cutCosts);
+        tree.branchCosts = branchCosts;
         copyNode(root, tree.getRoot());
         return tree;
     }
@@ -510,6 +600,7 @@ public class TangleSearchTree {
     //Helper for recursively copying the tree
     public Node copyNode(Node oldNode, Node newNode) {
         newNode.originalOrientation = oldNode.originalOrientation;
+        newNode.condensedOrientations = oldNode.condensedOrientations.clone();
         newNode.side = oldNode.side;
         newNode.branchId = oldNode.branchId;
         newNode.cost = oldNode.cost;
@@ -535,7 +626,7 @@ public class TangleSearchTree {
 
         public int originalOrientation;
         public BitSet condensedOrientations;
-        public  List<Integer> distinguishedCuts = new ArrayList<>();
+        public List<Integer> distinguishedCuts = new ArrayList<>();
         public Node leftChild;
         public Node rightChild;
         public Node parent;

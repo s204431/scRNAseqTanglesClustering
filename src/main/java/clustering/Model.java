@@ -367,6 +367,12 @@ public class Model {
         int tsneComponents = config.getTsneComponents();
         boolean useFastVersion = config.isUseFastVersion();
 
+        TangleClusterer.earlyStop = config.isUseEarlyStop();
+        tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
+        tangleClusterer.useOscarWerner = config.isUseWernerModification();
+        tangleClusterer.useSplitFirst = config.isUseSplitFirst();
+        tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
+
         int maxClusters = 10;
 
         int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.667), 1);
@@ -397,12 +403,16 @@ public class Model {
         int bestA = -1;
         double bestPsi = -1;
 
-        for (double psi = 0; psi <= 1; psi += 0.05) {
-            for (int nClusters = 2; nClusters <= maxClusters; nClusters++) {
+        double maxPsi = config.isAutoComputePsi() ? 0.0 : 1.0;
+        int minClusters = config.isAutoComputePsi() ? 2 : 2;
+
+        for (double psi = 0; psi <= maxPsi; psi += 0.05) {
+            for (int nClusters = minClusters; nClusters <= maxClusters; nClusters++) {
                 int a2 = Math.max((int)((dataset.data.length/(double)nClusters)*0.667), 1);
                 config.setA(a2);
                 config.setPsi(psi);
-                tangleClusterer.generateClusters(dataset, config, initialCuts, costs, costFunctions);
+
+                tangleClusterer.generateClusters(dataset, config, initialCuts, costs, costFunctions, reducedPoints);
                 softClustering = tangleClusterer.getSoftClustering();
                 hardClustering = tangleClusterer.getHardClustering();
                 //double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);

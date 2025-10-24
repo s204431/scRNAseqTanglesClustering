@@ -64,7 +64,7 @@ public class TangleClusterer {
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
         if (autoLimitSplitCosts) {
-            tree.limitSplitCosts(tree.root, calculateMaxSplitCost());
+            tree.limitSplitCosts(splitCosts, null, false);
             monitor.setSplitPrunedTree(tree.copy());
         } else {
             monitor.setSplitPrunedTree(null);
@@ -81,7 +81,8 @@ public class TangleClusterer {
         tree.calculateHardClustering();
     }
 
-    public void generateClusters(ScRNAseqDataset dataset, Config config, BitSet[] initialCuts, double[] costs, CostFunctions costFunctions) {
+    //This is used when tuning parameters in order to reuse initial cuts and costs
+    public void generateClusters(ScRNAseqDataset dataset, Config config, BitSet[] initialCuts, double[] costs, CostFunctions costFunctions, double[][] reducedPoints) {
         int a = config.getA();
         double psi = config.getPsi();
 
@@ -94,7 +95,7 @@ public class TangleClusterer {
         tangleSearchTree = tree;
         monitor.setUncondensedTree(tree.copy());
         if (autoLimitSplitCosts) {
-            tree.limitSplitCosts(tree.root, calculateMaxSplitCost());
+            tree.limitSplitCosts(splitCosts, reducedPoints, true);
             monitor.setSplitPrunedTree(tree.copy());
         } else {
             monitor.setSplitPrunedTree(null);
@@ -774,56 +775,6 @@ public class TangleClusterer {
         indices[i] = indices[h];
         indices[h] = temp2;
         return i;
-    }
-
-    //Calculates the maximum split cost to keep based on the mean cost in a window of a certain size.
-    private double calculateMaxSplitCost() {
-        int windowSize = 4;
-
-        //Remove all costs below the first cost.
-        List<Double> newSplitCosts = new ArrayList<>();
-        for (int i = 0; i < this.splitCosts.size(); i++) {
-            if (this.splitCosts.get(i) >= this.splitCosts.getFirst()) {
-                newSplitCosts.add(this.splitCosts.get(i));
-            }
-        }
-
-        if (newSplitCosts.size() < 2) { //If there is only 0 or 1 split do not limit the cost.
-            return Double.MAX_VALUE;
-        }
-
-        double[] splitCosts = new double[newSplitCosts.size()];
-        for (int i = 0; i < splitCosts.length; i++) {
-            splitCosts[i] = newSplitCosts.get(i);
-        }
-
-        Arrays.sort(splitCosts);
-        double[] sumArray = new double[splitCosts.length]; //Sum of costs in window ending on a given index.
-        sumArray[0] = splitCosts[0];
-        for (int i = 1; i < sumArray.length; i++) {
-            sumArray[i] = sumArray[i-1] + splitCosts[i] - (i-windowSize < 0 ? 0 : splitCosts[i-windowSize]);
-        }
-
-        //Find maximum difference from the mean in a window.
-        double maxDifference = -1;
-        int maxDifferenceIndex = -1;
-
-        double sum = 0.0;
-
-        for (int i = 1; i < sumArray.length; i++) {
-            double mean = sumArray[i-1] / Math.min(i, windowSize);
-            double difference = splitCosts[i] - mean;
-            sum += difference;
-            if (difference > maxDifference) {
-                maxDifference = difference;
-                maxDifferenceIndex = i;
-            }
-        }
-
-        //Return split cost for cut before the max difference;
-        System.out.println("Found max split cost: " + splitCosts[maxDifferenceIndex-1]);
-        System.out.println("Certainty: " + (maxDifference/sum));
-        return splitCosts[maxDifferenceIndex-1];
     }
 
     public void setMonitor(Monitor monitor) {
