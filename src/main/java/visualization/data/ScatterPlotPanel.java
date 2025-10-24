@@ -65,7 +65,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     }
 
     public void drawScatterPlot(double[][] points) {
-        XYSeries series = new XYSeries("Points", false, false);
+        XYSeries series = new XYSeries("Points", false, true);
         for (double[] p : points) series.add(p[0], p[1], false);
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(series);
@@ -134,7 +134,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         // One series per cluster
         XYSeriesCollection dataset = new XYSeriesCollection();
         for (int c : clusterSet.stream().toList()) {
-            XYSeries s = new XYSeries("Cluster " + c, false, false);
+            XYSeries s = new XYSeries("Cluster " + c, false, true);
             for (int i = 0; i < points.length; i++) {
                 if (clusters[i] == c) s.add(points[i][0], points[i][1], false);
             }
@@ -231,7 +231,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         for (int c : clustering) clusterSet.add(c);
 
         for (int c : clusterSet) {
-            XYSeries series = new XYSeries("Cluster " + c, false, false);
+            XYSeries series = new XYSeries("Cluster " + c, false, true);
 
             // Collect points for this cluster, and the matching probabilities
             List<Double> probsList = new ArrayList<>();
