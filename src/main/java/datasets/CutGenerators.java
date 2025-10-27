@@ -126,9 +126,9 @@ public class CutGenerators {
         }*/
         if (!useFastVersion) {
             double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
-            for (int i = a; i < dataPoints.length; i *= 2) {
-                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, i));
-            }
+            //for (int i = a; i < dataPoints.length; i *= 2) {
+                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a));
+            //}
         }
         /*try {
             bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
@@ -137,9 +137,9 @@ public class CutGenerators {
 
         }*/
         double[][] reducedPoints = Model.svd(dataPoints, nComponents);
-        for (int i = a; i < dataPoints.length; i *= 2) {
-            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, i));
-        }
+        //for (int i = a; i < dataPoints.length; i *= 2) {
+            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a));
+        //}
 
         return mergeCuts(bitSets);
     }
@@ -162,12 +162,13 @@ public class CutGenerators {
     }
 
     public BitSet[] runLowLevelCutGenerator(double[][] reducedData, String cutGeneratorName, int a) {
+        int timesMoreCuts = 18; //Generate this many times more cuts using shifting
         return switch (cutGeneratorName) {
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN -> getInitialCutsKNN(reducedData, a);
-            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_SIMPLE -> getInitialCutsSimple(reducedData, a);
-            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_RANGE -> getInitialCutsRange(reducedData, a);
-            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_LOCAL_MEANS -> getInitialCutsLocalMeans(reducedData, a);
-            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_DISTANCE_BETWEEN_MEANS -> getInitialCutsDistanceBetweenMeans(reducedData, a);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_SIMPLE -> getInitialCutsSimple(reducedData, a, timesMoreCuts);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_RANGE -> getInitialCutsRange(reducedData, a, timesMoreCuts);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_LOCAL_MEANS -> getInitialCutsLocalMeans(reducedData, a, timesMoreCuts);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_DISTANCE_BETWEEN_MEANS -> getInitialCutsDistanceBetweenMeans(reducedData, a, timesMoreCuts);
             default -> getInitialCutsKNN(reducedData, a);
         };
     }
@@ -189,91 +190,100 @@ public class CutGenerators {
     }
 
     public BitSet[] getInitialCutsKNN(double[][] dataPoints, int a) {
+        boolean directed = true;
+        int nIterations = 5;
+
         List<BitSet[]> bitSets = new ArrayList<>();
+        KNNGraph knnGraph = new KNNGraph(dataPoints, 25);
         for (int k = 15; k <= 25; k++) {
-            KNNGraph knnGraph = new KNNGraph(dataPoints, k);
-            double[] heuristicRepresentation = new double[dataPoints.length];
-            int[] addedOrder = new int[dataPoints.length];
-            int addedOrderIndex = 0;
-            List<List<Integer>> connectedComponents = knnGraph.getConnectedComponents();
+            for (int iteration = 0; iteration < nIterations; iteration++) {
+                double[] heuristicRepresentation = new double[dataPoints.length];
+                int[] addedOrder = new int[dataPoints.length];
+                int addedOrderIndex = 0;
+                List<List<Integer>> connectedComponents = knnGraph.getConnectedComponents();
 
-            //Greedy best first search
-            //boolean[] visited = new boolean[dataPoints.length];
-            boolean[] finished = new boolean[dataPoints.length]; //Visited and no longer in frontier
-            int[] indexInQueue = new int[dataPoints.length];
-            List<Integer> originalIndices = new ArrayList<>();
-            int currentUniqueIndex = 0;
-            PriorityQueue<Integer> frontier = new PriorityQueue<>(Comparator.comparingDouble(i -> heuristicRepresentation[originalIndices.get(i)]));
+                //Greedy best first search
+                //boolean[] visited = new boolean[dataPoints.length];
+                boolean[] finished = new boolean[dataPoints.length]; //Visited and no longer in frontier
+                int[] indexInQueue = new int[dataPoints.length];
+                List<Integer> originalIndices = new ArrayList<>();
+                int currentUniqueIndex = 0;
+                PriorityQueue<Integer> frontier = new PriorityQueue<>(Comparator.comparingDouble(i -> heuristicRepresentation[originalIndices.get(i)]));
 
-            Collections.shuffle(connectedComponents);
-            List<Integer> orderedIndices = new ArrayList<>();
-            for (int i = 0; i < dataPoints.length; i++) {
-                orderedIndices.add(i);
-            }
-            Collections.shuffle(orderedIndices);
-
-            for (int startVertex : orderedIndices) { //In case the graph contains multiple connected components
-                if (finished[startVertex]) {
-                    continue;
+                Collections.shuffle(connectedComponents);
+                List<Integer> orderedIndices = new ArrayList<>();
+                for (int i = 0; i < dataPoints.length; i++) {
+                    orderedIndices.add(i);
                 }
-                //visited[startVertex] = true;
-                heuristicRepresentation[startVertex] = 10*k; //Choose value larger than any distance between points (assumes z-score normalized)
-                originalIndices.add(startVertex);
-                indexInQueue[startVertex] = currentUniqueIndex;
-                frontier.add(currentUniqueIndex);
-                currentUniqueIndex++;
-                while (!frontier.isEmpty()) {
-                    int uniqueIndex = frontier.poll();
-                    int vertex = originalIndices.get(uniqueIndex);
-                    if (finished[vertex] || indexInQueue[vertex] != uniqueIndex) {
+                Collections.shuffle(orderedIndices);
+
+                for (int startVertex : orderedIndices) { //In case the graph contains multiple connected components
+                    if (finished[startVertex]) {
                         continue;
                     }
-                    finished[vertex] = true;
-                    addedOrder[addedOrderIndex] = vertex;
-                    addedOrderIndex++;
-                    for (int i = 0; i < knnGraph.graph.get(vertex).size(); i++) {
-                        int neighbor = knnGraph.graph.get(vertex).get(i);
-                        if (!finished[neighbor]) {
-                            double heuristic = knnSearchHeuristic(knnGraph, finished, neighbor);
-                            heuristicRepresentation[neighbor] = heuristic;
-                            originalIndices.add(neighbor);
-                            indexInQueue[neighbor] = currentUniqueIndex;
-                            //visited[neighbor] = true;
-                            frontier.add(currentUniqueIndex);
-                            currentUniqueIndex++;
+                    //visited[startVertex] = true;
+                    heuristicRepresentation[startVertex] = 10*k; //Choose value larger than any distance between points (assumes z-score normalized)
+                    originalIndices.add(startVertex);
+                    indexInQueue[startVertex] = currentUniqueIndex;
+                    frontier.add(currentUniqueIndex);
+                    currentUniqueIndex++;
+                    while (!frontier.isEmpty()) {
+                        int uniqueIndex = frontier.poll();
+                        int vertex = originalIndices.get(uniqueIndex);
+                        if (finished[vertex] || indexInQueue[vertex] != uniqueIndex) {
+                            continue;
+                        }
+                        finished[vertex] = true;
+                        addedOrder[addedOrderIndex] = vertex;
+                        addedOrderIndex++;
+                        List<Integer> neighbours = knnGraph.getNeighbours(vertex, k, directed)[0];
+                        for (int i = 0; i < neighbours.size(); i++) {
+                            int neighbor = neighbours.get(i);
+                            if (!finished[neighbor]) {
+                                double heuristic = knnSearchHeuristic(knnGraph, k, finished, neighbor, directed);
+                                heuristicRepresentation[neighbor] = heuristic;
+                                originalIndices.add(neighbor);
+                                indexInQueue[neighbor] = currentUniqueIndex;
+                                //visited[neighbor] = true;
+                                frontier.add(currentUniqueIndex);
+                                currentUniqueIndex++;
+                            }
                         }
                     }
                 }
-            }
 
-            //Create 1D representation based on the traversed order and heuristic values
-            double[][] oneDRepresentation = new double[dataPoints.length][1];
-            double minimum = Double.MAX_VALUE; //We shift heuristic values by minimum so they are non-negative
-            for (int i = 0; i < heuristicRepresentation.length; i++) {
-                minimum = Math.min(minimum, heuristicRepresentation[i]);
-            }
-            //The value of each point is the sum of heuristic values added up to and including the point
-            double sum = 0.0;
-            for (int i = 0; i < addedOrder.length; i++) {
-                double heuristicValue = heuristicRepresentation[addedOrder[i]] + (minimum < 0.0 ? -minimum : 0.0) + 1;
-                sum += heuristicValue;
-                oneDRepresentation[addedOrder[i]][0] = sum;
-            }
+                //Create 1D representation based on the traversed order and heuristic values
+                double[][] oneDRepresentation = new double[dataPoints.length][1];
+                double minimum = Double.MAX_VALUE; //We shift heuristic values by minimum so they are non-negative
+                for (int i = 0; i < heuristicRepresentation.length; i++) {
+                    minimum = Math.min(minimum, heuristicRepresentation[i]);
+                }
+                //The value of each point is the sum of heuristic values added up to and including the point
+                double sum = 0.0;
+                for (int i = 0; i < addedOrder.length; i++) {
+                    double heuristicValue = heuristicRepresentation[addedOrder[i]] + (minimum < 0.0 ? -minimum : 0.0) + 1;
+                    sum += heuristicValue;
+                    oneDRepresentation[addedOrder[i]][0] = sum;
+                }
 
-            BitSet[] cuts = getInitialCutsRange(oneDRepresentation, a); //Use a standard cut generator on 1D representation
-            bitSets.add(cuts);
+                BitSet[] cuts = getInitialCutsRange(oneDRepresentation, a, 1); //Use a standard cut generator on 1D representation
+                bitSets.add(cuts);
+            }
         }
 
         return mergeCuts(bitSets);
     }
 
     //Calculates the heuristic value for a given vertex (for KNN initial cut generator)
-    private double knnSearchHeuristic(KNNGraph knnGraph, boolean[] inSet, int vertex) {
+    private double knnSearchHeuristic(KNNGraph knnGraph, int k, boolean[] inSet, int vertex, boolean directed) {
         double heuristicValue = 0.0;
         int inSetCount = 0;
         int notInSetCount = 0;
-        for (int i = 0; i < knnGraph.graph.get(vertex).size(); i++) {
-            int neighbor = knnGraph.graph.get(vertex).get(i);
+        List[] neighboursAndDistances = knnGraph.getNeighbours(vertex, k, directed);
+        List<Integer> neighbours = neighboursAndDistances[0];
+        List<Double> distances = neighboursAndDistances[1];
+        for (int i = 0; i < neighbours.size(); i++) {
+            int neighbor = neighbours.get(i);
             if (inSet[neighbor]) {
                 inSetCount++;
             }
@@ -281,9 +291,9 @@ public class CutGenerators {
                 notInSetCount++;
             }
         }
-        for (int i = 0; i < knnGraph.graph.get(vertex).size(); i++) {
-            int neighbor = knnGraph.graph.get(vertex).get(i);
-            double weight = knnGraph.distances.get(vertex).get(i);
+        for (int i = 0; i < neighbours.size(); i++) {
+            int neighbor = neighbours.get(i);
+            double weight = distances.get(i);
             if (inSet[neighbor]) {
                 heuristicValue += (weight/inSetCount)*notInSetCount;
             }
@@ -345,52 +355,56 @@ public class CutGenerators {
         return dataPoints;
     }
 
-    public BitSet[] getInitialCutsDistanceBetweenMeans(double[][] dataPoints, int a) {
+    public BitSet[] getInitialCutsDistanceBetweenMeans(double[][] dataPoints, int a, int timesMoreCuts) {
+        int shiftAmount = (int) Math.max((a/precision)/timesMoreCuts, 1);
+
         List<BitSet> cuts = new ArrayList<>();
-        double[][] copy = new double[dataPoints.length][dataPoints[0].length];
-        int[] originalIndices = new int[dataPoints.length];
-        for (int i = 0; i < dataPoints.length; i++) {
-            originalIndices[i] = i;
-            System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
-        }
-        for (int i = 0; i < dataPoints[0].length; i++) {
-            mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
-            BitSet currentBitSet = new BitSet(dataPoints.length);
-            currentBitSet.setAll();
-            cuts.add(currentBitSet);
-            BitSet accumulated = new BitSet(dataPoints.length);
-            accumulated.setAll();
-            int cutIndex = 0;
-            for (int j = 0; j < dataPoints.length; j++) {
-                accumulated.remove(originalIndices[j]);
-                if (j <= cutIndex) {
-                    currentBitSet.remove(originalIndices[j]);
-                }
-                if (j > 0 && j % (a/precision) == 0) {
-                    if (dataPoints.length - j <= (a/precision) - 1) {
-                        break;
+        for (int shift = 0; shift < a; shift += shiftAmount) {
+            double[][] copy = new double[dataPoints.length][dataPoints[0].length];
+            int[] originalIndices = new int[dataPoints.length];
+            for (int i = 0; i < dataPoints.length; i++) {
+                originalIndices[i] = i;
+                System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
+            }
+            for (int i = 0; i < dataPoints[0].length; i++) {
+                mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
+                BitSet currentBitSet = new BitSet(dataPoints.length);
+                currentBitSet.setAll();
+                cuts.add(currentBitSet);
+                BitSet accumulated = new BitSet(dataPoints.length);
+                accumulated.setAll();
+                int cutIndex = 0;
+                for (int j = 0; j < dataPoints.length; j++) {
+                    accumulated.remove(originalIndices[j]);
+                    if (j <= cutIndex) {
+                        currentBitSet.remove(originalIndices[j]);
                     }
-                    currentBitSet = new BitSet(dataPoints.length);
-                    currentBitSet.unionWith(accumulated);
-                    cuts.add(currentBitSet);
-                    //Find where to put the cut.
-                    double sum1 = 0.0;
-                    double sum2 = 0.0;
-                    int count1 = 0;
-                    int count2 = 0;
-                    for (int k = j+1; k < j+a/precision; k++) {
-                        sum2 += copy[k][i];
-                        count2++;
-                    }
-                    double bestDensity = -1;
-                    for (int k = j+1; k < j+a/precision-1; k++) {
-                        sum2 -= copy[k][i];
-                        sum1 += copy[k][i];
-                        count2--;
-                        count1++;
-                        if (count1 > 0 && count2 > 0 && (sum2/count2) - (sum1/count1) > bestDensity) {
-                            bestDensity = (sum2/count2) - (sum1/count1);
-                            cutIndex = k;
+                    if (j > 0 && j % (a/precision) == shift) {
+                        if (dataPoints.length - j <= (a/precision) - 1) {
+                            break;
+                        }
+                        currentBitSet = new BitSet(dataPoints.length);
+                        currentBitSet.unionWith(accumulated);
+                        cuts.add(currentBitSet);
+                        //Find where to put the cut.
+                        double sum1 = 0.0;
+                        double sum2 = 0.0;
+                        int count1 = 0;
+                        int count2 = 0;
+                        for (int k = j+1; k < j+a/precision; k++) {
+                            sum2 += copy[k][i];
+                            count2++;
+                        }
+                        double bestDensity = -1;
+                        for (int k = j+1; k < j+a/precision-1; k++) {
+                            sum2 -= copy[k][i];
+                            sum1 += copy[k][i];
+                            count2--;
+                            count1++;
+                            if (count1 > 0 && count2 > 0 && (sum2/count2) - (sum1/count1) > bestDensity) {
+                                bestDensity = (sum2/count2) - (sum1/count1);
+                                cutIndex = k;
+                            }
                         }
                     }
                 }
@@ -404,35 +418,39 @@ public class CutGenerators {
     }
 
     //Original initial cut generator using simple axis parallel cuts with specific amount of points between them.
-    public BitSet[] getInitialCutsSimple(double[][] dataPoints, int a) {
+    public BitSet[] getInitialCutsSimple(double[][] dataPoints, int a, int timesMoreCuts) {
+        int shiftAmount = (int) Math.max((a/precision)/timesMoreCuts, 1);
+
         List<BitSet> cuts = new ArrayList<>();
         List<Double>[] axisParallelCuts = new ArrayList[dataPoints[0].length]; //For visualization.
-        double[][] copy = new double[dataPoints.length][dataPoints[0].length];
-        int[] originalIndices = new int[dataPoints.length];
-        for (int i = 0; i < dataPoints.length; i++) {
-            originalIndices[i] = i;
-            System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
-        }
-        for (int i = 0; i < dataPoints[0].length; i++) {
-            axisParallelCuts[i] = new ArrayList<>();
-            mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
-            //BitSet first = new BitSet(dataPoints.length);
-            //first.add(originalIndices[0]);
-            //cuts.add(first);
-            BitSet currentBitSet = new BitSet(dataPoints.length);
-            cuts.add(currentBitSet);
-            axisParallelCuts[i].add(dataPoints[originalIndices[0]][i]);
-            for (int j = 0; j < dataPoints.length-1; j++) {
-                currentBitSet.add(originalIndices[j]);
-                if (j > 0 && j % (a/precision) == 0) {
-                    if (dataPoints.length - j <= (a/precision) - 1) {
-                        break;
+        for (int shift = 0; shift < a; shift += shiftAmount) {
+            double[][] copy = new double[dataPoints.length][dataPoints[0].length];
+            int[] originalIndices = new int[dataPoints.length];
+            for (int i = 0; i < dataPoints.length; i++) {
+                originalIndices[i] = i;
+                System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
+            }
+            for (int i = 0; i < dataPoints[0].length; i++) {
+                axisParallelCuts[i] = new ArrayList<>();
+                mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
+                //BitSet first = new BitSet(dataPoints.length);
+                //first.add(originalIndices[0]);
+                //cuts.add(first);
+                BitSet currentBitSet = new BitSet(dataPoints.length);
+                cuts.add(currentBitSet);
+                axisParallelCuts[i].add(dataPoints[originalIndices[0]][i]);
+                for (int j = 0; j < dataPoints.length-1; j++) {
+                    currentBitSet.add(originalIndices[j]);
+                    if (j > 0 && j % (a/precision) == shift) {
+                        if (dataPoints.length - j <= (a/precision) - 1) {
+                            break;
+                        }
+                        axisParallelCuts[i].add(dataPoints[originalIndices[j]][i]);
+                        BitSet newBitSet = new BitSet(dataPoints.length);
+                        newBitSet.unionWith(currentBitSet);
+                        currentBitSet = newBitSet;
+                        cuts.add(currentBitSet);
                     }
-                    axisParallelCuts[i].add(dataPoints[originalIndices[j]][i]);
-                    BitSet newBitSet = new BitSet(dataPoints.length);
-                    newBitSet.unionWith(currentBitSet);
-                    currentBitSet = newBitSet;
-                    cuts.add(currentBitSet);
                 }
             }
         }
@@ -454,46 +472,50 @@ public class CutGenerators {
 
     //Initial cut generator using axis parallel cuts. Has a number of intervals with the same amount of points in each.
     //Each interval has one cut and each cut is placed at the largest range between two points in the interval.
-    public BitSet[] getInitialCutsRange(double[][] dataPoints, int a) {
+    public BitSet[] getInitialCutsRange(double[][] dataPoints, int a, int timesMoreCuts) {
+        int shiftAmount = (int) Math.max((a/precision)/timesMoreCuts, 1);
+
         List<BitSet> cuts = new ArrayList<>();
         List<Double>[] axisParallelCuts = new ArrayList[dataPoints[0].length]; //For visualization.
-        double[][] copy = new double[dataPoints.length][dataPoints[0].length];
-        int[] originalIndices = new int[dataPoints.length];
-        for (int i = 0; i < dataPoints.length; i++) {
-            originalIndices[i] = i;
-            System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
-        }
-        for (int i = 0; i < dataPoints[0].length; i++) {
-            axisParallelCuts[i] = new ArrayList<>();
-            mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
-            BitSet currentBitSet = new BitSet(dataPoints.length);
-            currentBitSet.setAll();
-            cuts.add(currentBitSet);
-            BitSet accumulated = new BitSet(dataPoints.length);
-            accumulated.setAll();
-            axisParallelCuts[i].add(dataPoints[originalIndices[0]][i]);
-            int cutIndex = 0;
-            for (int j = 0; j < dataPoints.length; j++) {
-                accumulated.remove(originalIndices[j]);
-                if (j <= cutIndex) {
-                    currentBitSet.remove(originalIndices[j]);
-                }
-                if (j > 0 && j % (a/precision) == 0) {
-                    if (dataPoints.length - j <= (a/precision) - 1) {
-                        break;
+        for (int shift = 0; shift < a; shift += shiftAmount) {
+            double[][] copy = new double[dataPoints.length][dataPoints[0].length];
+            int[] originalIndices = new int[dataPoints.length];
+            for (int i = 0; i < dataPoints.length; i++) {
+                originalIndices[i] = i;
+                System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
+            }
+            for (int i = 0; i < dataPoints[0].length; i++) {
+                axisParallelCuts[i] = new ArrayList<>();
+                mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
+                BitSet currentBitSet = new BitSet(dataPoints.length);
+                currentBitSet.setAll();
+                cuts.add(currentBitSet);
+                BitSet accumulated = new BitSet(dataPoints.length);
+                accumulated.setAll();
+                axisParallelCuts[i].add(dataPoints[originalIndices[0]][i]);
+                int cutIndex = 0;
+                for (int j = 0; j < dataPoints.length; j++) {
+                    accumulated.remove(originalIndices[j]);
+                    if (j <= cutIndex) {
+                        currentBitSet.remove(originalIndices[j]);
                     }
-                    currentBitSet = new BitSet(dataPoints.length);
-                    currentBitSet.unionWith(accumulated);
-                    cuts.add(currentBitSet);
-                    //Find where to put the cut.
-                    double maxRange = -1;
-                    for (int k = j+1; k < j+a/precision-1; k++) {
-                        if (copy[k+1][i] - copy[k][i] > maxRange) {
-                            maxRange = copy[k+1][i] - copy[k][i];
-                            cutIndex = k;
+                    if (j > 0 && j % (a/precision) == shift) {
+                        if (dataPoints.length - j <= (a/precision) - 1) {
+                            break;
                         }
+                        currentBitSet = new BitSet(dataPoints.length);
+                        currentBitSet.unionWith(accumulated);
+                        cuts.add(currentBitSet);
+                        //Find where to put the cut.
+                        double maxRange = -1;
+                        for (int k = j+1; k < j+a/precision-1; k++) {
+                            if (copy[k+1][i] - copy[k][i] > maxRange) {
+                                maxRange = copy[k+1][i] - copy[k][i];
+                                cutIndex = k;
+                            }
+                        }
+                        axisParallelCuts[i].add(dataPoints[originalIndices[cutIndex]][i]);
                     }
-                    axisParallelCuts[i].add(dataPoints[originalIndices[cutIndex]][i]);
                 }
             }
         }
@@ -515,89 +537,93 @@ public class CutGenerators {
 
     //Initial cut generator that uses axis parallel cuts and adjusts them using distances to local means in the interval on each side of the cut. Generates non axis parallel cuts.
     //This initial cut generator also has its own cost function built in.
-    public BitSet[] getInitialCutsLocalMeans(double[][] dataPoints, int a) {
+    public BitSet[] getInitialCutsLocalMeans(double[][] dataPoints, int a, int timesMoreCuts) {
+        int shiftAmount = (int) Math.max((a/precision)/timesMoreCuts, 1);
+
         double range = getMaxRange(dataPoints);
         List<Double> costs = new ArrayList<>();
         List<BitSet> cuts = new ArrayList<>();
         List<Double>[] axisParallelCuts = new ArrayList[dataPoints[0].length]; //For visualization.
-        double[][] copy = new double[dataPoints.length][dataPoints[0].length];
-        int[] originalIndices = new int[dataPoints.length];
-        for (int i = 0; i < dataPoints.length; i++) {
-            originalIndices[i] = i;
-            System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
-        }
-        for (int i = 0; i < dataPoints[0].length; i++) {
-            axisParallelCuts[i] = new ArrayList<>();
-            mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
-            BitSet currentBitSet = new BitSet(dataPoints.length);
-            currentBitSet.setAll();
-            cuts.add(currentBitSet);
-            BitSet accumulated = new BitSet(dataPoints.length);
-            accumulated.setAll();
-            axisParallelCuts[i].add(dataPoints[originalIndices[0]][i]);
-            int cutIndex = 0;
-            double[] mean1 = null;
-            double[] mean2 = null;
-            double cost = 0.0;
-            for (int j = 0; j < dataPoints.length; j++) {
-                accumulated.remove(originalIndices[j]);
-                if (j <= cutIndex) {
-                    if (mean1 == null || getDistance(dataPoints[originalIndices[j]], mean1) < getDistance(dataPoints[originalIndices[j]], mean2)) {
+        for (int shift = 0; shift < a; shift += shiftAmount) {
+            double[][] copy = new double[dataPoints.length][dataPoints[0].length];
+            int[] originalIndices = new int[dataPoints.length];
+            for (int i = 0; i < dataPoints.length; i++) {
+                originalIndices[i] = i;
+                System.arraycopy(dataPoints[i], 0, copy[i], 0, dataPoints[0].length);
+            }
+            for (int i = 0; i < dataPoints[0].length; i++) {
+                axisParallelCuts[i] = new ArrayList<>();
+                mergeSort(copy, originalIndices, i, 0, dataPoints.length-1);
+                BitSet currentBitSet = new BitSet(dataPoints.length);
+                currentBitSet.setAll();
+                cuts.add(currentBitSet);
+                BitSet accumulated = new BitSet(dataPoints.length);
+                accumulated.setAll();
+                axisParallelCuts[i].add(dataPoints[originalIndices[0]][i]);
+                int cutIndex = 0;
+                double[] mean1 = null;
+                double[] mean2 = null;
+                double cost = 0.0;
+                for (int j = 0; j < dataPoints.length; j++) {
+                    accumulated.remove(originalIndices[j]);
+                    if (j <= cutIndex) {
+                        if (mean1 == null || getDistance(dataPoints[originalIndices[j]], mean1) < getDistance(dataPoints[originalIndices[j]], mean2)) {
+                            currentBitSet.remove(originalIndices[j]);
+                        }
+                    }
+                    else if (mean1 != null && getDistance(dataPoints[originalIndices[j]], mean1) < getDistance(dataPoints[originalIndices[j]], mean2)) {
                         currentBitSet.remove(originalIndices[j]);
                     }
-                }
-                else if (mean1 != null && getDistance(dataPoints[originalIndices[j]], mean1) < getDistance(dataPoints[originalIndices[j]], mean2)) {
-                    currentBitSet.remove(originalIndices[j]);
-                }
-                if (mean1 != null) {
-                    cost += Math.exp(-((1.0/range)*getDistance(dataPoints[originalIndices[j]], (currentBitSet.get(originalIndices[j]) ? mean1 : mean2))));
-                }
-                if (j > 0 && j % (a/precision) == 0) {
-                    if (dataPoints.length - j <= (a/precision) - 1) {
-                        break;
+                    if (mean1 != null) {
+                        cost += Math.exp(-((1.0/range)*getDistance(dataPoints[originalIndices[j]], (currentBitSet.get(originalIndices[j]) ? mean1 : mean2))));
                     }
-                    currentBitSet = new BitSet(dataPoints.length);
-                    currentBitSet.unionWith(accumulated);
-                    cuts.add(currentBitSet);
-                    costs.add(cost);
-                    cost = 0.0;
-                    //Find where to put the cut.
-                    double maxRange = -1;
-                    for (int k = j+1; k < j+a/precision-1; k++) {
-                        if (copy[k+1][i] - copy[k][i] > maxRange) {
-                            maxRange = copy[k+1][i] - copy[k][i];
-                            cutIndex = k;
+                    if (j > 0 && j % (a/precision) == shift) {
+                        if (dataPoints.length - j <= (a/precision) - 1) {
+                            break;
                         }
-                    }
-                    axisParallelCuts[i].add(dataPoints[originalIndices[cutIndex]][i]);
-                    //Calculate means.
-                    mean1 = new double[dataPoints[0].length];
-                    mean2 = new double[dataPoints[0].length];
-                    int n1 = 0;
-                    int n2 = 0;
-                    for (int k = j+1; k < j+a/precision-1; k++) {
-                        for (int l = 0; l < dataPoints[originalIndices[k]].length; l++) {
-                            if (k <= cutIndex) {
-                                mean1[l] += dataPoints[originalIndices[k]][l];
-                                if (l == 0) {
-                                    n1++;
-                                }
+                        currentBitSet = new BitSet(dataPoints.length);
+                        currentBitSet.unionWith(accumulated);
+                        cuts.add(currentBitSet);
+                        costs.add(cost);
+                        cost = 0.0;
+                        //Find where to put the cut.
+                        double maxRange = -1;
+                        for (int k = j+1; k < j+a/precision-1; k++) {
+                            if (copy[k+1][i] - copy[k][i] > maxRange) {
+                                maxRange = copy[k+1][i] - copy[k][i];
+                                cutIndex = k;
                             }
-                            else {
-                                mean2[l] += dataPoints[originalIndices[k]][l];
-                                if (l == 0) {
-                                    n2++;
+                        }
+                        axisParallelCuts[i].add(dataPoints[originalIndices[cutIndex]][i]);
+                        //Calculate means.
+                        mean1 = new double[dataPoints[0].length];
+                        mean2 = new double[dataPoints[0].length];
+                        int n1 = 0;
+                        int n2 = 0;
+                        for (int k = j+1; k < j+a/precision-1; k++) {
+                            for (int l = 0; l < dataPoints[originalIndices[k]].length; l++) {
+                                if (k <= cutIndex) {
+                                    mean1[l] += dataPoints[originalIndices[k]][l];
+                                    if (l == 0) {
+                                        n1++;
+                                    }
+                                }
+                                else {
+                                    mean2[l] += dataPoints[originalIndices[k]][l];
+                                    if (l == 0) {
+                                        n2++;
+                                    }
                                 }
                             }
                         }
-                    }
-                    for (int k = 0; k < mean1.length; k++) {
-                        mean1[k] /= n1;
-                        mean2[k] /= n2;
+                        for (int k = 0; k < mean1.length; k++) {
+                            mean1[k] /= n1;
+                            mean2[k] /= n2;
+                        }
                     }
                 }
+                costs.add(cost);
             }
-            costs.add(cost);
         }
         BitSet[] result = new BitSet[cuts.size()];
         for (int i = 0; i < cuts.size(); i++) {
