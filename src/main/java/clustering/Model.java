@@ -21,8 +21,6 @@ import util.Monitor;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
 import smile.math.matrix.Matrix;
-import smile.validation.metric.NormalizedMutualInformation;
-import smile.validation.metric.AdjustedRandIndex;
 import util.BitSet;
 import util.Config;
 import util.TestSet;
@@ -288,69 +286,12 @@ public class Model {
         return dbi;
     }
 
-    public void cluster(ScRNAseqDataset dataset, Config config) {
+    public int[] cluster(ScRNAseqDataset dataset, Config config) {
         monitor.setDataset(dataset);
-
-        boolean prev0 = TangleClusterer.earlyStop;
-        boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
-        boolean prev2 = tangleClusterer.useOscarWerner;
-        boolean prev3 = tangleClusterer.useSplitFirst;
-        boolean prev4 = tangleClusterer.autoLimitSplitCosts;
-        boolean prev5 = tangleClusterer.removeRedundantCuts;
-
-        TangleClusterer.earlyStop = config.isUseEarlyStop();
-        tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
-        tangleClusterer.useOscarWerner = config.isUseWernerModification();
-        tangleClusterer.useSplitFirst = config.isUseSplitFirst();
-        tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
-        tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
 
         monitor.setClusterStartTime(System.currentTimeMillis());
         tangleClusterer.generateClusters(dataset, config);
         monitor.setClusterEndTime(System.currentTimeMillis());
-
-        TangleClusterer.earlyStop = prev0;
-        tangleClusterer.useAlternateConsistencyCheck = prev1;
-        tangleClusterer.useOscarWerner = prev2;
-        tangleClusterer.useSplitFirst = prev3;
-        tangleClusterer.autoLimitSplitCosts = prev4;
-        tangleClusterer.removeRedundantCuts = prev5;
-
-        softClustering = tangleClusterer.getSoftClustering();
-        hardClustering = tangleClusterer.getHardClustering();
-        double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
-        double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
-        System.out.println(NMIScore);
-        System.out.println(randIndex);
-    }
-
-    public int[] clusterAndReturn(ScRNAseqDataset dataset, Config config) {
-        monitor.setDataset(dataset);
-
-        boolean prev0 = TangleClusterer.earlyStop;
-        boolean prev1 = tangleClusterer.useAlternateConsistencyCheck;
-        boolean prev2 = tangleClusterer.useOscarWerner;
-        boolean prev3 = tangleClusterer.useSplitFirst;
-        boolean prev4 = tangleClusterer.autoLimitSplitCosts;
-        boolean prev5 = tangleClusterer.removeRedundantCuts;
-
-        TangleClusterer.earlyStop = config.isUseEarlyStop();
-        tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
-        tangleClusterer.useOscarWerner = config.isUseWernerModification();
-        tangleClusterer.useSplitFirst = config.isUseSplitFirst();
-        tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
-        tangleClusterer.removeRedundantCuts = config.isRemoveRedundant();
-
-        monitor.setClusterStartTime(System.currentTimeMillis());
-        tangleClusterer.generateClusters(dataset, config);
-        monitor.setClusterEndTime(System.currentTimeMillis());
-
-        TangleClusterer.earlyStop = prev0;
-        tangleClusterer.useAlternateConsistencyCheck = prev1;
-        tangleClusterer.useOscarWerner = prev2;
-        tangleClusterer.useSplitFirst = prev3;
-        tangleClusterer.autoLimitSplitCosts = prev4;
-        tangleClusterer.removeRedundantCuts = prev5;
 
         softClustering = tangleClusterer.getSoftClustering();
         hardClustering = tangleClusterer.getHardClustering();
@@ -368,19 +309,10 @@ public class Model {
         int tsneComponents = config.getTsneComponents();
         boolean useFastVersion = config.isUseFastVersion();
 
-        TangleClusterer.earlyStop = config.isUseEarlyStop();
-        tangleClusterer.useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
-        tangleClusterer.useOscarWerner = config.isUseWernerModification();
-        tangleClusterer.useSplitFirst = config.isUseSplitFirst();
-        tangleClusterer.autoLimitSplitCosts = config.isAutoComputePsi();
-
         int maxClusters = 10;
-
         int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.667), 1);
 
-
         double[][] reducedPoints;
-
         if (config.isUseFastVersion()) {
             reducedPoints = svd(dataset.data, tsneComponents);
         }

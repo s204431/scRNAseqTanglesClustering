@@ -36,81 +36,97 @@ public class TangleClusterer {
 
     //Generates a soft- and hard clustering for the provided dataset with a specific value of a and psi, and a specific initial cut generator and cost function.
     public void generateClusters(ScRNAseqDataset dataset, Config config) {
-        int a = config.getA();
-        double psi = config.getPsi();
-        String highLevelCutGenerator = config.getHighLevelCutGeneratorName();
-        String lowLevelCutGenerator = config.getLowLevelCutGeneratorName();
-        String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
-        String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
-        boolean useCache = config.isUseCache();
-        int splitSize = config.getSplitSize();
-        int tsneComponents = config.getTsneComponents();
-        boolean useFastVersion = config.isUseFastVersion();
+        updateClusteringParameters(config);
 
         splitCosts = new ArrayList<>();
         costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
-        dataset.setA(a);
-        BitSet[] initialCuts = dataset.getInitialCuts(highLevelCutGenerator, lowLevelCutGenerator, useFastVersion);
-        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
+        dataset.setA(config.getA());
+
+        BitSet[] initialCuts = dataset.getInitialCuts(
+                config.getHighLevelCutGeneratorName(),
+                config.getLowLevelCutGeneratorName(),
+                config.isUseFastVersion());
+
+        double[] costs = dataset.getCutCosts(
+                config.getHighLevelCostFunctionName(),
+                config.getLowLevelCostFunctionName(),
+                config.isUseCache(),
+                config.getSplitSize(),
+                config.getTsneComponents(),
+                config.isUseFastVersion());
+
         Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
         initialCuts = redundancyRemoved.x;
         costs = redundancyRemoved.y;
-        TangleSearchTree tree;
-        if (useOscarWerner) {
-            tree = useSplitFirst ? splitFirst(initialCuts, costs, dataset.data, config) : oscarWerner(initialCuts, costs, dataset.data, config);
-        } else {
-            tree = generateTangleSearchTree(initialCuts, costs, a, psi);
-        }
-        tangleSearchTree = tree;
-        monitor.setUncondensedTree(tree.copy());
-        if (autoLimitSplitCosts) {
-            tree.limitSplitCosts(splitCosts, null, false);
-            monitor.setSplitPrunedTree(tree.copy());
-        } else {
-            monitor.setSplitPrunedTree(null);
-        }
-        try {
-            tree.condenseTree(autoLimitSplitCosts ? 0 : 1);
-        } catch (NullPointerException e) {
-            tree.generateDefaultClustering();
-            return;
-        }
-        monitor.setCondensedTree(tree.copy());
-        tree.contractTree();
-        tree.calculateSoftClustering();
-        tree.calculateHardClustering();
+
+        //Run the main clustering pipeline without precomputed inputs
+        runClusteringPipeline(dataset, config, initialCuts, costs, null, false);
     }
 
     //This is used when tuning parameters in order to reuse initial cuts and costs
     public void generateClusters(ScRNAseqDataset dataset, Config config, BitSet[] initialCuts, double[] costs, CostFunctions costFunctions, double[][] reducedPoints) {
-        int a = config.getA();
-        double psi = config.getPsi();
+        updateClusteringParameters(config);
 
         splitCosts = new ArrayList<>();
         this.costFunctions = costFunctions;
         dataset.setCostFunctions(costFunctions);
-        TangleSearchTree tree = useOscarWerner ?
-                splitFirst(initialCuts, costs, dataset.data, config) :
-                generateTangleSearchTree(initialCuts, costs, a, psi);
-        tangleSearchTree = tree;
-        monitor.setUncondensedTree(tree.copy());
+        dataset.setA(config.getA());
+
+        //Run main clustering pipeline with precomputed inputs
+        runClusteringPipeline(dataset, config, initialCuts, costs, reducedPoints, true);
+    }
+
+    private void runClusteringPipeline(ScRNAseqDataset dataset,
+                                       Config config,
+                                       BitSet[] cuts,
+                                       double[] costs,
+                                       double[][] reducedPoints,
+                                       boolean reuseInputs) {
+
+        //Build tree
+        if (useOscarWerner) {
+            tangleSearchTree = useSplitFirst
+                    ? splitFirst(cuts, costs, dataset.data, config)
+                    : oscarWerner(cuts, costs, dataset.data, config);
+        } else {
+            tangleSearchTree = generateTangleSearchTree(cuts, costs, config.getA(), config.getPsi());
+        }
+        monitor.setUncondensedTree(tangleSearchTree.copy());
+
+        //Optional split pruning
         if (autoLimitSplitCosts) {
-            tree.limitSplitCosts(splitCosts, reducedPoints, true);
-            monitor.setSplitPrunedTree(tree.copy());
+            tangleSearchTree.limitSplitCosts(splitCosts, reducedPoints, reuseInputs);
+            monitor.setSplitPrunedTree(tangleSearchTree.copy());
         } else {
             monitor.setSplitPrunedTree(null);
         }
+
+        //Condense tangle search tree
         try {
-            tree.condenseTree(autoLimitSplitCosts ? 0 : 1);
+            tangleSearchTree.condenseTree(autoLimitSplitCosts ? 0 : 1);
         } catch (NullPointerException e) {
-            tree.generateDefaultClustering();
+            tangleSearchTree.generateDefaultClustering();
             return;
         }
-        monitor.setCondensedTree(tree.copy());
-        tree.contractTree();
-        tree.calculateSoftClustering();
-        tree.calculateHardClustering();
+        monitor.setCondensedTree(tangleSearchTree.copy());
+
+        //Contract tangle search tree
+        tangleSearchTree.contractTree();
+
+        //Compute hard and soft clustering
+        tangleSearchTree.calculateSoftClustering();
+        tangleSearchTree.calculateHardClustering();
+    }
+
+    //Extracts clustering parameters from config
+    private void updateClusteringParameters(Config config) {
+        earlyStop = config.isUseEarlyStop();
+        useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
+        useOscarWerner = config.isUseWernerModification();
+        useSplitFirst = config.isUseSplitFirst();
+        autoLimitSplitCosts = config.isAutoComputePsi();
+        removeRedundantCuts = config.isRemoveRedundant();
     }
 
     //Returns the last generated soft clustering.

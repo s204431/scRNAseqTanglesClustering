@@ -10,7 +10,6 @@ import visualization.test.TestProgressManager;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestSet {
 
@@ -119,7 +118,7 @@ public class TestSet {
                 int a = (int)(((double)dataset.data.length/nClusters)*0.667);
                 Config config = new Config();
                 config.setA(a);
-                int[] hardClustering = model.clusterAndReturn(dataset, config);
+                int[] hardClustering = model.cluster(dataset, config);
                 double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
                 double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
                 averageNMIScores[i] += NMI;
@@ -235,7 +234,7 @@ public class TestSet {
                     newConfig.setA(a);
 
                     boolean tuneParameters = config.isTuneParameters();
-                    int[] hardClustering = tuneParameters ? model.clusterAuto(dataset, newConfig) : model.clusterAndReturn(dataset, newConfig);
+                    int[] hardClustering = tuneParameters ? model.clusterAuto(dataset, newConfig) : model.cluster(dataset, newConfig);
                     averageTimes[testIndex][configIndex] += (preTime + (System.currentTimeMillis() - time1)) / 1000.0;
 
                     double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
