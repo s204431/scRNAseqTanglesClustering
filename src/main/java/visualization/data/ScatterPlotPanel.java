@@ -152,7 +152,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(false, true);
         Paint[] palette = GlobalConstants.CLUSTER_COLORS;
 
-        for (int c : clusterSet.stream().toList()) {
+        for (int c = 0; c < clusterSet.size(); c++) {
             renderer.setSeriesLinesVisible(c, false);
             renderer.setSeriesShapesVisible(c, true);
             renderer.setSeriesShape(c, circle);
@@ -192,8 +192,6 @@ public class ScatterPlotPanel extends JTabbedPane {
     // Renders per-item alpha using provided probabilities for each series
     private static final class SoftClusterRenderer extends XYLineAndShapeRenderer {
         private final List<double[]> perSeriesProbs;
-        private final double minAlpha = 0.05;
-        private final double gamma = 0.6;
 
         SoftClusterRenderer(List<double[]> perSeriesProbs) {
             super(false, true);
@@ -208,12 +206,22 @@ public class ScatterPlotPanel extends JTabbedPane {
             double p = 0.0;
             if (series >= 0 && series < perSeriesProbs.size()) {
                 double[] arr = perSeriesProbs.get(series);
-                if (item >= 0 && item < arr.length) p = arr[item];
+                if (item >= 0 && item < arr.length) {
+                    p = arr[item];
+                }
             }
-            p = Math.max(0.0, Math.min(1.0, p));
 
-            double a01 = minAlpha + (1.0 - minAlpha) * Math.pow(p, gamma);
-            int alpha = (int)Math.round(255.0 * a01);
+            double threshold = 0.5;
+            double minAlpha = 50;
+            double maxAlpha = 255;
+            int alpha = (int) minAlpha;
+
+            // Map the range [threshold,1] to [minAlpha,maxAlpha]
+            if (p > threshold) {
+                double scaledP = (p - threshold) / (1 - threshold);
+                alpha = (int) Math.max(minAlpha, Math.round(maxAlpha * scaledP));
+            }
+
             return new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
         }
     }
@@ -260,7 +268,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         Paint[] paints = GlobalConstants.CLUSTER_COLORS;
         double radiusPx = 3;
         Shape circle = new Ellipse2D.Double(-radiusPx, -radiusPx, 2*radiusPx, 2*radiusPx);
-        for (int c : clusterSet) {
+        for (int c = 0; c < clusterSet.size(); c++) {
             renderer.setSeriesPaint(c, paints[c % paints.length]);
             renderer.setSeriesLinesVisible(c, false);
             renderer.setSeriesShapesVisible(c, true);
