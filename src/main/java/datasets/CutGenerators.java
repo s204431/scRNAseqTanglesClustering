@@ -2,6 +2,7 @@ package datasets;
 
 import clustering.Model;
 import main.Main;
+import org.bytedeco.javacv.JavaCvErrorCallback;
 import util.BitSet;
 import util.Distance;
 import util.GlobalConstants;
@@ -190,6 +191,7 @@ public class CutGenerators {
     }
 
     public BitSet[] getInitialCutsKNN(double[][] dataPoints, int a) {
+        dataPoints = Main.zScoreNorm(dataPoints);
         boolean directed = true;
         int nIterations = 5;
 
@@ -200,7 +202,7 @@ public class CutGenerators {
                 double[] heuristicRepresentation = new double[dataPoints.length];
                 int[] addedOrder = new int[dataPoints.length];
                 int addedOrderIndex = 0;
-                List<List<Integer>> connectedComponents = knnGraph.getConnectedComponents();
+                //List<List<Integer>> connectedComponents = knnGraph.getConnectedComponents();
 
                 //Greedy best first search
                 //boolean[] visited = new boolean[dataPoints.length];
@@ -210,24 +212,26 @@ public class CutGenerators {
                 int currentUniqueIndex = 0;
                 PriorityQueue<Integer> frontier = new PriorityQueue<>(Comparator.comparingDouble(i -> heuristicRepresentation[originalIndices.get(i)]));
 
-                Collections.shuffle(connectedComponents);
+                //Collections.shuffle(connectedComponents);
                 List<Integer> orderedIndices = new ArrayList<>();
                 for (int i = 0; i < dataPoints.length; i++) {
                     orderedIndices.add(i);
                 }
                 Collections.shuffle(orderedIndices);
 
+                int componentSize = 0;
                 for (int startVertex : orderedIndices) { //In case the graph contains multiple connected components
                     if (finished[startVertex]) {
                         continue;
                     }
                     //visited[startVertex] = true;
-                    heuristicRepresentation[startVertex] = 10*k; //Choose value larger than any distance between points (assumes z-score normalized)
+                    heuristicRepresentation[startVertex] = k; //Choose value larger than any heuristic value
                     originalIndices.add(startVertex);
                     indexInQueue[startVertex] = currentUniqueIndex;
                     frontier.add(currentUniqueIndex);
                     currentUniqueIndex++;
                     while (!frontier.isEmpty()) {
+                        componentSize++;
                         int uniqueIndex = frontier.poll();
                         int vertex = originalIndices.get(uniqueIndex);
                         if (finished[vertex] || indexInQueue[vertex] != uniqueIndex) {
@@ -249,6 +253,10 @@ public class CutGenerators {
                                 currentUniqueIndex++;
                             }
                         }
+                    }
+                    //Avoid small outlier connected components
+                    if (componentSize <= 5) {
+                        heuristicRepresentation[startVertex] = 0.0;
                     }
                 }
 
@@ -277,12 +285,12 @@ public class CutGenerators {
     //Calculates the heuristic value for a given vertex (for KNN initial cut generator)
     private double knnSearchHeuristic(KNNGraph knnGraph, int k, boolean[] inSet, int vertex, boolean directed) {
         double heuristicValue = 0.0;
-        int inSetCount = 0;
-        int notInSetCount = 0;
+        //int inSetCount = 0;
+        //int notInSetCount = 0;
         List[] neighboursAndDistances = knnGraph.getNeighbours(vertex, k, directed);
         List<Integer> neighbours = neighboursAndDistances[0];
         List<Double> distances = neighboursAndDistances[1];
-        for (int i = 0; i < neighbours.size(); i++) {
+        /*for (int i = 0; i < neighbours.size(); i++) {
             int neighbor = neighbours.get(i);
             if (inSet[neighbor]) {
                 inSetCount++;
@@ -290,17 +298,21 @@ public class CutGenerators {
             else {
                 notInSetCount++;
             }
-        }
+        }*/
+        double sum = 0.0;
         for (int i = 0; i < neighbours.size(); i++) {
             int neighbor = neighbours.get(i);
             double weight = distances.get(i);
             if (inSet[neighbor]) {
-                heuristicValue += (weight/inSetCount)*notInSetCount;
+                //heuristicValue += (weight/inSetCount)*notInSetCount;
+                sum += Math.exp(-weight);
             }
             else {
-                heuristicValue -= (weight/notInSetCount)*inSetCount;
+                //heuristicValue -= (weight/notInSetCount)*inSetCount;
+                //heuristicValue += Math.exp(-weight);
             }
         }
+        heuristicValue = k - sum;
         return heuristicValue;
     }
 
