@@ -149,15 +149,14 @@ public class CutGenerators {
         int nComponents = 3;
         List<BitSet[]> bitsets = new ArrayList<>();
 
-        // T-sne
-        if (!useFastVersion) {
+        if (useFastVersion) {
+            double[][] reducedPoints = Model.svd(dataPoints, nComponents);
+            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a));
+        }
+        else {
             double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
             bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a));
         }
-
-        // PCA
-        double[][] reducedPoints = Model.svd(dataPoints, nComponents);
-        bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a));
 
         return mergeCuts(bitsets);
     }
@@ -399,22 +398,25 @@ public class CutGenerators {
                         currentBitSet.unionWith(accumulated);
                         cuts.add(currentBitSet);
                         //Find where to put the cut.
-                        double sum1 = 0.0;
-                        double sum2 = 0.0;
+                        double[] sum1 = new double[dataPoints[0].length];
+                        double[] sum2 = new double[dataPoints[0].length];
                         int count1 = 0;
                         int count2 = 0;
                         for (int k = j+1; k < j+a/precision; k++) {
-                            sum2 += copy[k][i];
+                            sum2 = addVectors(sum2, copy[k]);
                             count2++;
                         }
                         double bestDensity = -1;
                         for (int k = j+1; k < j+a/precision-1; k++) {
-                            sum2 -= copy[k][i];
-                            sum1 += copy[k][i];
+                            sum2 = subtractVectors(sum2, copy[k]);
+                            sum1 = addVectors(sum1, copy[k]);
                             count2--;
                             count1++;
-                            if (count1 > 0 && count2 > 0 && (sum2/count2) - (sum1/count1) > bestDensity) {
-                                bestDensity = (sum2/count2) - (sum1/count1);
+                            double[] avg1 = divideVector(sum1, count1);
+                            double[] avg2 = divideVector(sum2, count2);
+                            double distance = getDistance(avg1, avg2);
+                            if (count1 > 0 && count2 > 0 && distance > bestDensity) {
+                                bestDensity = distance;
                                 cutIndex = k;
                             }
                         }
@@ -427,6 +429,30 @@ public class CutGenerators {
             result[i] = cuts.get(i);
         }
         return result;
+    }
+
+    private double[] addVectors(double[] vector1, double[] vector2) {
+        double[] newVector = new double[vector1.length];
+        for (int i = 0; i < newVector.length; i++) {
+            newVector[i] = vector1[i] + vector2[i];
+        }
+        return newVector;
+    }
+
+    private double[] subtractVectors(double[] vector1, double[] vector2) {
+        double[] newVector = new double[vector1.length];
+        for (int i = 0; i < newVector.length; i++) {
+            newVector[i] = vector1[i] - vector2[i];
+        }
+        return newVector;
+    }
+
+    private double[] divideVector(double[] vector1, double k) {
+        double[] newVector = new double[vector1.length];
+        for (int i = 0; i < newVector.length; i++) {
+            newVector[i] = vector1[i]/k;
+        }
+        return newVector;
     }
 
     //Original initial cut generator using simple axis parallel cuts with specific amount of points between them.
