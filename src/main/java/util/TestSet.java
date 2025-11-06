@@ -184,6 +184,7 @@ public class TestSet {
         int nTests = observedPaths.length;
         int nConfigs = configs.length;
 
+        TestLogger testLogger = new TestLogger(nTests, nConfigs + 1, nRunsPerDataset); //+1 for python
         progressManager.initializeProgress(nTests, nConfigs, nRunsPerDataset);
 
         double[][] averageNMIScores = new double[nTests][nConfigs];
@@ -235,13 +236,15 @@ public class TestSet {
 
                     boolean tuneParameters = config.isTuneParameters();
                     int[] hardClustering = tuneParameters ? model.clusterAuto(dataset, newConfig) : model.cluster(dataset, newConfig);
-                    averageTimes[testIndex][configIndex] += (preTime + (System.currentTimeMillis() - time1)) / 1000.0;
+                    double postTime = (preTime + (System.currentTimeMillis() - time1)) / 1000.0;
+                    averageTimes[testIndex][configIndex] += postTime;
 
                     double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
                     double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
                     averageNMIScores[testIndex][configIndex] += NMI;
                     averageRandIndexScores[testIndex][configIndex] += randIndex;
 
+                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, postTime, NMI, randIndex);
                     progressManager.markTangleSingleRunFinished();
                 }
 
@@ -263,6 +266,7 @@ public class TestSet {
                 NMIPythonResults[testIndex] = NMIPython;
                 randIndexPythonResults[testIndex] = randIndexPython;
                 pythonTimes[testIndex] = pythonResult.y;
+                testLogger.setResult(observedFilePath, progressManager.getTitle(nConfigs - 1), testIndex, nConfigs, 0, pythonResult.y, NMIPython, randIndexPython);
                 progressManager.markPythonFinished(testIndex, pythonTimes[testIndex], NMIPythonResults[testIndex], randIndexPythonResults[testIndex]);
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);
@@ -310,6 +314,9 @@ public class TestSet {
         }
 
         progressManager.fireAllFinished();
+
+        //testLogger.printResults();
+        //testLogger.writeResultsCSV("test_results.csv");
     }
 
     private int getNumberOfClusters(int[] clustering) {

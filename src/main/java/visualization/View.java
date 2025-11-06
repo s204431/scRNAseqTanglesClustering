@@ -80,16 +80,22 @@ public class View {
         String[] titles;
         Config[] configs;
         if (selectedConfigFiles.length > 0) {
-            titles = new String[selectedConfigFiles.length + 1];
+            titles = new String[selectedConfigFiles.length + (compareWithStandardPipeline ? 1 : 0)];
             configs = new Config[selectedConfigFiles.length];
             for (int i = 0; i < selectedConfigFiles.length; i++) {
                 String fileName = selectedConfigFiles[i].getName();
                 titles[i] = fileName.replace(".txt", "");
                 configs[i] = Config.loadConfiguration(fileName);
             }
-            titles[selectedConfigFiles.length] = "Scanpy";
-        } else {    // In case no configs were chosen, we use user-defined configs
-            titles = new String[]{"Tangle", "Scanpy"};
+            if (compareWithStandardPipeline) titles[selectedConfigFiles.length] = "Scanpy";
+
+        // In case no configs were chosen, we use user-defined configs from parameter panel
+        } else {
+            if (compareWithStandardPipeline) {
+                titles = new String[]{"Tangle", "Scanpy"};
+            } else {
+                titles = new String[]{"Tangle"};
+            }
             configs = new Config[]{config};
         }
 
@@ -266,9 +272,11 @@ public class View {
     }
 
     public Tuple<int[], Double> getScanpyResult() {
-        monitor.setClusterStartTime(System.currentTimeMillis());
         Tuple<int[], Double> result = Main.runPython(getCurrentFilePath());
-        monitor.setClusterEndTime(System.currentTimeMillis());
+
+        long currentTime = System.currentTimeMillis();
+        monitor.setClusterStartTime((long) (currentTime - (result.y*1000)));
+        monitor.setClusterEndTime(currentTime);
         return result;
     }
 }

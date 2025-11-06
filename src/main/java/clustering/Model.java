@@ -70,7 +70,9 @@ public class Model {
     public void loadDataset(String observedFilePath, int hvg) {
         monitor.setFilePath(observedFilePath);
 
-        String labelFilePath = observedFilePath.replace("observed_counts", "labels");
+        String labelFilePath = "";
+        if (observedFilePath.contains("observed_counts")) labelFilePath = observedFilePath.replace("observed_counts", "labels");
+        else labelFilePath = observedFilePath.replace("obs", "labels");
 
         Tuple<float[][], int[]> data = loadData(observedFilePath, labelFilePath);
         float[][] originalData = data.x;
@@ -674,7 +676,7 @@ public class Model {
                 }
             }
         }
-        //System.out.println("Sparsity: " + ((double)nZeros)/(normalized.length*normalized[0].length));
+        System.out.println("Sparsity: " + ((double)nZeros)/(data.length*data[0].length));
         //System.out.println("Dimension: " + normalized.length + " " + normalized[0].length);
         return data;
     }

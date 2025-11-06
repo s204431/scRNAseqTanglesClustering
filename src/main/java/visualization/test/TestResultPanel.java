@@ -15,7 +15,7 @@ public class TestResultPanel extends JPanel {
     private TestProgressManager testProgressManager;
     private TestProgressManager.Listener testProgressListener;
 
-    private ResultsTable resultsTable = new ResultsTable(0, 3);
+    private ResultsTable resultsTable = new ResultsTable(0, new String[] {""});
     private JTable table = new JTable(resultsTable);
 
     public TestResultPanel(View view, TestProgressManager testProgressManager) {
@@ -128,10 +128,9 @@ public class TestResultPanel extends JPanel {
         resultsTable.setRowValues(3, avgRandIndexScores);
     }
 
-    public void initializeResultsTable() {
+    public void initializeResultsTable(String[] titles) {
         int size = testProgressManager.getSize();
-        int rowSize = testProgressManager.getConfigsSize();
-        resultsTable = new ResultsTable(size, rowSize);
+        resultsTable = new ResultsTable(size, titles);
         table.setModel(resultsTable);
         resizeViewportToRows(size*4 + 4);
     }
@@ -169,13 +168,12 @@ public class TestResultPanel extends JPanel {
 
         private int rowSize;
 
-        public ResultsTable(int size, int rowSize) {
-            this.rowSize = rowSize + 1;
+        public ResultsTable(int size, String[] titles) {
+            this.rowSize = titles.length;
 
             COL_NAMES = new String[rowSize + 1];
-            for (int i = 1; i <= rowSize; i++) {
-                if (testProgressManager == null) COL_NAMES[i] = "";
-                else COL_NAMES[i] = testProgressManager.getTitle(i - 1);
+            for (int i = 0; i < rowSize; i++) {
+                COL_NAMES[i + 1] = titles[i];
             }
             COL_NAMES[0] = "Description";
 

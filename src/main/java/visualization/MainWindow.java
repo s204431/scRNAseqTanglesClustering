@@ -169,7 +169,7 @@ public class MainWindow extends JFrame {
 
         addTestProgressListener(testProgressManager);
 
-        testResultPanel.initializeResultsTable();
+        testResultPanel.initializeResultsTable(titles);
         return testProgressManager;
     }
 
