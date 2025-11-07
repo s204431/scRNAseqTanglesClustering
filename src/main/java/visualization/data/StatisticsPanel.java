@@ -64,9 +64,11 @@ public class StatisticsPanel extends JScrollPane {
         }
         int cells = dataSet.data.length;
         int hvg   = dataSet.data[0].length;
+        double sparsity = dataSet.getSparsity();
         dataSection.clear()
                 .put("Cells", Integer.toString(cells))
                 .put("Highly Variable Genes", Integer.toString(hvg))
+                .put("Sparsity", format(sparsity))
                 .render();
     }
 

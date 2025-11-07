@@ -10,6 +10,7 @@ import java.util.Arrays;
 public class ScRNAseqDataset {
     public double[][] data;
     private int a;
+    private double sparsity;
 
     private BitSet[] initialCuts;
     private double[] cutCosts;
@@ -66,6 +67,10 @@ public class ScRNAseqDataset {
         this.a = a;
     }
 
+    public void setSparsity(double sparsity) {
+        this.sparsity = sparsity;
+    }
+
     public void setInitialCuts(BitSet[] initialCuts) {
         this.initialCuts = initialCuts;
     }
@@ -78,4 +83,7 @@ public class ScRNAseqDataset {
         return cutCosts;
     }
 
+    public double getSparsity() {
+        return sparsity;
+    }
 }

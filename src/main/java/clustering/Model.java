@@ -73,8 +73,8 @@ public class Model {
         Tuple<float[][], int[]> data = loadData(observedFilePath);
         float[][] originalData = data.x;
         groundTruth = data.y;
-        shuffledGroundTruth = groundTruth.clone();
 
+        shuffledGroundTruth = groundTruth.clone();
         Random r = new Random();
         seed = r.nextInt();
         shuffleArray(originalData, seed);
@@ -97,6 +97,7 @@ public class Model {
         //projectedData = tsne(hvgData, 2);
 
         dataset = new ScRNAseqDataset(hvgData);
+        dataset.setSparsity(computeSparsity(originalData));
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
 
