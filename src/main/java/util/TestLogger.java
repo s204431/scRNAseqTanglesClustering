@@ -13,9 +13,9 @@ public class TestLogger {
         this.results = new TestResult[tests][configs];
     }
 
-    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double time, double nmi, double randIndex) {
+    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double sparsity, double time, double nmi, double randIndex) {
         if (results[testIndex][configIndex] == null) {
-            results[testIndex][configIndex] = new TestResult(testName, configName, runs);
+            results[testIndex][configIndex] = new TestResult(testName, configName, runs, sparsity);
         }
         results[testIndex][configIndex].setResult(runIndex, time, nmi, randIndex);
     }
@@ -35,7 +35,7 @@ public class TestLogger {
 
         // Header
         StringBuilder sb = new StringBuilder();
-        sb.append("Test Name,Config Name");
+        sb.append("Test Name,Config Name,Genes,Cells,Depth_Mean,Balanced,Complexity,Sparsity,Runs");
         for (int k = 1; k <= maxRuns; k++) sb.append(",Time_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",NMI_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",RandIndex_").append(k);
@@ -45,7 +45,44 @@ public class TestLogger {
         for (int i = 0; i < tests; i++) {
             for (int j = 0; j < configs; j++) {
                 TestResult result = results[i][j];
-                sb.append(result.testName).append(",").append(result.configName);
+                if (result == null) continue;
+
+                String[] parts = result.testName.split("_");
+                int genes = -1;
+                int cells = -1;
+                int depthMean = -1;
+                boolean balanced = true;
+                String complexity = "unknown";
+                double sparsity = result.sparsity;
+
+                for (String part : parts) {
+                    if (part.contains("genes")) {
+                        genes = Integer.parseInt(part.replace("genes", ""));
+                    } else if (part.contains("cells")) {
+                        cells = Integer.parseInt(part.replace("cells", ""));
+                    } else if (part.contains("depth")) {
+                        if (part.contains("e+")) {
+                            String[] depthParts = part.replace("depth", "").split("e+");
+                            depthMean = (int) (Double.parseDouble(depthParts[0]) * Math.pow(10, Integer.parseInt(depthParts[1])));
+                        } else depthMean = Integer.parseInt(part.replace("depth", ""));
+                    } else if (part.contains("balanced")) {
+                        balanced = Boolean.parseBoolean(part.replace("balanced", ""));
+                    } else if (part.contains("complex")) {
+                        complexity = "complex";
+                    } else if (part.contains("simple")) {
+                        complexity = "simple";
+                    }
+                }
+
+                sb.append(result.testName)
+                        .append(",").append(result.configName)
+                        .append(",").append(genes)
+                        .append(",").append(cells)
+                        .append(",").append(depthMean)
+                        .append(",").append(balanced)
+                        .append(",").append(complexity)
+                        .append(",").append(sparsity)
+                        .append(",").append(runs);
 
                 for (int k = 0; k < maxRuns; k++) {
                     sb.append(",");
@@ -75,13 +112,15 @@ public class TestLogger {
     private class TestResult {
         public final String testName;
         public final String configName;
+        public final double sparsity;
         public final double[] times;
         public final double[] nmis;
         public final double[] randIndices;
 
-        public TestResult(String testName, String configName, int runs) {
+        public TestResult(String testName, String configName, int runs, double sparsity) {
             this.testName = testName;
             this.configName = configName;
+            this.sparsity = sparsity;
             this.times = new double[runs];
             this.nmis = new double[runs];
             this.randIndices = new double[runs];
@@ -97,7 +136,7 @@ public class TestLogger {
         public String toString() {
             StringBuilder sb = new StringBuilder();
 
-            sb.append("Test: ").append(testName).append(", Config: ").append(configName).append("\n");
+            sb.append("Test: ").append(testName).append(", Config: ").append(configName).append(", Sparsity").append(sparsity).append("\n");
 
             for (int i = 0; i < times.length; i++) {
                 sb.append(" Run ").append(i + 1).append(": Time = ").append(times[i])

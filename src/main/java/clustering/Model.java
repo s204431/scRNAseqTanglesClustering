@@ -807,4 +807,15 @@ public class Model {
         return softClustering;
     }
 
+    public double computeSparsity(float[][] originalData) {
+        int nZeros = 0;
+        for (int i = 0; i < originalData.length; i++) {
+            for (int j = 0; j < originalData[i].length; j++) {
+                if (originalData[i][j] == 0.0) {
+                    nZeros++;
+                }
+            }
+        }
+        return ((double)nZeros)/(originalData.length*originalData[0].length);
+    }
 }

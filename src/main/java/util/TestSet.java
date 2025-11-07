@@ -168,6 +168,7 @@ public class TestSet {
             Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath);
             float[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
+            double sparsity = model.computeSparsity(originalData);
 
             Random r = new Random();
             int seed = r.nextInt();
@@ -209,7 +210,7 @@ public class TestSet {
                     averageNMIScores[testIndex][configIndex] += NMI;
                     averageRandIndexScores[testIndex][configIndex] += randIndex;
 
-                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, postTime, NMI, randIndex);
+                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex);
                     progressManager.markTangleSingleRunFinished();
                 }
 
@@ -231,7 +232,7 @@ public class TestSet {
                 NMIPythonResults[testIndex] = NMIPython;
                 randIndexPythonResults[testIndex] = randIndexPython;
                 pythonTimes[testIndex] = pythonResult.y;
-                testLogger.setResult(observedFilePath, progressManager.getTitle(nConfigs - 1), testIndex, nConfigs, 0, pythonResult.y, NMIPython, randIndexPython);
+                testLogger.setResult(observedFilePath, progressManager.getTitle(nConfigs), testIndex, nConfigs, 0, sparsity, pythonResult.y, NMIPython, randIndexPython);
                 progressManager.markPythonFinished(testIndex, pythonTimes[testIndex], NMIPythonResults[testIndex], randIndexPythonResults[testIndex]);
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);
@@ -280,8 +281,8 @@ public class TestSet {
 
         progressManager.fireAllFinished();
 
-        //testLogger.printResults();
-        //testLogger.writeResultsCSV("test_results.csv");
+        testLogger.printResults();
+        testLogger.writeResultsCSV("test_results.csv");
     }
 
     private int getNumberOfClusters(int[] clustering) {
