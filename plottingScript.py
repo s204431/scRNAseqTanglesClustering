@@ -7,6 +7,20 @@ import matplotlib.pyplot as plt
 
 SAVE_FIGURES = False
 
+plt.rcParams.update({
+    "font.size": 10,
+    "axes.titlesize": 10,
+    "axes.labelsize": 10,
+    "xtick.labelsize": 9,
+    "ytick.labelsize": 9,
+    "legend.fontsize": 9
+})
+
+# size helpers: ~3.5" wide per panel so two subfigures fit side-by-side
+PANEL_WIDTH = 3.5   # inches per panel (horizontally)
+FIG_HEIGHT  = 3.2   # inches tall (compact but readable)
+SAVE_DPI    = 400   # higher DPI for sharpness in LaTeX
+
 
 
 df = pd.read_csv("test_results.csv")
@@ -45,7 +59,7 @@ long["Balanced_bool"] = (
 # Some handy lists
 test_names = sorted(df["Test Name"].unique().tolist())
 metrics = ["NMI", "RandIndex", "Time"]
-metrics_to_plot = ["NMI", "RandIndex"]  # focus on these two
+metrics_to_plot = ["NMI", "RandIndex"]
 
 # Consistent config order across *all* panels
 configs_order = sorted(long["Config Name"].unique().tolist())
@@ -142,7 +156,7 @@ subset_high = long.query("Metric in @metrics_to_plot and Sparsity >  @LOW_SPARSI
 subset_low_agg  = per_run_means(subset_low)
 subset_high_agg = per_run_means(subset_high)
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(PANEL_WIDTH*2, FIG_HEIGHT), sharey=True)
 
 grouped_boxplot(axes[0], subset_low_agg,  f"LOW sparsity ≤ {LOW_SPARSITY_MAX}",
                 metrics_to_plot, metric_color, configs_order, fix_01=True, show_means=True)
@@ -154,9 +168,9 @@ for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
 axes[0].legend(title="Metric", loc="best")
 
-fig.suptitle("NMI vs RandIndex by Config across Sparsity Conditions (per-run means)", fontsize=12)
+fig.suptitle("Quality - Sparsity (per-run means)", fontsize=12)
 plt.tight_layout()
-if SAVE_FIGURES: plt.savefig("plots/SparsityPlot.png", dpi=300, bbox_inches="tight")
+if SAVE_FIGURES: plt.savefig("plots/Quality_Sparsity.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 
@@ -167,7 +181,7 @@ subsets_cells = [(c, per_run_means(long.query("Metric in @metrics_to_plot and Ce
                  for c in cells_to_plot]
 
 n = len(subsets_cells)
-fig, axes = plt.subplots(1, n, figsize=(6 + 3*n, 5), sharey=True)
+fig, axes = plt.subplots(1, n, figsize=(PANEL_WIDTH*n, FIG_HEIGHT), sharey=True)
 if n == 1:
     axes = [axes]
 
@@ -180,9 +194,9 @@ for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
 axes[0].legend(title="Metric", loc="best")
 
-fig.suptitle("NMI vs RandIndex by Config across Cell Counts (per-run means)", fontsize=12)
+fig.suptitle("Quality - Cell Counts (per-run means)", fontsize=12)
 plt.tight_layout()
-if SAVE_FIGURES: plt.savefig("plots/CellCountPlot.png", dpi=300, bbox_inches="tight")
+if SAVE_FIGURES: plt.savefig("plots/Quality_Cell_Count.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 
@@ -193,7 +207,7 @@ subsets_comp = [(comp, per_run_means(long.query("Metric in @metrics_to_plot and 
                 for comp in complexities_to_plot]
 
 n = len(subsets_comp)
-fig, axes = plt.subplots(1, n, figsize=(6 + 3*n, 5), sharey=True)
+fig, axes = plt.subplots(1, n, figsize=(PANEL_WIDTH*n, FIG_HEIGHT), sharey=True)
 if n == 1:
     axes = [axes]
 
@@ -206,9 +220,9 @@ for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
 axes[0].legend(title="Metric", loc="best")
 
-fig.suptitle("NMI vs RandIndex by Config across Complexity (per-run means)", fontsize=12)
+fig.suptitle("Quality - Complexity (per-run means)", fontsize=12)
 plt.tight_layout()
-if SAVE_FIGURES: plt.savefig("plots/ComplexityPlot.png", dpi=300, bbox_inches="tight")
+if SAVE_FIGURES: plt.savefig("plots/Quality_Complexity.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 
@@ -220,7 +234,7 @@ subsets_bal = [(label, per_run_means(long.query("Metric in @metrics_to_plot and 
                for val, label in panels_balanced]
 
 n = len(subsets_bal)
-fig, axes = plt.subplots(1, n, figsize=(6 + 3*n, 5), sharey=True)
+fig, axes = plt.subplots(1, n, figsize=(PANEL_WIDTH*n, FIG_HEIGHT), sharey=True)
 if n == 1:
     axes = [axes]
 
@@ -233,9 +247,9 @@ for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
 axes[0].legend(title="Metric", loc="best")
 
-fig.suptitle("NMI vs RandIndex by Config — Balanced vs Unbalanced (per-run means)", fontsize=12)
+fig.suptitle("Quality - Balanced vs Unbalanced (per-run means)", fontsize=12)
 plt.tight_layout()
-if SAVE_FIGURES: plt.savefig("plots/BalancedPlot.png", dpi=300, bbox_inches="tight")
+if SAVE_FIGURES: plt.savefig("plots/Quality_Balanced.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% All tests: box = variation across runs (mean over tests)
@@ -253,13 +267,13 @@ agg_runs = (
 )
 
 # 3) Single plot: boxes per Config, side-by-side for NMI & RandIndex
-fig, ax = plt.subplots(figsize=(10, 5))
+fig, ax = plt.subplots(figsize=(PANEL_WIDTH, FIG_HEIGHT))
 
 # Reuse your color map & ordering (defined earlier)
 _ = grouped_boxplot(
     ax,
     agg_runs,
-    title="All tests — per-run means (box shows variation across runs)",
+    title="Quality - all tests (per-run means)",
     metrics_to_plot=metrics_to_plot,
     metric_color=metric_color,
     configs_order=configs_order,
@@ -274,5 +288,181 @@ for m in metrics_to_plot:
 ax.legend(title="Metric", loc="best")
 
 plt.tight_layout()
-if SAVE_FIGURES: plt.savefig("plots/AllTests.png", dpi=300, bbox_inches="tight")
+if SAVE_FIGURES: plt.savefig("plots/Quality_AllTests.png", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+
+
+#%% TIME PLOTS
+# ==== Running time figures (per-run means across tests) ====
+
+# One metric for these panels
+metrics_to_plot_time = ["Time"]
+
+# Color map for time (single metric still needs a color)
+colors_time = plt.cm.Set2(np.linspace(0, 1, len(metrics_to_plot_time)))
+metric_color_time = {m: colors_time[i] for i, m in enumerate(metrics_to_plot_time)}
+
+# Optional: log-scale for time if there is a wide range
+USE_LOG_TIME = False
+
+# Ensure plots/ exists when saving
+if SAVE_FIGURES:
+    import os
+    os.makedirs("plots", exist_ok=True)
+
+# ---------- Sparsity (LOW vs HIGH) ----------
+subset_low_t  = long.query("Metric in @metrics_to_plot_time and Sparsity <= @LOW_SPARSITY_MAX")
+subset_high_t = long.query("Metric in @metrics_to_plot_time and Sparsity >  @LOW_SPARSITY_MAX")
+
+subset_low_t_agg  = per_run_means(subset_low_t)
+subset_high_t_agg = per_run_means(subset_high_t)
+
+fig, axes = plt.subplots(1, 2, figsize=(PANEL_WIDTH*2, FIG_HEIGHT), sharey=True)
+
+grouped_boxplot(axes[0], subset_low_t_agg,  f"LOW sparsity ≤ {LOW_SPARSITY_MAX}",
+                metrics_to_plot_time, metric_color_time, configs_order,
+                fix_01=False, show_means=True)
+grouped_boxplot(axes[1], subset_high_t_agg, f"HIGH sparsity > {LOW_SPARSITY_MAX}",
+                metrics_to_plot_time, metric_color_time, configs_order,
+                fix_01=False, show_means=True)
+
+if USE_LOG_TIME:
+    axes[0].set_yscale("log")
+    axes[1].set_yscale("log")
+
+axes[0].set_ylabel("Time (s)")
+axes[0].set_ylim(bottom=0)
+# Legend (single metric)
+for m in metrics_to_plot_time:
+    axes[0].plot([], [], color=metric_color_time[m], label=m)
+axes[0].legend(title="Metric", loc="best")
+
+fig.suptitle("Runtime - Sparsity (per-run means)", fontsize=12)
+plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/Time_Sparsity.png", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# ---------- Cells ----------
+cells_to_plot = sorted(df['Cells'].unique().tolist())
+subsets_cells_t = [(c, per_run_means(long.query("Metric in @metrics_to_plot_time and Cells == @c")))
+                   for c in cells_to_plot]
+
+n = len(subsets_cells_t)
+fig, axes = plt.subplots(1, n, figsize=(PANEL_WIDTH*n, FIG_HEIGHT), sharey=True)
+if n == 1:
+    axes = [axes]
+
+for ax, (cells, subdf) in zip(axes, subsets_cells_t):
+    grouped_boxplot(ax, subdf, f"Cells = {cells}",
+                    metrics_to_plot_time, metric_color_time, configs_order,
+                    fix_01=False, show_means=True)
+
+if USE_LOG_TIME:
+    for ax in axes:
+        ax.set_yscale("log")
+
+axes[0].set_ylabel("Time (s)")
+axes[0].set_ylim(bottom=0)
+for m in metrics_to_plot_time:
+    axes[0].plot([], [], color=metric_color_time[m], label=m)
+axes[0].legend(title="Metric", loc="best")
+
+fig.suptitle("Runtime - Cell Counts (per-run means)", fontsize=12)
+plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/Time_Cells.png", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# ---------- Complexity ----------
+complexities_to_plot = ["simple", "complex"]
+subsets_comp_t = [(comp, per_run_means(long.query("Metric in @metrics_to_plot_time and Complexity == @comp")))
+                  for comp in complexities_to_plot]
+
+n = len(subsets_comp_t)
+fig, axes = plt.subplots(1, n, figsize=(PANEL_WIDTH*n, FIG_HEIGHT), sharey=True)
+if n == 1:
+    axes = [axes]
+
+for ax, (comp, subdf) in zip(axes, subsets_comp_t):
+    grouped_boxplot(ax, subdf, f"Complexity = {comp}",
+                    metrics_to_plot_time, metric_color_time, configs_order,
+                    fix_01=False, show_means=True)
+
+if USE_LOG_TIME:
+    for ax in axes:
+        ax.set_yscale("log")
+
+axes[0].set_ylabel("Time (s)")
+axes[0].set_ylim(bottom=0)
+for m in metrics_to_plot_time:
+    axes[0].plot([], [], color=metric_color_time[m], label=m)
+axes[0].legend(title="Metric", loc="best")
+
+fig.suptitle("Runtime - Complexity (per-run means)", fontsize=12)
+plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/Time_Complexity.png", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# ---------- Balanced ----------
+panels_balanced = [(True,  "Balanced = True"),
+                   (False, "Balanced = False")]
+subsets_bal_t = [(label, per_run_means(long.query("Metric in @metrics_to_plot_time and Balanced_bool == @val")))
+                 for val, label in panels_balanced]
+
+n = len(subsets_bal_t)
+fig, axes = plt.subplots(1, n, figsize=(PANEL_WIDTH*n, FIG_HEIGHT), sharey=True)
+if n == 1:
+    axes = [axes]
+
+for ax, (label, subdf) in zip(axes, subsets_bal_t):
+    grouped_boxplot(ax, subdf, label,
+                    metrics_to_plot_time, metric_color_time, configs_order,
+                    fix_01=False, show_means=True)
+
+if USE_LOG_TIME:
+    for ax in axes:
+        ax.set_yscale("log")
+
+axes[0].set_ylabel("Time (s)")
+axes[0].set_ylim(bottom=0)
+for m in metrics_to_plot_time:
+    axes[0].plot([], [], color=metric_color_time[m], label=m)
+axes[0].legend(title="Metric", loc="best")
+
+fig.suptitle("Runtime - Balanced vs Unbalanced (per-run means)", fontsize=12)
+plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/Time_Balanced.png", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# ---------- All tests summary: per-run means across tests ----------
+subset_all_t = long.query("Metric in @metrics_to_plot_time")
+agg_runs_t = (subset_all_t
+              .groupby(["Config Name", "Metric", "Run"], as_index=False)
+              .agg(Value=("Value", "mean")))
+
+fig, ax = plt.subplots(figsize=(PANEL_WIDTH, FIG_HEIGHT))
+grouped_boxplot(ax, agg_runs_t,
+                title="Runtime - all tests (per-run means)",
+                metrics_to_plot=metrics_to_plot_time,
+                metric_color=metric_color_time,
+                configs_order=configs_order,
+                fix_01=False,
+                show_means=True)
+
+if USE_LOG_TIME:
+    ax.set_yscale("log")
+
+ax.set_ylabel("Time (s)")
+ax.set_ylim(bottom=0)
+for m in metrics_to_plot_time:
+    ax.plot([], [], color=metric_color_time[m], label=m)
+ax.legend(title="Metric", loc="best")
+
+plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/Time_AllTests.png", dpi=300, bbox_inches="tight")
 plt.show()
