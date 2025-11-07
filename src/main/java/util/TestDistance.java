@@ -19,8 +19,7 @@ public class TestDistance {
         int[][] fullGroundTruths = new int[dataPaths.length][];
         for (int i = 0; i < dataPaths.length; i++) {
             String path = dataPaths[i];
-            String labelFilePath = path.replace("observed_counts", "labels");
-            Tuple<float[][], int[]> loaded = model.loadData(path, labelFilePath);
+            Tuple<float[][], int[]> loaded = model.loadData(path);
             float[][] originalData = loaded.x;
             float[][] normalizedData = normalize ? model.logNormalize(originalData) : originalData;
             int[] groundTruth = loaded.y;

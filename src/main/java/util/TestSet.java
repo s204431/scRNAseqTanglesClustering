@@ -15,7 +15,6 @@ public class TestSet {
 
     private String dirPath;
     public String[] observedPaths;
-    public String[] labelsPaths;
     private Model model;
 
     public double[] averageNMIScores;
@@ -31,33 +30,15 @@ public class TestSet {
         File dir = new File(directoryPath);
         String[] filePaths = dir.list();
         observedPaths = new String[filePaths.length/2]; //Assuming that only the required files are there.
-        labelsPaths = new String[filePaths.length/2];
 
         //Find all observed and labels file paths.
-        int index1 = 0;
-        int index2 = 0;
+        int index = 0;
         for (int i = 0; i < filePaths.length; i++) {
             if (filePaths[i].contains("observed_counts")) {
-                observedPaths[index1] = filePaths[i];
-                index1++;
-            }
-            else {
-                labelsPaths[index2] = filePaths[i];
-                index2++;
+                observedPaths[index] = filePaths[i];
+                index++;
             }
         }
-
-        //Match observed and labels
-        String[] newLabelsPaths = new String[labelsPaths.length];
-        for (int i = 0; i < observedPaths.length; i++) {
-            for (int j = 0; j < labelsPaths.length; j++) {
-                if (observedPaths[i].replace("observed_counts", "").equals(labelsPaths[j].replace("labels", ""))) {
-                    newLabelsPaths[i] = labelsPaths[j];
-                    break;
-                }
-            }
-        }
-        labelsPaths = newLabelsPaths;
     }
 
     public TestSet(Model model, File[] files) {
@@ -65,23 +46,9 @@ public class TestSet {
         dirPath = files[0].getParent();
 
         observedPaths = new String[files.length];
-        labelsPaths = new String[files.length];
         for (int i = 0; i < files.length; i++) {
             observedPaths[i] = files[i].getAbsolutePath().replace(dirPath + "\\", "");
-            labelsPaths[i] = observedPaths[i].replace("observed_counts", "labels");
         }
-
-        //Match observed and labels
-        String[] newLabelsPaths = new String[labelsPaths.length];
-        for (int i = 0; i < observedPaths.length; i++) {
-            for (int j = 0; j < labelsPaths.length; j++) {
-                if (observedPaths[i].replace("observed_counts", "").equals(labelsPaths[j].replace("labels", ""))) {
-                    newLabelsPaths[i] = labelsPaths[j];
-                    break;
-                }
-            }
-        }
-        labelsPaths = newLabelsPaths;
     }
 
     public void run(int nRunsPerDataset, boolean runPython) {
@@ -97,8 +64,7 @@ public class TestSet {
 
         for (int i = 0; i < observedPaths.length; i++) {
             String observedFilePath = observedPaths[i];
-            String labelFilePath = labelsPaths[i];
-            Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath, dirPath + "/" + labelFilePath);
+            Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" +  observedFilePath);
             float[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
 
@@ -199,8 +165,7 @@ public class TestSet {
             if (progressManager.testingStopped()) return;
 
             String observedFilePath = observedPaths[testIndex];
-            String labelFilePath = labelsPaths[testIndex];
-            Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath, dirPath + "/" + labelFilePath);
+            Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath);
             float[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
 

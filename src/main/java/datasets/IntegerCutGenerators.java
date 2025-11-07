@@ -1,10 +1,9 @@
 package datasets;
 
+import clustering.Model;
 import util.BitSet;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static datasets.CutGenerators.mergeSort;
 
@@ -134,6 +133,78 @@ public class IntegerCutGenerators {
 
             cuts[i] = currentBitSet;
 
+        }
+        return cuts;
+    }
+
+    public BitSet[] getInitialCutsDimensionSimilarity(double[][] dataPoints, int a) {
+        int maxDimensions = 1000;
+
+        double[][] reducedPoints = new double[dataPoints.length][Math.min(dataPoints[0].length, maxDimensions)];
+        for (int i = 0; i < reducedPoints.length; i++) {
+            for (int j = 0; j < reducedPoints[i].length; j++) {
+                reducedPoints[i][j] = dataPoints[i][j];
+            }
+        }
+
+        BitSet[] cuts = new BitSet[reducedPoints[0].length];
+
+        int[][] sortedLocation = new int[reducedPoints.length][reducedPoints[0].length];
+        int[][] dataPointLocation = new int[reducedPoints.length][reducedPoints[0].length];
+
+        for (int i = 0; i < reducedPoints[0].length; i++) {
+            Integer[] pointerArray = new Integer[reducedPoints.length];
+            for (int j = 0; j < pointerArray.length; j++) {
+                pointerArray[j] = j;
+            }
+            int index = i;
+            Arrays.sort(pointerArray, Comparator.comparingDouble(v -> reducedPoints[v][index]));
+            for (int j = 0; j < pointerArray.length; j++) {
+                sortedLocation[pointerArray[j]][i] = j;
+                dataPointLocation[j][i] = pointerArray[j];
+            }
+        }
+
+        for (int i = 0; i < reducedPoints[0].length; i++) {
+            double totalCost = 0;
+            double minCost = Double.MAX_VALUE;
+            int bestIndex = -1;
+            for (int j = 0; j < dataPointLocation.length-a; j++) {
+                int dataPoint = dataPointLocation[j][i];
+                for (int d = 0; d < reducedPoints[0].length; d++) {
+                    if (d == i) {
+                        continue;
+                    }
+                    int location = sortedLocation[dataPoint][d];
+                    int original1 = location-1 >= 0 ? sortedLocation[dataPointLocation[location-1][d]][i] : -1;
+                    int original2 = location+1 < dataPointLocation.length ? sortedLocation[dataPointLocation[location+1][d]][i] : -1;
+                    if (original1 >= 0 && j > original1) {
+                        totalCost--;
+                    }
+                    else if (original1 >= 0) {
+                        totalCost++;
+                    }
+                    if (original2 >= 0 && j > original2) {
+                        totalCost--;
+                    }
+                    else if (original2 >= 0) {
+                        totalCost++;
+                    }
+                }
+                double costNormalized = totalCost/Math.min(j+1, reducedPoints.length-j);
+                //double costNormalized = totalCost;
+                //System.out.print(costNormalized + ", ");
+                if (j >= a && costNormalized < minCost) {
+                    minCost = costNormalized;
+                    bestIndex = j;
+                }
+            }
+            //System.out.println(bestIndex + " " + minCost);
+            BitSet cut = new BitSet(reducedPoints.length);
+            for (int j = 0; j <= bestIndex; j++) {
+                cut.setValue(dataPointLocation[j][i], true);
+            }
+            cuts[i] = cut;
         }
         return cuts;
     }

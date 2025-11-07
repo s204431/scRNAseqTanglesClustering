@@ -70,11 +70,7 @@ public class Model {
     public void loadDataset(String observedFilePath, int hvg) {
         monitor.setFilePath(observedFilePath);
 
-        String labelFilePath = "";
-        if (observedFilePath.contains("observed_counts")) labelFilePath = observedFilePath.replace("observed_counts", "labels");
-        else labelFilePath = observedFilePath.replace("obs", "labels");
-
-        Tuple<float[][], int[]> data = loadData(observedFilePath, labelFilePath);
+        Tuple<float[][], int[]> data = loadData(observedFilePath);
         float[][] originalData = data.x;
         groundTruth = data.y;
         shuffledGroundTruth = groundTruth.clone();
@@ -516,9 +512,13 @@ public class Model {
         return tsne(encoded.toDoubleMatrix(), nComponents);
     }
 
-    public Tuple<float[][], int[]> loadData(String observedFilePath, String labelsFilePath) {
+    public Tuple<float[][], int[]> loadData(String observedFilePath) {
+        String labelFilePath = "";
+        if (observedFilePath.contains("observed_counts")) labelFilePath = observedFilePath.replace("observed_counts", "labels");
+        else labelFilePath = observedFilePath.replace("obs", "labels");
+
         if (observedFilePath.endsWith(".csv")) {
-            return new Tuple<>(readCSV(observedFilePath), loadGroundTruthCSV(labelsFilePath));
+            return new Tuple<>(readCSV(observedFilePath), loadGroundTruthCSV(labelFilePath));
         }
         else if (observedFilePath.endsWith(".h5ad")) {
             return readH5AD(observedFilePath);

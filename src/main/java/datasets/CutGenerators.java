@@ -112,7 +112,7 @@ public class CutGenerators {
 
         //dataPoints = Model.pca(dataPoints, 100);
 
-        int nComponents = 3;
+        int nComponents = 10;
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
