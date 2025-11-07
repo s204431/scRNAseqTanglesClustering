@@ -112,7 +112,8 @@ public class CutGenerators {
 
         //dataPoints = Model.pca(dataPoints, 100);
 
-        int nComponents = 10;
+        int nComponentsTSNE = 3;
+        int nComponentsPCA = 10;
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
@@ -126,21 +127,11 @@ public class CutGenerators {
 
         }*/
         if (!useFastVersion) {
-            double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
-            //for (int i = a; i < dataPoints.length; i *= 2) {
-                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a));
-            //}
-        }
-        /*try {
-            bitSets.add(getInitialCutsLocalMeans(Model.umap(dataPoints, nComponents), a));
-        }
-        catch (Exception e) {
-
-        }*/
-        double[][] reducedPoints = Model.svd(dataPoints, nComponents);
-        //for (int i = a; i < dataPoints.length; i *= 2) {
+            double[][] reducedPoints = Model.tsne(dataPoints, nComponentsTSNE);
             bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a));
-        //}
+        }
+        double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA);
+        bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a));
 
         return mergeCuts(bitSets);
     }
