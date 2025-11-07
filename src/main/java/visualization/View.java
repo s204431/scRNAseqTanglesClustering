@@ -178,8 +178,13 @@ public class View {
     }
 
     public void loadDataset() {
-        points = Model.svd(model.getHvgData(), 100);
-        points = Model.tsne(points, 2);
+        points = model.getHvgData();
+        if (points.length > 4000) {
+            points = Model.svd(points, 2);
+        } else {
+            points = Model.svd(points, 100);
+            points = Model.tsne(points, 2);
+        }
         points = Main.zScoreNorm(points);
 
         SwingUtilities.invokeLater(() -> {

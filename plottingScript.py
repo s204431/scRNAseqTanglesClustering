@@ -5,6 +5,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+SAVE_FIGURES = False
+
+
+
 df = pd.read_csv("test_results.csv")
 
 # Number of runs (assumed constant)
@@ -152,6 +156,7 @@ axes[0].legend(title="Metric", loc="best")
 
 fig.suptitle("NMI vs RandIndex by Config across Sparsity Conditions (per-run means)", fontsize=12)
 plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/SparsityPlot.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 
@@ -177,8 +182,8 @@ axes[0].legend(title="Metric", loc="best")
 
 fig.suptitle("NMI vs RandIndex by Config across Cell Counts (per-run means)", fontsize=12)
 plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/CellCountPlot.png", dpi=300, bbox_inches="tight")
 plt.show()
-
 
 
 # %% Complexity panels — per-run means
@@ -203,8 +208,8 @@ axes[0].legend(title="Metric", loc="best")
 
 fig.suptitle("NMI vs RandIndex by Config across Complexity (per-run means)", fontsize=12)
 plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/ComplexityPlot.png", dpi=300, bbox_inches="tight")
 plt.show()
-
 
 
 # %% Balanced panels — per-run means
@@ -230,8 +235,8 @@ axes[0].legend(title="Metric", loc="best")
 
 fig.suptitle("NMI vs RandIndex by Config — Balanced vs Unbalanced (per-run means)", fontsize=12)
 plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/BalancedPlot.png", dpi=300, bbox_inches="tight")
 plt.show()
-
 
 # %% All tests: box = variation across runs (mean over tests)
 
@@ -269,4 +274,5 @@ for m in metrics_to_plot:
 ax.legend(title="Metric", loc="best")
 
 plt.tight_layout()
+if SAVE_FIGURES: plt.savefig("plots/AllTests.png", dpi=300, bbox_inches="tight")
 plt.show()
