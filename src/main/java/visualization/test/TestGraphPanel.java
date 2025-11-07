@@ -132,13 +132,15 @@ public class TestGraphPanel extends JPanel {
             }
 
             // Python
-            String pyName = testProgressManager.getTitle(nConfigs);
-            double py = switch (metric) {
-                case NMI  -> testProgressManager.getPythonNMI(test);
-                case RAND -> testProgressManager.getPythonRandIdx(test);
-                case TIME -> testProgressManager.getPythonTime(test);
-            };
-            if (py > 0) dataSet.addValue(py, pyName, ""+(test + 1));
+            if (testProgressManager.getTitleCount() != nConfigs) {
+                String pyName = testProgressManager.getTitle(nConfigs);
+                double py = switch (metric) {
+                    case NMI -> testProgressManager.getPythonNMI(test);
+                    case RAND -> testProgressManager.getPythonRandIdx(test);
+                    case TIME -> testProgressManager.getPythonTime(test);
+                };
+                dataSet.addValue(py, pyName, "" + (test + 1));
+            }
         }
 
         JFreeChart chart = ChartFactory.createBarChart(title, xLabel, yLabel, dataSet, PlotOrientation.VERTICAL, true, false, false);

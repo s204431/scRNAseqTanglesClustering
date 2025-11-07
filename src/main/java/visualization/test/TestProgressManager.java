@@ -194,4 +194,8 @@ public class TestProgressManager {
     public void fireAllFinished() {
         for (Listener l : listeners) l.onAllFinished();
     }
+
+    public int getTitleCount() {
+        return titles.length;
+    }
 }
