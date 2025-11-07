@@ -137,6 +137,7 @@ public class TopPanel extends JPanel {
                     try (Stream<Path> s = Files.walk(f.toPath())) {
                         s.filter(p -> Files.isRegularFile(p))
                                 .filter(p -> p.toString().contains("observed_counts"))
+                                .filter(p -> p.toString().contains("obs"))
                                 .filter(p -> p.toString().endsWith(".csv"))
                                 .forEach(p -> allFiles.add(p.toFile()));
                     } catch (IOException ex) {

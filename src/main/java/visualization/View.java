@@ -72,6 +72,7 @@ public class View {
         File[] selectedTestFiles = window.getSelectedTestFiles();
         if (selectedTestFiles == null || selectedTestFiles.length == 0) {
             System.out.println("No test files were selected.");
+            window.stopTesting();
             return;
         }
 
