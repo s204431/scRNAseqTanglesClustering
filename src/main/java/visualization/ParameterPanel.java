@@ -249,14 +249,14 @@ public class ParameterPanel extends JPanel {
         // ==================== Check Box Logic ==================== //
         autoComputeACheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            aField.setEditable(!isChecked);
-            aField.setEnabled(!isChecked);
+            aField.setEditable(!parameterTuningCheckBox.isSelected() && !isChecked);
+            aField.setEnabled(!parameterTuningCheckBox.isSelected() && !isChecked);
         });
 
         autoComputePsiCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            psiField.setEditable(!isChecked);
-            psiField.setEnabled(!isChecked);
+            psiField.setEditable(!parameterTuningCheckBox.isSelected() && !isChecked);
+            psiField.setEnabled(!parameterTuningCheckBox.isSelected() && !isChecked);
         });
 
         parameterTuningCheckBox.addItemListener(e -> {
@@ -265,10 +265,10 @@ public class ParameterPanel extends JPanel {
             //autoComputeACheckBox.setEnabled(!isChecked);
             //autoComputePsiCheckBox.setSelected(false);
             //autoComputePsiCheckBox.setEnabled(!isChecked);
-            aField.setEditable(!isChecked);
-            aField.setEnabled(!isChecked);
-            psiField.setEditable(!isChecked);
-            psiField.setEnabled(!isChecked);
+            aField.setEditable(!autoComputeACheckBox.isSelected() && !isChecked);
+            aField.setEnabled(!autoComputeACheckBox.isSelected() && !isChecked);
+            psiField.setEditable(!autoComputePsiCheckBox.isSelected() && !isChecked);
+            psiField.setEnabled(!autoComputePsiCheckBox.isSelected() && !isChecked);
         });
 
 

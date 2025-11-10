@@ -299,6 +299,8 @@ public class Model {
     }
 
     public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
+        monitor.setClusterStartTime(System.currentTimeMillis());
+
         String highLevelCutGenerator = config.getHighLevelCutGeneratorName();
         String lowLevelCutGenerator = config.getLowLevelCutGeneratorName();
         String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
@@ -334,6 +336,7 @@ public class Model {
         double bestSilhuetteScore = -1;
         int bestA = -1;
         double bestPsi = -1;
+        TangleSearchTree[] bestTrees = null;
 
         double maxPsi = config.isAutoComputePsi() ? 0.0 : 1.0;
         int minClusters = config.isAutoComputePsi() ? 2 : 2;
@@ -359,10 +362,16 @@ public class Model {
                     bestHardClustering = hardClustering;
                     bestA = a2;
                     bestPsi = psi;
+                    bestTrees = new TangleSearchTree[] { monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree() };
                 }
                 //System.out.println(silhouetteScore);
             }
         }
+
+        monitor.setClusterEndTime(System.currentTimeMillis());
+        monitor.setUncondensedTree(bestTrees[0]);
+        monitor.setSplitPrunedTree(bestTrees[1]);
+        monitor.setCondensedTree(bestTrees[2]);
 
         softClustering = bestSoftClustering;
         hardClustering = bestHardClustering;
