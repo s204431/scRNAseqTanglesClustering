@@ -128,12 +128,33 @@ public class CutGenerators {
         }*/
         if (!useFastVersion) {
             double[][] reducedPoints = Model.tsne(dataPoints, nComponentsTSNE);
-            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a));
+            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, true));
         }
-        double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA);
-        bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a));
+
+        if (lowLevelCutGenerator.equals(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN)) {
+            double[][] reducedPoints = Model.svd(dataPoints, 10);
+            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
+            for (int n : new int[] {5, 4, 3, 2}) {
+                reducedPoints = getFirstDimensions(reducedPoints, n);
+                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
+            }
+        }
+        else {
+            double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA);
+            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
+        }
 
         return mergeCuts(bitSets);
+    }
+
+    private double[][] getFirstDimensions(double[][] data, int n) {
+        double[][] newData = new double[data.length][n];
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < n; j++) {
+                newData[i][j] = data[i][j];
+            }
+        }
+        return newData;
     }
 
     public BitSet[] singleCutGenerator(double[][] dataPoints, String cutGeneratorName, int a, boolean useFastVersion) {
@@ -142,25 +163,25 @@ public class CutGenerators {
 
         if (useFastVersion) {
             double[][] reducedPoints = Model.svd(dataPoints, nComponents);
-            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a));
+            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
         }
         else {
             double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
-            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a));
+            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
         }
 
         return mergeCuts(bitsets);
     }
 
-    public BitSet[] runLowLevelCutGenerator(double[][] reducedData, String cutGeneratorName, int a) {
+    public BitSet[] runLowLevelCutGenerator(double[][] reducedData, String cutGeneratorName, int a, boolean moreIterations) {
         int timesMoreCuts = 18; //Generate this many times more cuts using shifting
         return switch (cutGeneratorName) {
-            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN -> getInitialCutsKNN(reducedData, a);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN -> getInitialCutsKNN(reducedData, a, moreIterations ? 5 : 1);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_SIMPLE -> getInitialCutsSimple(reducedData, a, timesMoreCuts);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_RANGE -> getInitialCutsRange(reducedData, a, timesMoreCuts);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_LOCAL_MEANS -> getInitialCutsLocalMeans(reducedData, a, timesMoreCuts);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_DISTANCE_BETWEEN_MEANS -> getInitialCutsDistanceBetweenMeans(reducedData, a, timesMoreCuts);
-            default -> getInitialCutsKNN(reducedData, a);
+            default -> getInitialCutsKNN(reducedData, a, moreIterations ? 5 : 1);
         };
     }
 
@@ -180,10 +201,9 @@ public class CutGenerators {
         return merged;
     }
 
-    public BitSet[] getInitialCutsKNN(double[][] dataPoints, int a) {
+    public BitSet[] getInitialCutsKNN(double[][] dataPoints, int a, int nIterations) {
         dataPoints = Main.zScoreNorm(dataPoints);
         boolean directed = true;
-        int nIterations = 5;
 
         List<BitSet[]> bitSets = new ArrayList<>();
         KNNGraph knnGraph = new KNNGraph(dataPoints, 25);
