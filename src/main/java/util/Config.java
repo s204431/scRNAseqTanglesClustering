@@ -23,7 +23,8 @@ public final class Config {
     private boolean autoComputePsi;
     private boolean tuneParameters;
     private boolean useFastVersion;
-    private boolean removeRedundant;
+    private boolean removeRedundantCuts;
+    private boolean removeRedundantCutsIteratively;
     private int splitSize;
     private int tsneComponents;
 
@@ -43,7 +44,8 @@ public final class Config {
         setAutoCompute(true, true);
         setTuneParameters(false);
         setUseFastVersion(false);
-        setRemoveRedundant(false);
+        setRemoveRedundantCuts(true);
+        setRemoveRedundantCutsIteratively(false);
         setDimensionReductionParameters(1000, 5);
     }
 
@@ -63,7 +65,8 @@ public final class Config {
                   boolean autoComputePsi,
                   boolean tuneParameters,
                   boolean useFastVersion,
-                  boolean removeRedundant,
+                  boolean removeRedundantCuts,
+                  boolean removeRedundantCutsIteratively,
                   int splitSize,
                   int tsneComponents) {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
@@ -82,7 +85,8 @@ public final class Config {
         this.autoComputePsi = autoComputePsi;
         this.tuneParameters = tuneParameters;
         this.useFastVersion = useFastVersion;
-        this.removeRedundant = removeRedundant;
+        this.removeRedundantCuts = removeRedundantCuts;
+        this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
         this.splitSize = splitSize;
         this.tsneComponents = tsneComponents;
     }
@@ -104,7 +108,8 @@ public final class Config {
         this.autoComputePsi = config.autoComputePsi;
         this.tuneParameters = config.tuneParameters;
         this.useFastVersion = config.useFastVersion;
-        this.removeRedundant = config.removeRedundant;
+        this.removeRedundantCuts = config.removeRedundantCuts;
+        this.removeRedundantCutsIteratively = config.removeRedundantCutsIteratively;
         this.splitSize = config.splitSize;
         this.tsneComponents = config.tsneComponents;
     }
@@ -146,6 +151,7 @@ public final class Config {
         TUNE_PARAMETERS,
         FAST_VERSION,
         REMOVE_REDUNDANT_CUTS_INDEX,
+        REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX,
         SPLIT_SIZE_INDEX,
         TSNE_COMPONENTS_INDEX
     }
@@ -169,6 +175,7 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
         CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()] = "use_fast_version";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
+        CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] = "remove_redundant_cuts_iteratively";
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] = "split_size";
         CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] = "tsne_components";
     }
@@ -213,7 +220,8 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] + ":" + formatValue(autoComputePsi));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()] + ":" + formatValue(useFastVersion));
-                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundant));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundantCuts));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] + ":" + formatValue(removeRedundantCutsIteratively));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] + ":" + formatValue(splitSize));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] + ":" + formatValue(tsneComponents));
             }
@@ -240,7 +248,8 @@ public final class Config {
         boolean autoComputePsi = false;
         boolean tuneParameters = false;
         boolean useFastVersion = false;
-        boolean removeRedundant = false;
+        boolean removeRedundantCuts = false;
+        boolean removeRedundantCutsIteratively = false;
         int splitSize = 0;
         int tsneComponents = 0;
 
@@ -269,7 +278,8 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()])) autoComputePsi = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()])) useFastVersion = Boolean.parseBoolean(value);
-                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundant = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundantCuts = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()])) removeRedundantCutsIteratively = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()])) splitSize = Integer.parseInt(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()])) tsneComponents = Integer.parseInt(value);
                 else {
@@ -302,7 +312,8 @@ public final class Config {
         newConfig.autoComputePsi = autoComputePsi;
         newConfig.tuneParameters = tuneParameters;
         newConfig.useFastVersion = useFastVersion;
-        newConfig.removeRedundant = removeRedundant;
+        newConfig.removeRedundantCuts = removeRedundantCuts;
+        newConfig.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
         newConfig.splitSize = splitSize;
         newConfig.tsneComponents = tsneComponents;
         return newConfig;
@@ -326,7 +337,8 @@ public final class Config {
                 "Auto Compute psi: " + autoComputePsi + "\n" +
                 "Tune Parameters: " + tuneParameters + "\n" +
                 "Use Fast Version" + useFastVersion + "\n" +
-                "Remove Redundant Cuts: " + removeRedundant + "\n" +
+                "Remove Redundant Cuts: " + removeRedundantCuts + "\n" +
+                "Remove Redundant Cuts Iteratively: " + removeRedundantCutsIteratively + "\n" +
                 "Split Size: " + splitSize + "\n" +
                 "t-SNE Components: " + tsneComponents;
     }
@@ -451,12 +463,20 @@ public final class Config {
         return useFastVersion;
     }
 
-    public boolean isRemoveRedundant() {
-        return removeRedundant;
+    public boolean isRemoveRedundantCuts() {
+        return removeRedundantCuts;
     }
 
-    public void setRemoveRedundant(boolean removeRedundant) {
-        this.removeRedundant = removeRedundant;
+    public void setRemoveRedundantCuts(boolean removeRedundantCuts) {
+        this.removeRedundantCuts = removeRedundantCuts;
+    }
+
+    public boolean isRemoveRedundantCutsIteratively() {
+        return removeRedundantCutsIteratively;
+    }
+
+    public void setRemoveRedundantCutsIteratively(boolean removeRedundantCutsIteratively) {
+        this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
     }
 
     public int getSplitSize() {

@@ -17,10 +17,11 @@ public class TangleClusterer {
     //This class is used to generate a clustering with tangles.
 
     protected static boolean earlyStop = false;
+    protected boolean removeRedundantCuts = true;
     protected boolean useAlternateConsistencyCheck = false;
     protected boolean useOscarWerner = false;
     protected boolean useSplitFirst = false;
-    protected boolean removeRedundantCuts = false;
+    protected boolean removeRedundantCutsIteratively = false;
     protected boolean autoLimitSplitCosts = false;
 
     private TangleSearchTree tangleSearchTree;
@@ -56,9 +57,11 @@ public class TangleClusterer {
                 config.getTsneComponents(),
                 config.isUseFastVersion());
 
-        Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
-        initialCuts = redundancyRemoved.x;
-        costs = redundancyRemoved.y;
+        if (removeRedundantCuts) {
+            Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
+            initialCuts = redundancyRemoved.x;
+            costs = redundancyRemoved.y;
+        }
 
         //Run the main clustering pipeline without precomputed inputs
         runClusteringPipeline(dataset, config, initialCuts, costs, null, false);
@@ -126,7 +129,8 @@ public class TangleClusterer {
         useOscarWerner = config.isUseWernerModification();
         useSplitFirst = config.isUseSplitFirst();
         autoLimitSplitCosts = config.isAutoComputePsi();
-        removeRedundantCuts = config.isRemoveRedundant();
+        removeRedundantCuts = config.isRemoveRedundantCuts();
+        removeRedundantCutsIteratively = config.isRemoveRedundantCutsIteratively();
     }
 
     //Returns the last generated soft clustering.
@@ -246,7 +250,7 @@ public class TangleClusterer {
                 int[] branchIndicesOrdered = indicesOrdered.get(node.branchId);
                 int branchPointer = branchPointers.get(node.branchId);
                 HashSet<Integer> branchCuts = null;
-                if (removeRedundantCuts) branchCuts = branchCutSets.get(node.branchId);
+                if (removeRedundantCutsIteratively) branchCuts = branchCutSets.get(node.branchId);
 
                 for (int i = branchPointer; i < initialCuts.length; i++) {
                     int cutIndex = branchIndicesOrdered[i];
@@ -258,7 +262,7 @@ public class TangleClusterer {
                         break;
                     }
 
-                    if (removeRedundantCuts && !branchCuts.contains(cutIndex)) {
+                    if (removeRedundantCutsIteratively && !branchCuts.contains(cutIndex)) {
                         //System.out.println("Node " + debugIndices[node.originalOrientation]  + (node.side ? "L" : "R") + " in branch: " + node.branchId + " has skipped cut: " + debugIndices[branchIndicesOrdered[i]]);
                         branchPointer++;
                         continue;
@@ -310,7 +314,7 @@ public class TangleClusterer {
                             indicesOrdered.add(newIndices);
 
                             int[] originalIndices = new int[newIndices.length];
-                            if (removeRedundantCuts) {
+                            if (removeRedundantCutsIteratively) {
                                 for (int k = 0; k < newIndices.length; k++) {
                                     originalIndices[k] = k;
                                 }
@@ -435,7 +439,7 @@ public class TangleClusterer {
 
                 HashSet<Integer> usedCuts = branchUsedCuts.get(node.branchId);
                 HashSet<Integer> branchCuts = null;
-                if (removeRedundantCuts) branchCuts = branchCutSets.get(node.branchId);
+                if (removeRedundantCutsIteratively) branchCuts = branchCutSets.get(node.branchId);
 
                 double[] localCosts = branchCosts.get(node.branchId);
                 int[] branchIndicesOrdered = indicesOrdered.get(node.branchId);
@@ -461,7 +465,7 @@ public class TangleClusterer {
                         continue;
                     }
 
-                    if (removeRedundantCuts && !branchCuts.contains(cutIndex)) {
+                    if (removeRedundantCutsIteratively && !branchCuts.contains(cutIndex)) {
                         //System.out.println("Skipped cut: " + cutIndex);
                         branchPointer++;
                         continue;
@@ -520,7 +524,7 @@ public class TangleClusterer {
                             indicesOrdered.add(newIndices);
 
                             int[] originalIndices = new int[newIndices.length];
-                            if (removeRedundantCuts) {
+                            if (removeRedundantCutsIteratively) {
                                 for (int k = 0; k < newIndices.length; k++) {
                                     originalIndices[k] = k;
                                 }

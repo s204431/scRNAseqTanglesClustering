@@ -324,12 +324,15 @@ public class Model {
         dataset.setA(minA);
         CostFunctions costFunctions = new CostFunctions();
         dataset.setCostFunctions(costFunctions);
+        monitor.setDataset(dataset);
+
         BitSet[] initialCuts = dataset.getInitialCuts(highLevelCutGenerator, lowLevelCutGenerator, useFastVersion);
         double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
-        Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
-        initialCuts = redundancyRemoved.x;
-        costs = redundancyRemoved.y;
-        monitor.setDataset(dataset);
+        if (tangleClusterer.removeRedundantCuts) {
+            Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
+            initialCuts = redundancyRemoved.x;
+            costs = redundancyRemoved.y;
+        }
 
         double[][] bestSoftClustering = null;
         int[] bestHardClustering = null;

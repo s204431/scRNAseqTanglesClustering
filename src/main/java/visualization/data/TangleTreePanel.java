@@ -89,8 +89,7 @@ public class TangleTreePanel extends JPanel {
     }
 
     public void removeTabs() {
-        while (treeTabs.getTabCount() > 0)
-            treeTabs.remove(0);
+        treeTabs.removeAll();
     }
 
     public void loadTrees(int clusterIndex) {
@@ -105,8 +104,8 @@ public class TangleTreePanel extends JPanel {
         drawTrees(trees[0], trees[1], trees[2]);
     }
 
-    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, int clusterIndex) {
-        getCutsAndCosts();
+    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, int clusterIndex, boolean removeRedundantCuts) {
+        getCutsAndCosts(removeRedundantCuts);
         sortCutsAndCosts();
 
         clusterIndexToTrees.put(clusterIndex, new TangleSearchTree[] { originalTree, splitPruned, condensed });
@@ -259,12 +258,14 @@ public class TangleTreePanel extends JPanel {
         addNode(tree, node.rightChild, uniqueId);
     }
 
-    private void getCutsAndCosts() {
+    private void getCutsAndCosts(boolean removeRedundantCuts) {
         branchCosts = view.getBranchCosts();
 
-        cuts = view.getCuts();
-        cutCosts = view.getCutCosts();
-        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
+        cuts = view.getCuts().clone();
+        cutCosts = view.getCutCosts().clone();
+
+        double factor = removeRedundantCuts ? 0.9 : 1.0;
+        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, factor);
         cuts = result.x;
         cutCosts = result.y;
     }

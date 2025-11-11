@@ -40,7 +40,8 @@ public class ParameterPanel extends JPanel {
     private JCheckBox useSplitFirstCheckbox;
     private JCheckBox disableEarlyStopCheckbox;
     private JCheckBox useCacheCheckBox;
-    private JCheckBox removeRedundantCheckBox;
+    private JCheckBox removeRedundantCutsCheckbox;
+    private JCheckBox removeRedundantCutsIterativelyCheckBox;
     private JComboBox<String> highLevelCutGeneratorDropdown;
     private JComboBox<String> lowLevelCutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
@@ -140,10 +141,14 @@ public class ParameterPanel extends JPanel {
         addRow(useSplitFirstCheckbox, disableEarlyStopCheckbox);
 
         useCacheCheckBox = new JCheckBox("Use Cache");
-        removeRedundantCheckBox = new JCheckBox("<html>Remove Cuts<br>Iteratively</html>");
+        removeRedundantCutsCheckbox = new JCheckBox("Remove Cuts");
         useCacheCheckBox.setSelected(true);
-        removeRedundantCheckBox.setSelected(false);
-        addRow(useCacheCheckBox, removeRedundantCheckBox);
+        removeRedundantCutsCheckbox.setSelected(true);
+        addRow(useCacheCheckBox, removeRedundantCutsCheckbox);
+
+        removeRedundantCutsIterativelyCheckBox = new JCheckBox("<html>Remove Cuts<br>Iteratively</html>");
+        removeRedundantCutsIterativelyCheckBox.setSelected(false);
+        addFullWidth(removeRedundantCutsIterativelyCheckBox);
 
         highLevelCutGeneratorDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_CUT_GENERATOR_NAMES);
         addRow("<html>High Level<br> Cut Generator</html>", highLevelCutGeneratorDropdown);
@@ -313,9 +318,8 @@ public class ParameterPanel extends JPanel {
         }
 
         view.performClustering(config);
-        view.drawTangleSearchTree();
-
-        getAndSortCutsAndCosts();
+        view.drawTangleSearchTree(config.isRemoveRedundantCuts());
+        getAndSortCutsAndCosts(config.isRemoveRedundantCuts());
         cutNumberField.setText("0");
     }
 
@@ -422,7 +426,8 @@ public class ParameterPanel extends JPanel {
                 autoComputePsiCheckBox.isSelected(),
                 useParameterTuning,
                 fastVersionCheckBox.isSelected(),
-                removeRedundantCheckBox.isSelected(),
+                removeRedundantCutsCheckbox.isSelected(),
+                removeRedundantCutsIterativelyCheckBox.isSelected(),
                 splitSize,
                 tsneComponents
         );
@@ -434,7 +439,8 @@ public class ParameterPanel extends JPanel {
         useSplitFirstCheckbox.setSelected(config.isUseSplitFirst());
         disableEarlyStopCheckbox.setSelected(!config.isUseEarlyStop());
         useCacheCheckBox.setSelected(config.isUseCache());
-        removeRedundantCheckBox.setSelected(config.isRemoveRedundant());
+        removeRedundantCutsCheckbox.setSelected(config.isRemoveRedundantCuts());
+        removeRedundantCutsIterativelyCheckBox.setSelected(config.isRemoveRedundantCutsIteratively());
 
         selectDropdown(highLevelCutGeneratorDropdown, config.getHighLevelCutGeneratorName());
         selectDropdown(lowLevelCutGeneratorDropdown, config.getLowLevelCutGeneratorName());
@@ -503,12 +509,15 @@ public class ParameterPanel extends JPanel {
         System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
     }
 
-    private void getAndSortCutsAndCosts() {
+    private void getAndSortCutsAndCosts(boolean removeRedundantCuts) {
         BitSet[] cuts = view.getCuts();
         double[] cutCosts = view.getCutCosts();
-        Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
-        cuts = result.x;
-        cutCosts = result.y;
+
+        if (removeRedundantCuts) {
+            Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
+            cuts = result.x;
+            cutCosts = result.y;
+        }
 
         int n = cutCosts.length;
         Integer[] indices = new Integer[n];

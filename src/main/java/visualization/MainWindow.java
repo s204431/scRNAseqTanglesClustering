@@ -140,9 +140,9 @@ public class MainWindow extends JFrame {
         scatterPanel.drawGroundTruth(points, groundTruth);
     }
 
-    public void drawTangleSearchTree(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed) {
+    public void drawTangleSearchTree(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, boolean removeRedundantCuts) {
         int clusterIndex = scatterPanel.getClusterIndex();
-        tangleTreePanel.drawTrees(originalTree, splitPruned, condensed, clusterIndex);
+        tangleTreePanel.drawTrees(originalTree, splitPruned, condensed, clusterIndex, removeRedundantCuts);
         statsPanel.updateTangleStats(new TangleSearchTree[] { originalTree, splitPruned, condensed });
     }
 

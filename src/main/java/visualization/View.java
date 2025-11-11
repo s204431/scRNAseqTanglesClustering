@@ -153,8 +153,8 @@ public class View {
         return model.getCutCosts();
     }
 
-    public void drawTangleSearchTree() {
-        window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree());
+    public void drawTangleSearchTree(boolean removeRedundantCuts) {
+        window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree(), removeRedundantCuts);
     }
 
     public void loadDataset(String filePath, int hvg) {
