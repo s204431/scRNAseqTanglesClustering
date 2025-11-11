@@ -552,7 +552,7 @@ public class Model {
         return gt;
     }
 
-    public double[][] highlyVariableGenes(float[][] data, int nTopGenes) {
+    public double[][] highlyVariableGenes2(float[][] data, int nTopGenes) {
         int nGenes = data[0].length;
         int nCells = data.length;
 
@@ -595,7 +595,7 @@ public class Model {
         return newData;
     }
 
-    public double[][] highlyVariableGenes2(float[][] data, int nTopGenes) {
+    public double[][] highlyVariableGenes(float[][] data, int nTopGenes) {
         double[] dispersions = new double[data[0].length];
         double[] means = new double[data[0].length];
         Integer[] indices = new Integer[data[0].length];

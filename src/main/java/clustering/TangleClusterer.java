@@ -690,7 +690,7 @@ public class TangleClusterer {
     }
 
     //Removes redundant cuts that agree on factor% of their elements.
-    public static Tuple<BitSet[], double[]> removeRedundantCuts(BitSet[] initialCuts, double[] costs, double factor) {
+    public static Tuple<BitSet[], double[]> removeRedundantCuts2(BitSet[] initialCuts, double[] costs, double factor) {
         boolean[] toBeRemoved = new boolean[initialCuts.length]; //true indicates that the corresponding cut should be removed.
         for (int i = 0; i < initialCuts.length; i++) {
             for (int j = 0; j < initialCuts.length; j++) {
@@ -720,7 +720,7 @@ public class TangleClusterer {
         return new Tuple<>(newInitialCuts, newCosts);
     }
 
-    public static Tuple<BitSet[], double[]> removeRedundantCuts2(BitSet[] initialCuts, double[] costs, double factor) {
+    public static Tuple<BitSet[], double[]> removeRedundantCuts(BitSet[] initialCuts, double[] costs, double factor) {
         int maxCutsToKeep = -1;
         Integer[] sortedIndices = new Integer[costs.length]; //Sorted by costs
         for (int i = 0; i < costs.length; i++) {
