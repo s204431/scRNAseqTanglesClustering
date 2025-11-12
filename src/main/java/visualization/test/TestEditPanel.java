@@ -5,6 +5,8 @@ import visualization.View;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -13,8 +15,8 @@ import java.awt.*;
 import java.io.File;
 
 public class TestEditPanel extends JPanel {
-    public static final Color LIGHT_GREEN = new Color(200, 240, 200);
-    public static final Color LIGHT_YELLOW = new Color(255, 240, 200);
+    public static final Color LIGHT_GREEN = new Color(100, 240, 100);
+    public static final Color LIGHT_YELLOW = new Color(240, 240, 150);
 
     private View view;
 
@@ -57,6 +59,9 @@ public class TestEditPanel extends JPanel {
         addTableWithToolbar(editableTestTable, testEditTable, testEditScrollPane, "Choose tests to run");
         add(Box.createRigidArea(new Dimension(0, 50)));
         addTableWithToolbar(editableConfigTable, configEditTable, configEditScrollPane, "Choose additional configurations to run");
+
+        addDoubleClickFunctionality(editableTestTable, testEditTable);
+        addDoubleClickFunctionality(editableConfigTable, configEditTable);
     }
 
     private void addTableWithToolbar(EditableTable editableTable, JTable table, JScrollPane scrollPane, String titledBorder) {
@@ -86,6 +91,23 @@ public class TestEditPanel extends JPanel {
         testToolBar.add(selectNoneButton);
 
         add(testToolBar);
+    }
+
+    public void addDoubleClickFunctionality(EditableTable editableTable, JTable table) {
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    int viewRow = table.rowAtPoint(e.getPoint());
+                    int viewCol = table.columnAtPoint(e.getPoint());
+                    if (viewRow < 0 || viewCol == 0) return;
+
+                    int modelRow = table.convertRowIndexToModel(viewRow);
+                    File f = editableTable.getFileAtModelRow(modelRow);
+                    openFile(f);
+                }
+            }
+        });
     }
 
     public void loadTestSet(List<File> selectedDirs) {
@@ -314,6 +336,10 @@ public class TestEditPanel extends JPanel {
             fireTableRowsUpdated(0, length - 1);
         }
 
+        File getFileAtModelRow(int modelRow) {
+            return rows.get(modelRow).file;
+        }
+
         @Override public int getRowCount() {
             return rows.size();
         }
@@ -344,6 +370,34 @@ public class TestEditPanel extends JPanel {
                 rows.get(r).run = (Boolean) v;
                 fireTableCellUpdated(r, c);
             }
+        }
+    }
+
+    private void openFile(File file) {
+        if (file == null || !file.isFile()) return;
+
+        try {
+            if (!Desktop.isDesktopSupported()) {
+                JOptionPane.showMessageDialog(this,
+                        "Desktop integration is not supported on this platform.",
+                        "Cannot open file", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            Desktop desktop = Desktop.getDesktop();
+            if (!desktop.isSupported(Desktop.Action.OPEN)) {
+                JOptionPane.showMessageDialog(this,
+                        "OPEN action is not supported on this platform.",
+                        "Cannot open file", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            desktop.open(file);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to open file:\n" + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

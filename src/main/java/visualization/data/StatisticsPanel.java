@@ -124,7 +124,7 @@ public class StatisticsPanel extends JScrollPane {
     }
 
     public void addTreeInfo(TangleSearchTree tree, String treeName, String id) {
-        if (tree == null) return;
+        if (tree == null || (tree.getRoot().rightChild == null && tree.getRoot().leftChild == null)) return;
 
         HashMap<Integer, Integer> cutCountMap = computeCutCountMap(tree);
 
@@ -172,8 +172,6 @@ public class StatisticsPanel extends JScrollPane {
     }
 
     private HashMap<Integer, Integer> computeCutCountMap(TangleSearchTree tree) {
-        if (tree == null) return null;
-
         HashMap<Integer, Integer> cutCountMap = new HashMap<>();
         computeDistinctCutsRecursive(tree.getRoot(), cutCountMap, 0);
         return cutCountMap;

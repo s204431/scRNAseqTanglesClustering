@@ -137,7 +137,7 @@ public class ParameterPanel extends JScrollPane {
         useTsneCutGenerationCheckbox = new JCheckBox("<html>Use t-SNE<br> Cut Generation</html>");
         useTsneCutGenerationCheckbox.setSelected(true);
         tsneComponentsCutGenerationField = new JTextField(5);
-        tsneComponentsCutGenerationField.setText("5");
+        tsneComponentsCutGenerationField.setText("3");
         addRow(useTsneCutGenerationCheckbox, tsneComponentsCutGenerationField);
 
         addFiller(5);
@@ -193,16 +193,16 @@ public class ParameterPanel extends JScrollPane {
         addFullWidth(removeRedundantCutsIterativelyCheckBox);
 
         highLevelCutGeneratorDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_CUT_GENERATOR_NAMES);
-        addRow("<html>High Level<br> Cut Generator</html>", highLevelCutGeneratorDropdown);
+        addRow("<html>Cut Generator<br>Batching</html>", highLevelCutGeneratorDropdown);
 
         lowLevelCutGeneratorDropdown = new JComboBox<>(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_NAMES);
-        addRow("<html>Low Level<br> Cut Generator</html>", lowLevelCutGeneratorDropdown);
+        addRow("<html>Cut Generator</html>", lowLevelCutGeneratorDropdown);
 
         highLevelCostFunctionDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_COST_FUNCTION_NAMES);
-        addRow("<html>High Level<br> Cost Function</html>", highLevelCostFunctionDropdown);
+        addRow("<html>Cost Function<br>Batching</html>", highLevelCostFunctionDropdown);
 
         lowLevelCostFunctionDropdown = new JComboBox<>(GlobalConstants.LOW_LEVEL_COST_FUNCTION_NAMES);
-        addRow("<html>Low Level<br> Cost Function</html>", lowLevelCostFunctionDropdown);
+        addRow("<html>Cost Function</html>", lowLevelCostFunctionDropdown);
     }
 
     private void buildClusteringSection() {

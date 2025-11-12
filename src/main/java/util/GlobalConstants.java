@@ -7,8 +7,8 @@ public class GlobalConstants {
         SPLIT,
         NORMAL
     }
-    public static final String HIGH_LEVEL_CUT_GENERATOR_SPLIT = "Split";
-    public static final String HIGH_LEVEL_CUT_GENERATOR_NORMAL = "Normal";
+    public static final String HIGH_LEVEL_CUT_GENERATOR_SPLIT = "Batching";
+    public static final String HIGH_LEVEL_CUT_GENERATOR_NORMAL = "No batching";
     public static final String[] HIGH_LEVEL_CUT_GENERATOR_NAMES = new String[HIGH_LEVEL_CUT_GENERATOR.values().length];
     static {
         HIGH_LEVEL_CUT_GENERATOR_NAMES[HIGH_LEVEL_CUT_GENERATOR.SPLIT.ordinal()] = HIGH_LEVEL_CUT_GENERATOR_SPLIT;
@@ -38,17 +38,17 @@ public class GlobalConstants {
 
     public enum HIGH_LEVEL_COST_FUNCTION {
         AVERAGE,
-        NORMAL,
-        BEST_SPLIT
+        BEST_SPLIT,
+        NORMAL
     }
-    public static final String HIGH_LEVEL_COST_FUNCTION_AVERAGE = "Average";
-    public static final String HIGH_LEVEL_COST_FUNCTION_NORMAL = "Normal";
-    public static final String HIGH_LEVEL_COST_FUNCTION_BEST_SPLIT = "Best Split";
+    public static final String HIGH_LEVEL_COST_FUNCTION_AVERAGE = "Average batch";
+    public static final String HIGH_LEVEL_COST_FUNCTION_BEST_SPLIT = "Best Batch";
+    public static final String HIGH_LEVEL_COST_FUNCTION_NORMAL = "No batching";
     public static final String[] HIGH_LEVEL_COST_FUNCTION_NAMES = new String[HIGH_LEVEL_COST_FUNCTION.values().length];
     static{
         HIGH_LEVEL_COST_FUNCTION_NAMES[HIGH_LEVEL_COST_FUNCTION.AVERAGE.ordinal()] = HIGH_LEVEL_COST_FUNCTION_AVERAGE;
-        HIGH_LEVEL_COST_FUNCTION_NAMES[HIGH_LEVEL_COST_FUNCTION.NORMAL.ordinal()] = HIGH_LEVEL_COST_FUNCTION_NORMAL;
         HIGH_LEVEL_COST_FUNCTION_NAMES[HIGH_LEVEL_COST_FUNCTION.BEST_SPLIT.ordinal()] = HIGH_LEVEL_COST_FUNCTION_BEST_SPLIT;
+        HIGH_LEVEL_COST_FUNCTION_NAMES[HIGH_LEVEL_COST_FUNCTION.NORMAL.ordinal()] = HIGH_LEVEL_COST_FUNCTION_NORMAL;
     }
 
     public enum LOW_LEVEL_COST_FUNCTION {
