@@ -47,15 +47,21 @@ public class TangleClusterer {
         BitSet[] initialCuts = dataset.getInitialCuts(
                 config.getHighLevelCutGeneratorName(),
                 config.getLowLevelCutGeneratorName(),
-                config.isUseFastVersion());
+                config.getSplitSizeCutGeneration(),
+                config.isUsePcaCutGeneration(),
+                config.getPcaComponentsCutGeneration(),
+                config.isUseTSNECutGeneration(),
+                config.getTsneComponentsCutGeneration());
 
         double[] costs = dataset.getCutCosts(
                 config.getHighLevelCostFunctionName(),
                 config.getLowLevelCostFunctionName(),
                 config.isUseCache(),
-                config.getSplitSize(),
-                config.getTsneComponents(),
-                config.isUseFastVersion());
+                config.getSplitSizeCostFunction(),
+                config.isUsePcaCostFunction(),
+                config.getPcaComponentsCostFunction(),
+                config.isUseTSNECostFunction(),
+                config.getTsneComponentsCostFunction());
 
         if (removeRedundantCuts) {
             Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
@@ -198,9 +204,6 @@ public class TangleClusterer {
         String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
         String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
         boolean useCache = config.isUseCache();
-        int splitSize = config.getSplitSize();
-        int tsneComponents = config.getTsneComponents();
-        boolean useFastVersion = config.isUseFastVersion();
 
         //Costs for each branch ID (in order of initial cuts).
         List<double[]> branchCosts = new ArrayList<>();
@@ -299,7 +302,15 @@ public class TangleClusterer {
                             newDataset.setCostFunctions(costFunctions);
                             costFunctions.setMask(childNode.intersection);
                             newDataset.setInitialCuts(newCuts);
-                            double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
+                            double[] newCosts = newDataset.getCutCosts(
+                                    highLevelCostFunctionName,
+                                    lowLevelCostFunctionName,
+                                    useCache,
+                                    config.getSplitSizeCostFunction(),
+                                    config.isUsePcaCostFunction(),
+                                    config.getPcaComponentsCostFunction(),
+                                    config.isUseTSNECostFunction(),
+                                    config.getTsneComponentsCostFunction());
                             branchCosts.add(newCosts);
 
                             //Reorder cuts and costs based on the cost order for the parent branch
@@ -383,9 +394,6 @@ public class TangleClusterer {
         String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
         String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
         boolean useCache = config.isUseCache();
-        int splitSize = config.getSplitSize();
-        int tsneComponents = config.getTsneComponents();
-        boolean useFastVersion = config.isUseFastVersion();
 
         //Hashset containing every cut that was added to the tree
         List<HashSet<Integer>> branchUsedCuts = new ArrayList<>();
@@ -509,7 +517,15 @@ public class TangleClusterer {
                             newDataset.setCostFunctions(costFunctions);
                             costFunctions.setMask(childNode.intersection);
                             newDataset.setInitialCuts(newCuts);
-                            double[] newCosts = newDataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
+                            double[] newCosts = newDataset.getCutCosts(
+                                    highLevelCostFunctionName,
+                                    lowLevelCostFunctionName,
+                                    useCache,
+                                    config.getSplitSizeCostFunction(),
+                                    config.isUsePcaCostFunction(),
+                                    config.getPcaComponentsCostFunction(),
+                                    config.isUseTSNECostFunction(),
+                                    config.getTsneComponentsCostFunction());
                             branchCosts.add(newCosts);
 
                             //Reorder cuts and costs based on the cost order for the parent branch

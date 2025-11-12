@@ -30,33 +30,67 @@ public class ScRNAseqDataset {
         this.costFunctions = costFunctions;
     }
 
-    public BitSet[] getInitialCuts(String highLevelCutGenerator, String lowLevelCutGenerator, boolean useFastVersion) {
+    public BitSet[] getInitialCuts(String highLevelCutGenerator, String lowLevelCutGenerator, int splitSize, boolean usePca, int pcaComponents, boolean useTsne, int tsneComponents) {
         if (a == 0) {
             System.out.println("Variable for a is not chosen yet or is 0.");
             return null;
         }
 
         if (highLevelCutGenerator.equals(GlobalConstants.HIGH_LEVEL_CUT_GENERATOR_NORMAL)) {
-            initialCuts = cutGenerators.singleCutGenerator(data, lowLevelCutGenerator, a, useFastVersion);
+            initialCuts = cutGenerators.singleCutGenerator(data, lowLevelCutGenerator, a, usePca, pcaComponents, useTsne, tsneComponents);
         } else {
-            initialCuts = cutGenerators.splitCutGenerator(data, lowLevelCutGenerator, a, useFastVersion);
+            initialCuts = cutGenerators.splitCutGenerator(data, lowLevelCutGenerator, a, splitSize, usePca, pcaComponents, useTsne, tsneComponents);
         }
 
         return initialCuts;
     }
 
-    public double[] getCutCosts(String highLevelCostFunction, String lowLevelCostFunction, boolean useCache, int splitSize, int tsneComponents, boolean useFastVersion) {
+    public double[] getCutCosts(String highLevelCostFunction,
+                                String lowLevelCostFunction,
+                                boolean useCache,
+                                int splitSize,
+                                boolean usePca,
+                                int pcaComponents,
+                                boolean useTsne,
+                                int tsneComponents) {
+
         switch (highLevelCostFunction) {
             case GlobalConstants.HIGH_LEVEL_COST_FUNCTION_BEST_SPLIT:
-                cutCosts = costFunctions.bestFirstCostFunction(data, initialCuts, lowLevelCostFunction, useCache, splitSize, tsneComponents, useFastVersion);
+                cutCosts = costFunctions.bestFirstCostFunction(
+                        data,
+                        initialCuts,
+                        lowLevelCostFunction,
+                        useCache,
+                        splitSize,
+                        usePca,
+                        pcaComponents,
+                        useTsne,
+                        tsneComponents);
                 break;
 
             case GlobalConstants.HIGH_LEVEL_COST_FUNCTION_AVERAGE:
-                cutCosts = costFunctions.averageCostFunction(data, initialCuts, lowLevelCostFunction, useCache, splitSize, tsneComponents, useFastVersion);
+                cutCosts = costFunctions.averageCostFunction(
+                        data,
+                        initialCuts,
+                        lowLevelCostFunction,
+                        useCache,
+                        splitSize,
+                        usePca,
+                        pcaComponents,
+                        useTsne,
+                        tsneComponents);
                 break;
 
             default:
-                cutCosts = costFunctions.singleCostFunction(data, initialCuts, lowLevelCostFunction, useCache, tsneComponents, useFastVersion);
+                cutCosts = costFunctions.singleCostFunction(
+                        data,
+                        initialCuts,
+                        lowLevelCostFunction,
+                        useCache,
+                        usePca,
+                        pcaComponents,
+                        useTsne,
+                        tsneComponents);
                 break;
         }
 

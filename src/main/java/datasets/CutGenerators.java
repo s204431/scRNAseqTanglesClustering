@@ -18,8 +18,7 @@ public class CutGenerators {
     public double[] cutCosts; //For local means only
 
 
-    public BitSet[] splitCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, boolean useFastVersion) {
-        int splitSize = 1000;
+    public BitSet[] splitCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, int splitSize, boolean usePca, int pcaComponents, boolean useTsne, int tsneComponents) {
         int nSplits = (int)Math.ceil(dataPoints[0].length/(double)splitSize);
 
         List<double[][]> splits = new ArrayList<>();
@@ -70,7 +69,10 @@ public class CutGenerators {
             runnables[i] = new SplitParallelRunner();
             runnables[i].data = splits.get(i);
             runnables[i].a = a;
-            runnables[i].useFastVersion = useFastVersion;
+            runnables[i].usePca = usePca;
+            runnables[i].pcaComponents = pcaComponents;
+            runnables[i].useTsne = useTsne;
+            runnables[i].tsneComponents = tsneComponents;
             runnables[i].lowLevelCutGenerator = lowLevelCutGenerator;
             threads[i] = new Thread(runnables[i]);
             threads[i].start();
@@ -99,21 +101,21 @@ public class CutGenerators {
         public BitSet[] result;
         public double[][] data;
         public int a;
-        public boolean useFastVersion;
+        public boolean usePca;
+        public int pcaComponents;
+        public boolean useTsne;
+        public int tsneComponents;
         public String lowLevelCutGenerator;
 
         @Override
         public void run() {
-            result = combinedCutGenerator(data, lowLevelCutGenerator, a, useFastVersion);
+            result = combinedCutGenerator(data, lowLevelCutGenerator, a, usePca, pcaComponents, useTsne, tsneComponents);
         }
     }
 
-    public BitSet[] combinedCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, boolean useFastVersion) {
+    public BitSet[] combinedCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, boolean usePca, int nComponentsPCA, boolean useTsne, int nComponentsTSNE) {
 
         //dataPoints = Model.pca(dataPoints, 100);
-
-        int nComponentsTSNE = 3;
-        int nComponentsPCA = 10;
 
         List<BitSet[]> bitSets = new ArrayList<>();
 
@@ -126,22 +128,23 @@ public class CutGenerators {
         catch (Exception e) {
 
         }*/
-        if (!useFastVersion) {
+        if (useTsne) {
             double[][] reducedPoints = Model.tsne(dataPoints, nComponentsTSNE);
             bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, true));
         }
 
-        if (lowLevelCutGenerator.equals(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN)) {
-            double[][] reducedPoints = Model.svd(dataPoints, 10);
-            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
-            for (int n : new int[] {5, 4, 3, 2}) {
-                reducedPoints = getFirstDimensions(reducedPoints, n);
+        if (usePca) {
+            if (lowLevelCutGenerator.equals(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN)) {
+                double[][] reducedPoints = Model.svd(dataPoints, 10);
+                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
+                for (int n : new int[]{5, 4, 3, 2}) {
+                    reducedPoints = getFirstDimensions(reducedPoints, n);
+                    bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
+                }
+            } else {
+                double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA);
                 bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
             }
-        }
-        else {
-            double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA);
-            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
         }
 
         return mergeCuts(bitSets);
@@ -157,16 +160,23 @@ public class CutGenerators {
         return newData;
     }
 
-    public BitSet[] singleCutGenerator(double[][] dataPoints, String cutGeneratorName, int a, boolean useFastVersion) {
-        int nComponents = 3;
+    public BitSet[] singleCutGenerator(double[][] dataPoints,
+                                       String cutGeneratorName,
+                                       int a,
+                                       boolean usePca,
+                                       int pcaComponents,
+                                       boolean useTsne,
+                                       int tsneComponents) {
+
         List<BitSet[]> bitsets = new ArrayList<>();
 
-        if (useFastVersion) {
-            double[][] reducedPoints = Model.svd(dataPoints, nComponents);
+        if (usePca) {
+            double[][] reducedPoints = Model.svd(dataPoints, pcaComponents);
             bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
         }
-        else {
-            double[][] reducedPoints = Model.tsne(dataPoints, nComponents);
+
+        if (useTsne) {
+            double[][] reducedPoints = Model.tsne(dataPoints, tsneComponents);
             bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
         }
 

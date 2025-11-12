@@ -301,24 +301,15 @@ public class Model {
     public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
         monitor.setClusterStartTime(System.currentTimeMillis());
 
-        String highLevelCutGenerator = config.getHighLevelCutGeneratorName();
-        String lowLevelCutGenerator = config.getLowLevelCutGeneratorName();
-        String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
-        String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
-        boolean useCache = config.isUseCache();
-        int splitSize = config.getSplitSize();
-        int tsneComponents = config.getTsneComponents();
-        boolean useFastVersion = config.isUseFastVersion();
-
         int maxClusters = 10;
         int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.667), 1);
 
         double[][] reducedPoints;
-        if (config.isUseFastVersion()) {
-            reducedPoints = svd(dataset.data, tsneComponents);
+        if (config.isUsePcaCostFunction()) {
+            reducedPoints = svd(dataset.data, config.getPcaComponentsCostFunction());
         }
         else {
-            reducedPoints = tsne(dataset.data, tsneComponents);
+            reducedPoints = tsne(dataset.data, config.getTsneComponentsCostFunction());
         }
 
         dataset.setA(minA);
@@ -326,8 +317,26 @@ public class Model {
         dataset.setCostFunctions(costFunctions);
         monitor.setDataset(dataset);
 
-        BitSet[] initialCuts = dataset.getInitialCuts(highLevelCutGenerator, lowLevelCutGenerator, useFastVersion);
-        double[] costs = dataset.getCutCosts(highLevelCostFunctionName, lowLevelCostFunctionName, useCache, splitSize, tsneComponents, useFastVersion);
+        BitSet[] initialCuts = dataset.getInitialCuts(
+                config.getHighLevelCutGeneratorName(),
+                config.getLowLevelCutGeneratorName(),
+                config.getSplitSizeCutGeneration(),
+                config.isUsePcaCutGeneration(),
+                config.getPcaComponentsCutGeneration(),
+                config.isUseTSNECutGeneration(),
+                config.getTsneComponentsCutGeneration());
+
+        double[] costs = dataset.getCutCosts(
+                config.getHighLevelCostFunctionName(),
+                config.getLowLevelCostFunctionName(),
+                config.isUseCache(),
+                config.getSplitSizeCostFunction(),
+                config.isUsePcaCostFunction(),
+                config.getPcaComponentsCostFunction(),
+                config.isUseTSNECostFunction(),
+                config.getTsneComponentsCostFunction());
+
+
         if (tangleClusterer.removeRedundantCuts) {
             Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
             initialCuts = redundancyRemoved.x;

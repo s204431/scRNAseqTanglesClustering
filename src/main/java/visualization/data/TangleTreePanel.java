@@ -58,6 +58,8 @@ public class TangleTreePanel extends JPanel {
     public TangleTreePanel(View view) {
         this.view = view;
         //setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
+        setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
         setLayout(new BorderLayout());
         add(topPanel, BorderLayout.NORTH);
         add(treeTabs, BorderLayout.CENTER);

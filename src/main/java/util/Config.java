@@ -22,11 +22,18 @@ public final class Config {
     private boolean autoComputeA;
     private boolean autoComputePsi;
     private boolean tuneParameters;
-    private boolean useFastVersion;
     private boolean removeRedundantCuts;
     private boolean removeRedundantCutsIteratively;
-    private int splitSize;
-    private int tsneComponents;
+    private int splitSizeCutGeneration;
+    private boolean usePcaCutGeneration;
+    private int pcaComponentsCutGeneration;
+    private boolean useTSNECutGeneration;
+    private int tsneComponentsCutGeneration;
+    private int splitSizeCostFunction;
+    private boolean usePcaCostFunction;
+    private int pcaComponentsCostFunction;
+    private boolean useTSNECostFunction;
+    private int tsneComponentsCostFunction;
 
     public Config() {
         this.useAlternateConsistencyCheck = true;
@@ -43,10 +50,10 @@ public final class Config {
         this.psi = 0;
         setAutoCompute(true, true);
         setTuneParameters(false);
-        setUseFastVersion(false);
         setRemoveRedundantCuts(true);
         setRemoveRedundantCutsIteratively(false);
-        setDimensionReductionParameters(1000, 5);
+        setPreprocessingCutGeneration(1000, true, 10, true, 5);
+        setPreprocessingCostFunction(1000, false, 10, true, 5);
     }
 
     public Config(boolean useAlternateConsistencyCheck,
@@ -64,11 +71,18 @@ public final class Config {
                   boolean autoComputeA,
                   boolean autoComputePsi,
                   boolean tuneParameters,
-                  boolean useFastVersion,
                   boolean removeRedundantCuts,
                   boolean removeRedundantCutsIteratively,
-                  int splitSize,
-                  int tsneComponents) {
+                  int splitSizeCutGeneration,
+                  boolean usePcaCutGeneration,
+                  int pcaComponentsCutGeneration,
+                  boolean useTSNECutGeneration,
+                  int tsneComponentsCutGeneration,
+                  int splitSizeCostFunction,
+                  boolean usePcaCostFunction,
+                  int pcaComponentsCostFunction,
+                  boolean useTSNECostFunction,
+                  int tsneComponentsCostFunction) {
         this.useAlternateConsistencyCheck = useAlternateConsistencyCheck;
         this.useWernerModification = useWernerModification;
         this.useSplitFirst = useSplitFirst;
@@ -84,11 +98,18 @@ public final class Config {
         this.autoComputeA = autoComputeA;
         this.autoComputePsi = autoComputePsi;
         this.tuneParameters = tuneParameters;
-        this.useFastVersion = useFastVersion;
         this.removeRedundantCuts = removeRedundantCuts;
         this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
-        this.splitSize = splitSize;
-        this.tsneComponents = tsneComponents;
+        this.splitSizeCutGeneration = splitSizeCutGeneration;
+        this.usePcaCutGeneration = usePcaCutGeneration;
+        this.pcaComponentsCutGeneration = pcaComponentsCutGeneration;
+        this.useTSNECutGeneration = useTSNECutGeneration;
+        this.tsneComponentsCutGeneration = tsneComponentsCutGeneration;
+        this.splitSizeCostFunction = splitSizeCostFunction;
+        this.usePcaCostFunction = usePcaCostFunction;
+        this.pcaComponentsCostFunction = pcaComponentsCostFunction;
+        this.useTSNECostFunction = useTSNECostFunction;
+        this.tsneComponentsCostFunction = tsneComponentsCostFunction;
     }
 
     public Config(Config config) {
@@ -107,11 +128,18 @@ public final class Config {
         this.autoComputeA = config.autoComputeA;
         this.autoComputePsi = config.autoComputePsi;
         this.tuneParameters = config.tuneParameters;
-        this.useFastVersion = config.useFastVersion;
         this.removeRedundantCuts = config.removeRedundantCuts;
         this.removeRedundantCutsIteratively = config.removeRedundantCutsIteratively;
-        this.splitSize = config.splitSize;
-        this.tsneComponents = config.tsneComponents;
+        this.splitSizeCutGeneration = config.splitSizeCutGeneration;
+        this.usePcaCutGeneration = config.usePcaCutGeneration;
+        this.pcaComponentsCutGeneration = config.pcaComponentsCutGeneration;
+        this.useTSNECutGeneration = config.useTSNECutGeneration;
+        this.tsneComponentsCutGeneration = config.tsneComponentsCutGeneration;
+        this.splitSizeCostFunction = config.splitSizeCostFunction;
+        this.usePcaCostFunction = config.usePcaCostFunction;
+        this.pcaComponentsCostFunction = config.pcaComponentsCostFunction;
+        this.useTSNECostFunction = config.useTSNECostFunction;
+        this.tsneComponentsCostFunction = config.tsneComponentsCostFunction;
     }
 
     public void setAutoCompute(boolean a, boolean psi) {
@@ -123,13 +151,28 @@ public final class Config {
         this.tuneParameters = tuneParameters;
     }
 
-    public void setUseFastVersion(boolean useFastVersion) {
-        this.useFastVersion = useFastVersion;
+    public void setPreprocessingCutGeneration(int splitSizeCutGeneration,
+                                              boolean usePcaCutGeneration,
+                                              int pcaComponentsCutGeneration,
+                                              boolean useTSNECutGeneration,
+                                              int tsneComponentsCutGeneration) {
+        this.splitSizeCutGeneration = splitSizeCutGeneration;
+        this.usePcaCutGeneration = usePcaCutGeneration;
+        this.useTSNECutGeneration = useTSNECutGeneration;
+        this.pcaComponentsCutGeneration = pcaComponentsCutGeneration;
+        this.tsneComponentsCutGeneration = tsneComponentsCutGeneration;
     }
 
-    public void setDimensionReductionParameters(int splitSize, int tsneComponents) {
-        this.splitSize = splitSize;
-        this.tsneComponents = tsneComponents;
+    public void setPreprocessingCostFunction(int splitSizeCostFunction,
+                                             boolean usePcaCostFunction,
+                                             int pcaComponentsCostFunction,
+                                             boolean useTSNECostFunction,
+                                             int tsneComponentsCostFunction) {
+        this.splitSizeCostFunction = splitSizeCostFunction;
+        this.usePcaCostFunction = usePcaCostFunction;
+        this.useTSNECostFunction = useTSNECostFunction;
+        this.pcaComponentsCostFunction = pcaComponentsCostFunction;
+        this.tsneComponentsCostFunction = tsneComponentsCostFunction;
     }
 
     // =========== Helpers for saving and loading config files ===========
@@ -149,11 +192,18 @@ public final class Config {
         AUTO_COMPUTE_A_INDEX,
         AUTO_COMPUTE_PSI_INDEX,
         TUNE_PARAMETERS,
-        FAST_VERSION,
         REMOVE_REDUNDANT_CUTS_INDEX,
         REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX,
-        SPLIT_SIZE_INDEX,
-        TSNE_COMPONENTS_INDEX
+        SPLIT_SIZE_CUT_GENERATION_INDEX,
+        USE_PCA_CUT_GENERATOR_INDEX,
+        PCA_COMPONENTS_CUT_GENERATOR_INDEX,
+        USE_TSNE_CUT_GENERATOR_INDEX,
+        TSNE_COMPONENTS_CUT_GENERATOR_INDEX,
+        SPLIT_SIZE_COST_FUNCTION_INDEX,
+        USE_PCA_COST_FUNCTION_INDEX,
+        PCA_COMPONENTS_COST_FUNCTION_INDEX,
+        USE_TSNE_COST_FUNCTION_INDEX,
+        TSNE_COMPONENTS_COST_FUNCTION_INDEX
     }
 
     private static final String[] CONFIG_DESCRIPTIONS = new String[ConfigIndices.values().length];
@@ -173,11 +223,18 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] = "auto_compute_a";
         CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] = "auto_compute_psi";
         CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
-        CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()] = "use_fast_version";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] = "remove_redundant_cuts_iteratively";
-        CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] = "split_size";
-        CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] = "tsne_components";
+        CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_CUT_GENERATION_INDEX.ordinal()] = "split_size_cut_generation";
+        CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_CUT_GENERATOR_INDEX.ordinal()] = "use_pca_cut_generator";
+        CONFIG_DESCRIPTIONS[ConfigIndices.PCA_COMPONENTS_CUT_GENERATOR_INDEX.ordinal()] = "pca_components_cut_generator";
+        CONFIG_DESCRIPTIONS[ConfigIndices.USE_TSNE_CUT_GENERATOR_INDEX.ordinal()] = "use_tsne_cut_generator";
+        CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_CUT_GENERATOR_INDEX.ordinal()] = "tsne_components_cut_generator";
+        CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_COST_FUNCTION_INDEX.ordinal()] = "split_size_cost_function";
+        CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_COST_FUNCTION_INDEX.ordinal()] = "use_pca_cost_function";
+        CONFIG_DESCRIPTIONS[ConfigIndices.PCA_COMPONENTS_COST_FUNCTION_INDEX.ordinal()] = "pca_components_cost_function";
+        CONFIG_DESCRIPTIONS[ConfigIndices.USE_TSNE_COST_FUNCTION_INDEX.ordinal()] = "use_tsne_cost_function";
+        CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_COST_FUNCTION_INDEX.ordinal()] = "tsne_components_cost_function";
     }
 
     private String formatValue(boolean b) {
@@ -219,11 +276,18 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] + ":" + formatValue(autoComputeA));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] + ":" + formatValue(autoComputePsi));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
-                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()] + ":" + formatValue(useFastVersion));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundantCuts));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] + ":" + formatValue(removeRedundantCutsIteratively));
-                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()] + ":" + formatValue(splitSize));
-                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()] + ":" + formatValue(tsneComponents));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_CUT_GENERATION_INDEX.ordinal()] + ":" + formatValue(splitSizeCutGeneration));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(usePcaCutGeneration));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.PCA_COMPONENTS_CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(pcaComponentsCutGeneration));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.USE_TSNE_CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(useTSNECutGeneration));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(tsneComponentsCutGeneration));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(splitSizeCostFunction));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(usePcaCostFunction));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.PCA_COMPONENTS_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(pcaComponentsCostFunction));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.USE_TSNE_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(useTSNECostFunction));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_COST_FUNCTION_INDEX.ordinal()] + ":" + formatValue(tsneComponentsCostFunction));
             }
             System.out.println("Config saved at " + configPath.toAbsolutePath());
         } catch (IOException e) {
@@ -247,11 +311,18 @@ public final class Config {
         boolean autoComputeA = false;
         boolean autoComputePsi = false;
         boolean tuneParameters = false;
-        boolean useFastVersion = false;
         boolean removeRedundantCuts = false;
         boolean removeRedundantCutsIteratively = false;
-        int splitSize = 0;
-        int tsneComponents = 0;
+        int splitSizeCutGeneration = 1000;
+        boolean usePcaCutGeneration = false;
+        int pcaComponentsCutGeneration = 0;
+        boolean useTSNECutGeneration = false;
+        int tsneComponentsCutGeneration = 0;
+        int splitSizeCostFunction = 1000;
+        boolean usePcaCostFunction = false;
+        int pcaComponentsCostFunction = 0;
+        boolean useTSNECostFunction = false;
+        int tsneComponentsCostFunction = 0;
 
         if (!fileName.contains(".txt")) fileName += ".txt";
         Path configPath = Paths.get("config", fileName);
@@ -277,11 +348,18 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()])) autoComputeA = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()])) autoComputePsi = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
-                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.FAST_VERSION.ordinal()])) useFastVersion = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundantCuts = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()])) removeRedundantCutsIteratively = Boolean.parseBoolean(value);
-                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_INDEX.ordinal()])) splitSize = Integer.parseInt(value);
-                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_INDEX.ordinal()])) tsneComponents = Integer.parseInt(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_CUT_GENERATION_INDEX.ordinal()])) splitSizeCutGeneration = Integer.parseInt(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_CUT_GENERATOR_INDEX.ordinal()])) usePcaCutGeneration = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.PCA_COMPONENTS_CUT_GENERATOR_INDEX.ordinal()])) pcaComponentsCutGeneration = Integer.parseInt(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.USE_TSNE_CUT_GENERATOR_INDEX.ordinal()])) useTSNECutGeneration = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_CUT_GENERATOR_INDEX.ordinal()])) tsneComponentsCutGeneration = Integer.parseInt(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_COST_FUNCTION_INDEX.ordinal()])) splitSizeCostFunction = Integer.parseInt(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_COST_FUNCTION_INDEX.ordinal()])) usePcaCostFunction = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.PCA_COMPONENTS_COST_FUNCTION_INDEX.ordinal()])) pcaComponentsCostFunction = Integer.parseInt(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.USE_TSNE_COST_FUNCTION_INDEX.ordinal()])) useTSNECostFunction = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TSNE_COMPONENTS_COST_FUNCTION_INDEX.ordinal()])) tsneComponentsCostFunction = Integer.parseInt(value);
                 else {
                     System.out.println("Error when loading config file:\nConfig file not formatted correctly");
                     return null;
@@ -311,11 +389,18 @@ public final class Config {
         newConfig.autoComputeA = autoComputeA;
         newConfig.autoComputePsi = autoComputePsi;
         newConfig.tuneParameters = tuneParameters;
-        newConfig.useFastVersion = useFastVersion;
         newConfig.removeRedundantCuts = removeRedundantCuts;
         newConfig.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
-        newConfig.splitSize = splitSize;
-        newConfig.tsneComponents = tsneComponents;
+        newConfig.splitSizeCutGeneration = splitSizeCutGeneration;
+        newConfig.usePcaCutGeneration = usePcaCutGeneration;
+        newConfig.pcaComponentsCutGeneration = pcaComponentsCutGeneration;
+        newConfig.useTSNECutGeneration = useTSNECutGeneration;
+        newConfig.tsneComponentsCutGeneration = tsneComponentsCutGeneration;
+        newConfig.splitSizeCostFunction = splitSizeCostFunction;
+        newConfig.usePcaCostFunction = usePcaCostFunction;
+        newConfig.pcaComponentsCostFunction = pcaComponentsCostFunction;
+        newConfig.useTSNECostFunction = useTSNECostFunction;
+        newConfig.tsneComponentsCostFunction = tsneComponentsCostFunction;
         return newConfig;
     }
 
@@ -336,11 +421,18 @@ public final class Config {
                 "Auto Compute a: " + autoComputeA + "\n" +
                 "Auto Compute psi: " + autoComputePsi + "\n" +
                 "Tune Parameters: " + tuneParameters + "\n" +
-                "Use Fast Version" + useFastVersion + "\n" +
                 "Remove Redundant Cuts: " + removeRedundantCuts + "\n" +
                 "Remove Redundant Cuts Iteratively: " + removeRedundantCutsIteratively + "\n" +
-                "Split Size: " + splitSize + "\n" +
-                "t-SNE Components: " + tsneComponents;
+                "Split Size Cut Generation: " + splitSizeCutGeneration + "\n" +
+                "Use PCA Cut Generation: " + usePcaCutGeneration + "\n" +
+                "PCA Components Cut Generation: " + pcaComponentsCutGeneration + "\n" +
+                "Use TSNE Cut Generation: " + useTSNECutGeneration + "\n" +
+                "TSNE Components Cut Generation: " + tsneComponentsCutGeneration + "\n" +
+                "Split Size Cost Function: " + splitSizeCostFunction + "\n" +
+                "Use PCA Cost Function: " + usePcaCostFunction + "\n" +
+                "PCA Components Cost Function: " + pcaComponentsCostFunction + "\n" +
+                "Use TSNE Cost Function: " + useTSNECostFunction + "\n" +
+                "TSNE Components Cost Function: " + tsneComponentsCostFunction + "\n";
     }
 
     public boolean isUseAlternateConsistencyCheck() {
@@ -459,10 +551,6 @@ public final class Config {
         return tuneParameters;
     }
 
-    public boolean isUseFastVersion() {
-        return useFastVersion;
-    }
-
     public boolean isRemoveRedundantCuts() {
         return removeRedundantCuts;
     }
@@ -479,19 +567,83 @@ public final class Config {
         this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
     }
 
-    public int getSplitSize() {
-        return splitSize;
+    public boolean isUsePcaCutGeneration() {
+        return usePcaCutGeneration;
     }
 
-    public void setSplitSize(int splitSize) {
-        this.splitSize = splitSize;
+    public void setUsePcaCutGeneration(boolean usePcaCutGeneration) {
+        this.usePcaCutGeneration = usePcaCutGeneration;
     }
 
-    public int getTsneComponents() {
-        return tsneComponents;
+    public int getPcaComponentsCutGeneration() {
+        return pcaComponentsCutGeneration;
     }
 
-    public void setTsneComponents(int tsneComponents) {
-        this.tsneComponents = tsneComponents;
+    public void setPcaComponentsCutGeneration(int pcaComponentsCutGeneration) {
+        this.pcaComponentsCutGeneration = pcaComponentsCutGeneration;
+    }
+
+    public boolean isUseTSNECutGeneration() {
+        return useTSNECutGeneration;
+    }
+
+    public void setUseTSNECutGeneration(boolean useTSNECutGeneration) {
+        this.useTSNECutGeneration = useTSNECutGeneration;
+    }
+
+    public int getTsneComponentsCutGeneration() {
+        return tsneComponentsCutGeneration;
+    }
+
+    public void setTsneComponentsCutGeneration(int tsneComponentsCutGeneration) {
+        this.tsneComponentsCutGeneration = tsneComponentsCutGeneration;
+    }
+
+    public boolean isUsePcaCostFunction() {
+        return usePcaCostFunction;
+    }
+
+    public void setUsePcaCostFunction(boolean usePcaCostFunction) {
+        this.usePcaCostFunction = usePcaCostFunction;
+    }
+
+    public int getPcaComponentsCostFunction() {
+        return pcaComponentsCostFunction;
+    }
+
+    public void setPcaComponentsCostFunction(int pcaComponentsCostFunction) {
+        this.pcaComponentsCostFunction = pcaComponentsCostFunction;
+    }
+
+    public boolean isUseTSNECostFunction() {
+        return useTSNECostFunction;
+    }
+
+    public void setUseTSNECostFunction(boolean useTSNECostFunction) {
+        this.useTSNECostFunction = useTSNECostFunction;
+    }
+
+    public int getTsneComponentsCostFunction() {
+        return tsneComponentsCostFunction;
+    }
+
+    public void setTsneComponentsCostFunction(int tsneComponentsCostFunction) {
+        this.tsneComponentsCostFunction = tsneComponentsCostFunction;
+    }
+
+    public int getSplitSizeCutGeneration() {
+        return splitSizeCutGeneration;
+    }
+
+    public void setSplitSizeCutGeneration(int splitSizeCutGeneration) {
+        this.splitSizeCutGeneration = splitSizeCutGeneration;
+    }
+
+    public int getSplitSizeCostFunction() {
+        return splitSizeCostFunction;
+    }
+
+    public void setSplitSizeCostFunction(int splitSizeCostFunction) {
+        this.splitSizeCostFunction = splitSizeCostFunction;
     }
 }

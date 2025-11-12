@@ -13,8 +13,9 @@ import java.awt.event.ItemEvent;
 import java.util.Arrays;
 import java.util.Comparator;
 
-public class ParameterPanel extends JPanel {
+public class ParameterPanel extends JScrollPane {
     private final View view;
+    private final JPanel contentPanel = new JPanel();
 
     // Constants
     private static final int TITLE_TEXT_SIZE = 16;
@@ -30,9 +31,17 @@ public class ParameterPanel extends JPanel {
     private BitSet[] sortedCuts;
     private double[] sortedCutCosts;
 
-    // Dimension reduction components
-    private JTextField splitSizeField;
-    private JTextField tsneComponentsField;
+    // Preprocessing section components
+    private JTextField splitSizeCutGenerationField;
+    private JCheckBox usePcaCutGenerationCheckbox;
+    private JTextField pcaComponentsCutGenerationField;
+    private JCheckBox useTsneCutGenerationCheckbox;
+    private JTextField tsneComponentsCutGenerationField;
+    private JTextField splitSizeCostFunctionField;
+    private JCheckBox usePcaCostFunctionCheckbox;
+    private JTextField pcaComponentsCostFunctionField;
+    private JCheckBox useTsneCostFunctionCheckbox;
+    private JTextField tsneComponentsCostFunctionField;
 
     // Algorithm section components
     private JCheckBox consistencyCheckbox;
@@ -46,7 +55,6 @@ public class ParameterPanel extends JPanel {
     private JComboBox<String> lowLevelCutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
     private JComboBox<String> lowLevelCostFunctionDropdown;
-    private JCheckBox fastVersionCheckBox;
     private JCheckBox parameterTuningCheckBox;
 
     // Cluster section components
@@ -75,13 +83,14 @@ public class ParameterPanel extends JPanel {
     public ParameterPanel(View view, boolean dataPanel) {
         this.view = view;
         this.dataPanel = dataPanel;
-        //setBackground(Color.WHITE);
-        setLayout(new GridBagLayout());
+
+        contentPanel.setLayout(new GridBagLayout());
+
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = DEFAULT_INSETS;
         gbc.weightx = 0.0;
 
-        buildDimensionSection();
+        buildPreprocessingSection();
         buildAlgorithmSection();
         buildClusteringSection();
         if (dataPanel) {
@@ -96,25 +105,58 @@ public class ParameterPanel extends JPanel {
         gbc.gridy++;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        add(Box.createGlue(), gbc);
+        contentPanel.add(Box.createGlue(), gbc);
 
         // Placed at the end to trigger change actions of check boxes
         autoComputeACheckBox.setSelected(true);
         autoComputePsiCheckBox.setSelected(true);
+
+        // Make parameter panel scrollable
+        setViewportView(contentPanel);
+        setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
+        setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
+        //setBorder(BorderFactory.createEmptyBorder());
+        contentPanel.setOpaque(true);
     }
 
-    private void buildDimensionSection() {
+    private void buildPreprocessingSection() {
         addFiller(10);
 
-        addTitle("Dimension Reduction");
+        addTitle("Preprocessing");
 
-        splitSizeField = new JTextField(5);
-        splitSizeField.setText("1000");
-        addRow("Split size", splitSizeField);
+        splitSizeCutGenerationField = new JTextField(5);
+        splitSizeCutGenerationField.setText("1000");
+        addRow("<html>Split Size<br> Cut Generation", splitSizeCutGenerationField);
 
-        tsneComponentsField = new JTextField(5);
-        tsneComponentsField.setText("5");
-        addRow("t-SNE Components", tsneComponentsField);
+        usePcaCutGenerationCheckbox = new JCheckBox("<html>Use PCA<br> Cut Generation</html>");
+        usePcaCutGenerationCheckbox.setSelected(true);
+        pcaComponentsCutGenerationField = new JTextField(5);
+        pcaComponentsCutGenerationField.setText("10");
+        addRow(usePcaCutGenerationCheckbox, pcaComponentsCutGenerationField);
+
+        useTsneCutGenerationCheckbox = new JCheckBox("<html>Use t-SNE<br> Cut Generation</html>");
+        useTsneCutGenerationCheckbox.setSelected(true);
+        tsneComponentsCutGenerationField = new JTextField(5);
+        tsneComponentsCutGenerationField.setText("5");
+        addRow(useTsneCutGenerationCheckbox, tsneComponentsCutGenerationField);
+
+        addFiller(5);
+
+        splitSizeCostFunctionField = new JTextField(5);
+        splitSizeCostFunctionField.setText("1000");
+        addRow("<html>Split Size<br> Cost Function", splitSizeCostFunctionField);
+
+        usePcaCostFunctionCheckbox = new JCheckBox("<html>Use PCA<br> Cost Function</html>");
+        usePcaCostFunctionCheckbox.setSelected(true);
+        pcaComponentsCostFunctionField = new JTextField(5);
+        pcaComponentsCostFunctionField.setText("10");
+        addRow(usePcaCostFunctionCheckbox, pcaComponentsCostFunctionField);
+
+        useTsneCostFunctionCheckbox = new JCheckBox("<html>Use t-SNE<br> Cost Function</html>");
+        useTsneCostFunctionCheckbox.setSelected(true);
+        tsneComponentsCostFunctionField = new JTextField(5);
+        tsneComponentsCostFunctionField.setText("5");
+        addRow(useTsneCostFunctionCheckbox, tsneComponentsCostFunctionField);
     }
 
     private void buildAlgorithmSection() {
@@ -192,10 +234,7 @@ public class ParameterPanel extends JPanel {
 
         parameterTuningCheckBox = new JCheckBox("Tune Parameters");
         parameterTuningCheckBox.setSelected(false);
-
-        fastVersionCheckBox = new JCheckBox("Fast Version");
-        fastVersionCheckBox.setSelected(false);
-        addRow(fastVersionCheckBox, parameterTuningCheckBox);
+        addFullWidth(parameterTuningCheckBox);
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster Tangles");
@@ -394,15 +433,30 @@ public class ParameterPanel extends JPanel {
             }
         }
 
-        int splitSize;
-        int tsneComponents;
+        int splitSizeCutGeneration;
+        boolean usePcaCutGeneration = usePcaCutGenerationCheckbox.isSelected();
+        int pcaComponentsCutGeneration;
+        boolean useTsneCutGeneration = useTsneCutGenerationCheckbox.isSelected();
+        int tsneComponentsCutGeneration;
+
+        int splitSizeCostFunction;
+        boolean usePcaCostFunction = usePcaCostFunctionCheckbox.isSelected();
+        int pcaComponentsCostFunction;
+        boolean useTsneCostFunction = useTsneCostFunctionCheckbox.isSelected();
+        int tsneComponentsCostFunction;
         try {
-            splitSize = Integer.parseInt(splitSizeField.getText());
-            tsneComponents = Integer.parseInt(tsneComponentsField.getText());
+            splitSizeCutGeneration = Integer.parseInt(splitSizeCutGenerationField.getText());
+            pcaComponentsCutGeneration = Integer.parseInt(pcaComponentsCutGenerationField.getText());
+            tsneComponentsCutGeneration = Integer.parseInt(tsneComponentsCutGenerationField.getText());
+
+            splitSizeCostFunction = Integer.parseInt(splitSizeCostFunctionField.getText());
+            pcaComponentsCostFunction = Integer.parseInt(pcaComponentsCostFunctionField.getText());
+            tsneComponentsCostFunction = Integer.parseInt(tsneComponentsCostFunctionField.getText());
+
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Split size and TSNE components must be integers.",
+                    "Split sizes and component values must be integers.",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -425,11 +479,18 @@ public class ParameterPanel extends JPanel {
                 autoComputeACheckBox.isSelected(),
                 autoComputePsiCheckBox.isSelected(),
                 useParameterTuning,
-                fastVersionCheckBox.isSelected(),
                 removeRedundantCutsCheckbox.isSelected(),
                 removeRedundantCutsIterativelyCheckBox.isSelected(),
-                splitSize,
-                tsneComponents
+                splitSizeCutGeneration,
+                usePcaCutGeneration,
+                pcaComponentsCutGeneration,
+                useTsneCutGeneration,
+                tsneComponentsCutGeneration,
+                splitSizeCostFunction,
+                usePcaCostFunction,
+                pcaComponentsCostFunction,
+                useTsneCostFunction,
+                tsneComponentsCostFunction
         );
     }
 
@@ -456,9 +517,16 @@ public class ParameterPanel extends JPanel {
         autoComputeACheckBox.setSelected(config.isAutoComputeA());
         autoComputePsiCheckBox.setSelected(config.isAutoComputePsi());
         parameterTuningCheckBox.setSelected(config.isTuneParameters());
-        fastVersionCheckBox.setSelected(config.isUseFastVersion());
-        splitSizeField.setText(Integer.toString(config.getSplitSize()));
-        tsneComponentsField.setText(Integer.toString(config.getTsneComponents()));
+        splitSizeCutGenerationField.setText(Integer.toString(config.getSplitSizeCutGeneration()));
+        usePcaCutGenerationCheckbox.setSelected(config.isUsePcaCutGeneration());
+        pcaComponentsCutGenerationField.setText(Integer.toString(config.getPcaComponentsCutGeneration()));
+        useTsneCutGenerationCheckbox.setSelected(config.isUseTSNECutGeneration());
+        tsneComponentsCutGenerationField.setText(Integer.toString(config.getTsneComponentsCutGeneration()));
+        splitSizeCostFunctionField.setText(Integer.toString(config.getSplitSizeCostFunction()));
+        usePcaCostFunctionCheckbox.setSelected(config.isUsePcaCostFunction());
+        pcaComponentsCostFunctionField.setText(Integer.toString(config.getPcaComponentsCostFunction()));
+        useTsneCostFunctionCheckbox.setSelected(config.isUseTSNECostFunction());
+        tsneComponentsCostFunctionField.setText(Integer.toString(config.getTsneComponentsCostFunction()));
 
         revalidate();
         repaint();
@@ -601,7 +669,7 @@ public class ParameterPanel extends JPanel {
         gbc.anchor = (col == 0) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
         //gbc.anchor = GridBagConstraints.BASELINE_LEADING;
 
-        add(comp, gbc);
+        contentPanel.add(comp, gbc);
 
         // Reset
         gbc.gridwidth = 1;

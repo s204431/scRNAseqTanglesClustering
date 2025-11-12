@@ -23,7 +23,16 @@ public class CostFunctions {
         this.mask = mask;
     }
 
-    public double[] averageCostFunction(double[][] dataPoints, BitSet[] initialCuts, String lowLevelCostFunctionName, boolean useCache, int splitSize, int tsneComponents, boolean useFastVersion) {
+    public double[] averageCostFunction(double[][] dataPoints,
+                                        BitSet[] initialCuts,
+                                        String lowLevelCostFunctionName,
+                                        boolean useCache,
+                                        int splitSize,
+                                        boolean usePca,
+                                        int pcaComponents,
+                                        boolean useTsne,
+                                        int tsneComponents) {
+
         double[] costs = new double[initialCuts.length];
 
         int nSplits = (int)Math.ceil(dataPoints[0].length/(double)splitSize);
@@ -90,8 +99,10 @@ public class CostFunctions {
             runnables[i].lowLevelCostFunctionName = lowLevelCostFunctionName;
             runnables[i].index = i;
             runnables[i].cacheUsed = cacheUsed;
-            runnables[i].components = tsneComponents;
-            runnables[i].useFastVersion = useFastVersion;
+            runnables[i].usePca = usePca;
+            runnables[i].pcaComponents = pcaComponents;
+            runnables[i].useTsne = useTsne;
+            runnables[i].tsneComponents = tsneComponents;
             threads[i] = new Thread(runnables[i]);
             threads[i].start();
         }
@@ -124,7 +135,16 @@ public class CostFunctions {
         return costs;
     }
 
-    public double[] bestFirstCostFunction(double[][] dataPoints, BitSet[] initialCuts, String lowLevelCostFunctionName, boolean useCache, int splitSize, int tsneComponents, boolean useFastVersion) {
+    public double[] bestFirstCostFunction(double[][] dataPoints,
+                                          BitSet[] initialCuts,
+                                          String lowLevelCostFunctionName,
+                                          boolean useCache,
+                                          int splitSize,
+                                          boolean usePca,
+                                          int pcaComponents,
+                                          boolean useTsne,
+                                          int tsneComponents) {
+
         double[] costs = new double[initialCuts.length];
         Arrays.fill(costs, Double.MAX_VALUE);
 
@@ -175,8 +195,10 @@ public class CostFunctions {
             runnables[i].lowLevelCostFunctionName = lowLevelCostFunctionName;
             runnables[i].index = i;
             runnables[i].cacheUsed = cacheUsed;
-            runnables[i].components = tsneComponents;
-            runnables[i].useFastVersion = useFastVersion;
+            runnables[i].usePca = usePca;
+            runnables[i].pcaComponents = pcaComponents;
+            runnables[i].useTsne = useTsne;
+            runnables[i].tsneComponents = tsneComponents;
             threads[i] = new Thread(runnables[i]);
             threads[i].start();
         }
@@ -213,15 +235,17 @@ public class CostFunctions {
         public String lowLevelCostFunctionName;
         public boolean cacheUsed;
         public int index;
-        public int components;
-        public boolean useFastVersion;
+        public boolean usePca;
+        public int pcaComponents;
+        public boolean useTsne;
+        public int tsneComponents;
 
         public double[][] localReducedPoints; //For caching.
 
         @Override
         public void run() {
             if (!cacheUsed) {
-                data = useFastVersion ? Model.svd(data, components) : Model.tsne(data, components);
+                data = usePca ? Model.svd(data, pcaComponents) : Model.tsne(data, tsneComponents);
                 data = Main.zScoreNorm(data);
                 localReducedPoints = data;
             }
@@ -230,13 +254,20 @@ public class CostFunctions {
     }
 
     //This cost function reduces points and runs a single other cost function.
-    public double[] singleCostFunction(double[][] dataPoints, BitSet[] initialCuts, String lowLevelCostFunctionName, boolean useCache, int components, boolean useFastVersion) {
+    public double[] singleCostFunction(double[][] dataPoints,
+                                       BitSet[] initialCuts,
+                                       String lowLevelCostFunctionName,
+                                       boolean useCache,
+                                       boolean usePca,
+                                       int pcaComponents,
+                                       boolean useTsne,
+                                       int tsneComponents) {
 
         if (useCache && reducedPoints != null) {
             dataPoints = loadFromCache().getFirst();
         }
         else {
-            dataPoints = useFastVersion ? Model.svd(dataPoints, components) : Model.tsne(dataPoints, components);
+            dataPoints = usePca ? Model.svd(dataPoints, pcaComponents) : Model.tsne(dataPoints, tsneComponents);
             dataPoints = Main.zScoreNorm(dataPoints);
             if (useCache) {
                 reducedPoints = new ArrayList<>();
