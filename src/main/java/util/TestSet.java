@@ -214,7 +214,7 @@ public class TestSet {
                     averageNMIScores[testIndex][configIndex] += NMI;
                     averageRandIndexScores[testIndex][configIndex] += randIndex;
 
-                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex);
+                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering));
                     progressManager.markTangleSingleRunFinished();
                 }
 
@@ -236,7 +236,7 @@ public class TestSet {
                 NMIPythonResults[testIndex] = NMIPython;
                 randIndexPythonResults[testIndex] = randIndexPython;
                 pythonTimes[testIndex] = pythonResult.y;
-                testLogger.setResult(observedFilePath, progressManager.getTitle(nConfigs), testIndex, nConfigs, 0, sparsity, pythonResult.y, NMIPython, randIndexPython);
+                testLogger.setResult(observedFilePath, progressManager.getTitle(nConfigs), testIndex, nConfigs, 0, sparsity, pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x));
                 progressManager.markPythonFinished(testIndex, pythonTimes[testIndex], NMIPythonResults[testIndex], randIndexPythonResults[testIndex]);
                 System.out.println("NMI python: " + NMIPython);
                 System.out.println("Rand index python: " + randIndexPython);

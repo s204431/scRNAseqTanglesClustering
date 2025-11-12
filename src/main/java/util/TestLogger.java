@@ -13,11 +13,11 @@ public class TestLogger {
         this.results = new TestResult[tests][configs];
     }
 
-    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double sparsity, double time, double nmi, double randIndex) {
+    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double sparsity, double time, double nmi, double randIndex, int nClusters) {
         if (results[testIndex][configIndex] == null) {
             results[testIndex][configIndex] = new TestResult(testName, configName, runs, sparsity);
         }
-        results[testIndex][configIndex].setResult(runIndex, time, nmi, randIndex);
+        results[testIndex][configIndex].setResult(runIndex, time, nmi, randIndex, nClusters);
     }
 
     public void printResults() {
@@ -39,6 +39,7 @@ public class TestLogger {
         for (int k = 1; k <= maxRuns; k++) sb.append(",Time_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",NMI_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",RandIndex_").append(k);
+        for (int k = 1; k <= maxRuns; k++) sb.append(",Clusters_").append(k);
         sb.append("\n");
 
         // Rows
@@ -84,20 +85,30 @@ public class TestLogger {
                         .append(",").append(sparsity)
                         .append(",").append(runs);
 
+                // Times
                 for (int k = 0; k < maxRuns; k++) {
                     sb.append(",");
                     if (k < result.times.length) sb.append(result.times[k]);
                 }
 
+                // NMIs
                 for (int k = 0; k < maxRuns; k++) {
                     sb.append(",");
                     if (k < result.nmis.length) sb.append(result.nmis[k]);
                 }
 
+                // Rand Indices
                 for (int k = 0; k < maxRuns; k++) {
                     sb.append(",");
                     if (k < result.randIndices.length) sb.append(result.randIndices[k]);
                 }
+
+                // Clusters
+                for (int k = 0; k < maxRuns; k++) {
+                    sb.append(",");
+                    if (k < result.times.length) sb.append(result.nClusters[k]);
+                }
+
                 sb.append("\n");
             }
         }
@@ -116,6 +127,7 @@ public class TestLogger {
         public final double[] times;
         public final double[] nmis;
         public final double[] randIndices;
+        public final int[] nClusters;
 
         public TestResult(String testName, String configName, int runs, double sparsity) {
             this.testName = testName;
@@ -124,12 +136,14 @@ public class TestLogger {
             this.times = new double[runs];
             this.nmis = new double[runs];
             this.randIndices = new double[runs];
+            this.nClusters = new int[runs];
         }
 
-        public void setResult(int runIndex, double time, double nmi, double randIndex) {
+        public void setResult(int runIndex, double time, double nmi, double randIndex, int nClusters) {
             this.times[runIndex] = time;
             this.nmis[runIndex] = nmi;
             this.randIndices[runIndex] = randIndex;
+            this.nClusters[runIndex] = nClusters;
         }
 
         @Override
@@ -141,7 +155,8 @@ public class TestLogger {
             for (int i = 0; i < times.length; i++) {
                 sb.append(" Run ").append(i + 1).append(": Time = ").append(times[i])
                   .append(", NMI = ").append(nmis[i])
-                  .append(", Rand Index = ").append(randIndices[i]).append("\n");
+                  .append(", Rand Index = ").append(randIndices[i])
+                  .append("  Clusters = ").append(nClusters[i]).append("\n");
             }
             return sb.toString();
         }
