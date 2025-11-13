@@ -146,7 +146,7 @@ public class TestSet {
                           TestProgressManager progressManager) {
 
         System.out.println("Running warmup clustering...");
-        singleWarmup();
+        singleWarmup(configs[0]);
         System.out.println("Warmup completed\n");
 
         System.out.println("Testing on " + observedPaths.length + " datasets with " + nRunsPerDataset + " runs");
@@ -310,7 +310,7 @@ public class TestSet {
     }
 
     // Runs a warmup clustering on the first dataset of the test set.
-    private void singleWarmup() {
+    private void singleWarmup(Config warmupConfig) {
         String observedFilePath = observedPaths[0];
         Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath);
         float[][] originalData = loaded.x;
@@ -327,7 +327,6 @@ public class TestSet {
         // Single warmup clustering
         ScRNAseqDataset warmupDataset = new ScRNAseqDataset(hvgData);
         int warmupA = (int)(((double)warmupDataset.data.length/nClusters)*0.667);
-        Config warmupConfig = new Config();
         warmupConfig.setA(warmupA);
         model.cluster(warmupDataset, warmupConfig);
     }
