@@ -184,7 +184,7 @@ public class CutGenerators {
     }
 
     public BitSet[] runLowLevelCutGenerator(double[][] reducedData, String cutGeneratorName, int a, boolean moreIterations) {
-        int timesMoreCuts = 18; //Generate this many times more cuts using shifting
+        int timesMoreCuts = 1; //Generate this many times more cuts using shifting
         return switch (cutGeneratorName) {
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN -> getInitialCutsKNN(reducedData, a, moreIterations ? 5 : 1);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_SIMPLE -> getInitialCutsSimple(reducedData, a, timesMoreCuts);
@@ -391,7 +391,7 @@ public class CutGenerators {
         int shiftAmount = (int) Math.max((a/precision)/timesMoreCuts, 1);
 
         List<BitSet> cuts = new ArrayList<>();
-        for (int shift = 0; shift < a; shift += shiftAmount) {
+        for (int shift = 0; shift < a/precision; shift += shiftAmount) {
             double[][] copy = new double[dataPoints.length][dataPoints[0].length];
             int[] originalIndices = new int[dataPoints.length];
             for (int i = 0; i < dataPoints.length; i++) {
@@ -482,7 +482,7 @@ public class CutGenerators {
 
         List<BitSet> cuts = new ArrayList<>();
         List<Double>[] axisParallelCuts = new ArrayList[dataPoints[0].length]; //For visualization.
-        for (int shift = 0; shift < a; shift += shiftAmount) {
+        for (int shift = 0; shift < a/precision; shift += shiftAmount) {
             double[][] copy = new double[dataPoints.length][dataPoints[0].length];
             int[] originalIndices = new int[dataPoints.length];
             for (int i = 0; i < dataPoints.length; i++) {
@@ -536,7 +536,7 @@ public class CutGenerators {
 
         List<BitSet> cuts = new ArrayList<>();
         List<Double>[] axisParallelCuts = new ArrayList[dataPoints[0].length]; //For visualization.
-        for (int shift = 0; shift < a; shift += shiftAmount) {
+        for (int shift = 0; shift < a/precision; shift += shiftAmount) {
             double[][] copy = new double[dataPoints.length][dataPoints[0].length];
             int[] originalIndices = new int[dataPoints.length];
             for (int i = 0; i < dataPoints.length; i++) {
@@ -603,7 +603,7 @@ public class CutGenerators {
         List<Double> costs = new ArrayList<>();
         List<BitSet> cuts = new ArrayList<>();
         List<Double>[] axisParallelCuts = new ArrayList[dataPoints[0].length]; //For visualization.
-        for (int shift = 0; shift < a; shift += shiftAmount) {
+        for (int shift = 0; shift < a/precision; shift += shiftAmount) {
             double[][] copy = new double[dataPoints.length][dataPoints[0].length];
             int[] originalIndices = new int[dataPoints.length];
             for (int i = 0; i < dataPoints.length; i++) {
