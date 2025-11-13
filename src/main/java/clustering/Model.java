@@ -157,6 +157,19 @@ public class Model {
         return unShuffledArray;
     }
 
+    public float[][] computeUnShuffledArray(float[][] shuffledArray, int seed) {
+        int n = shuffledArray.length;
+        float[][] unShuffledArray = new float[n][shuffledArray[0].length];
+        int[] indices = new int[n];
+        for (int i = 0; i < n; i++) indices[i] = i;
+
+        shuffleArray(indices, seed);
+        for (int i = 0; i < n; i++) {
+            unShuffledArray[indices[i]] = shuffledArray[i];
+        }
+        return unShuffledArray;
+    }
+
     public void runTestset() {
         TestSet testSet = new TestSet(this, "data/testset");
         testSet.run(10, true);

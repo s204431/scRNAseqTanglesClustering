@@ -168,23 +168,19 @@ public class TestSet {
         for (int testIndex = 0; testIndex < nTests; testIndex++) {
             if (progressManager.testingStopped()) return;
 
+            // Read and preprocess dataset
             String observedFilePath = observedPaths[testIndex];
             Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath);
             float[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
             double sparsity = model.computeSparsity(originalData);
-
-            Random r = new Random();
-            int seed = r.nextInt();
-            int[] shuffledGroundTruth = groundTruth.clone();
-            model.shuffleArray(shuffledGroundTruth, seed);
-            model.shuffleArray(originalData, seed);
-
-            long preTime1 = System.currentTimeMillis();
             float[][] normalizedData = model.logNormalize(originalData);
-            double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
-            int nClusters = getNumberOfClusters(groundTruth);
-            long preTime = System.currentTimeMillis() - preTime1;
+
+            // Prepare shuffling seeds
+            Random r = new Random();
+            int[] shuffleSeeds = new int[nRunsPerDataset];
+            for (int i = 0; i < nRunsPerDataset; i++) shuffleSeeds[i] = r.nextInt();
+
 
             for (int configIndex = 0; configIndex < configs.length; configIndex++) {
                 Config config = configs[configIndex];
@@ -192,6 +188,17 @@ public class TestSet {
                 for (int run = 0; run < nRunsPerDataset; run++) {
                     if (progressManager.testingStopped()) return;
 
+                    // Shuffle the dataset before each run
+                    int[] shuffledGroundTruth = groundTruth.clone();
+                    model.shuffleArray(shuffledGroundTruth, shuffleSeeds[run]);
+                    model.shuffleArray(normalizedData, shuffleSeeds[run]);
+
+                    long preTime1 = System.currentTimeMillis();
+                    double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
+                    int nClusters = getNumberOfClusters(groundTruth);
+                    long preTime = System.currentTimeMillis() - preTime1;
+
+                    // Clustering
                     long time1 = System.currentTimeMillis();
                     ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
 
@@ -209,13 +216,18 @@ public class TestSet {
                     double postTime = (preTime + (System.currentTimeMillis() - time1)) / 1000.0;
                     averageTimes[testIndex][configIndex] += postTime;
 
+                    // Evaluate clustering
                     double NMI = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);
                     double randIndex = AdjustedRandIndex.of(shuffledGroundTruth, hardClustering);
                     averageNMIScores[testIndex][configIndex] += NMI;
                     averageRandIndexScores[testIndex][configIndex] += randIndex;
 
+                    // Save results
                     testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering));
                     progressManager.markTangleSingleRunFinished();
+
+                    // Unshuffle dataset after each run
+                    normalizedData = model.computeUnShuffledArray(normalizedData, shuffleSeeds[run]);
                 }
 
                 averageNMIScores[testIndex][configIndex] /= nRunsPerDataset;
