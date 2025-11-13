@@ -147,9 +147,11 @@ public class ParameterPanel extends JScrollPane {
         addRow("<html>Split Size<br> Cost Function", splitSizeCostFunctionField);
 
         usePcaCostFunctionCheckbox = new JCheckBox("<html>Use PCA<br> Cost Function</html>");
-        usePcaCostFunctionCheckbox.setSelected(true);
+        usePcaCostFunctionCheckbox.setSelected(false);
         pcaComponentsCostFunctionField = new JTextField(5);
         pcaComponentsCostFunctionField.setText("10");
+        pcaComponentsCostFunctionField.setEnabled(false);
+        pcaComponentsCostFunctionField.setEditable(false);
         addRow(usePcaCostFunctionCheckbox, pcaComponentsCostFunctionField);
 
         useTsneCostFunctionCheckbox = new JCheckBox("<html>Use t-SNE<br> Cost Function</html>");
@@ -313,6 +315,26 @@ public class ParameterPanel extends JScrollPane {
             aField.setEnabled(!autoComputeACheckBox.isSelected() && !isChecked);
             psiField.setEditable(!autoComputePsiCheckBox.isSelected() && !isChecked);
             psiField.setEnabled(!autoComputePsiCheckBox.isSelected() && !isChecked);
+        });
+
+        usePcaCostFunctionCheckbox.addItemListener(e -> {
+            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+            pcaComponentsCostFunctionField.setEditable(isChecked);
+            pcaComponentsCostFunctionField.setEnabled(isChecked);
+
+            useTsneCostFunctionCheckbox.setSelected(!isChecked);
+            tsneComponentsCostFunctionField.setEditable(!isChecked);
+            tsneComponentsCostFunctionField.setEnabled(!isChecked);
+        });
+
+        useTsneCostFunctionCheckbox.addItemListener(e -> {
+            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
+            tsneComponentsCostFunctionField.setEditable(isChecked);
+            tsneComponentsCostFunctionField.setEnabled(isChecked);
+
+            usePcaCostFunctionCheckbox.setSelected(!isChecked);
+            pcaComponentsCostFunctionField.setEditable(!isChecked);
+            pcaComponentsCostFunctionField.setEnabled(!isChecked);
         });
 
 
