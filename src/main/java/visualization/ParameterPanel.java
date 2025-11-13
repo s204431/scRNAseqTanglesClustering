@@ -80,6 +80,10 @@ public class ParameterPanel extends JScrollPane {
 
     private boolean runningTests = false;
 
+    // Where the layout helpers should add components
+    private JPanel targetPanel = contentPanel;
+    private int sectionRow = 0;
+
     public ParameterPanel(View view, boolean dataPanel) {
         this.view = view;
         this.dataPanel = dataPanel;
@@ -120,9 +124,7 @@ public class ParameterPanel extends JScrollPane {
     }
 
     private void buildPreprocessingSection() {
-        addFiller(10);
-
-        addTitle("Preprocessing");
+        beginSection("Preprocessing Parameters");
 
         splitSizeCutGenerationField = new JTextField(5);
         splitSizeCutGenerationField.setText("1000");
@@ -159,12 +161,12 @@ public class ParameterPanel extends JScrollPane {
         tsneComponentsCostFunctionField = new JTextField(5);
         tsneComponentsCostFunctionField.setText("5");
         addRow(useTsneCostFunctionCheckbox, tsneComponentsCostFunctionField);
+
+        endSection();
     }
 
     private void buildAlgorithmSection() {
-        addFiller(5);
-
-        addTitle("Algorithm Modifications");
+        beginSection("Algorithm Modifications");
 
         consistencyCheckbox = new JCheckBox("<html>" +
                 "Consistency<br>" +
@@ -205,12 +207,12 @@ public class ParameterPanel extends JScrollPane {
 
         lowLevelCostFunctionDropdown = new JComboBox<>(GlobalConstants.LOW_LEVEL_COST_FUNCTION_NAMES);
         addRow("<html>Cost Function</html>", lowLevelCostFunctionDropdown);
+
+        endSection();
     }
 
     private void buildClusteringSection() {
-        addFiller(5);
-
-        addTitle("Cluster Parameters");
+        beginSection("Clustering Parameters");
 
         aField = new JTextField(6);
         String aFieldText = " a ";
@@ -243,12 +245,12 @@ public class ParameterPanel extends JScrollPane {
             pythonClusterButton = new JButton("Cluster Scanpy");
             addRow(clusterButton, pythonClusterButton);
         }
+
+        endSection();
     }
 
     private void buildCutsSection() {
-        addFiller(5);
-
-        addTitle("Cut Visualization");
+        beginSection("Cut Visualization");
 
         // A counter for cuts ( - [number] + )
         cutNumberField = new JTextField("0", 3);
@@ -263,12 +265,12 @@ public class ParameterPanel extends JScrollPane {
 
         cutButton = new JButton("Show Cut");
         addRow(counterPanel, cutButton);
+
+        endSection();
     }
 
     private void buildTestSection() {
-        addFiller(5);
-
-        addTitle("Test Parameters");
+        beginSection("Testing Parameters");
 
         runNumberField = new JTextField(3);
         runNumberField.setText("1");
@@ -277,6 +279,8 @@ public class ParameterPanel extends JScrollPane {
         pythonCheckBox = new JCheckBox("<html>Compare With<br>Scanpy</html>");
         testButton = new JButton("Run Tests");
         addRow(testButton, pythonCheckBox);
+
+        endSection();
     }
 
     private void addActions() {
@@ -648,6 +652,28 @@ public class ParameterPanel extends JScrollPane {
     }
 
     // ================= LAYOUT HELPERS =================
+    private void beginSection(String title) {
+        CollapsibleSection section = new CollapsibleSection(title);
+        section.getHeaderButton().setBackground(contentPanel.getBackground());
+
+        gbc.gridx = 0;
+        gbc.gridy = row++;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        contentPanel.add(section, gbc);
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.0;
+
+        targetPanel = section.getBodyPanel();
+        sectionRow = 0;
+    }
+
+    private void endSection() {
+        targetPanel = contentPanel;
+        sectionRow = 0;
+    }
+
     private void addTitle(String text) {
         JLabel title = new JLabel(text);
         title.setFont(title.getFont().deriveFont(Font.BOLD, TITLE_TEXT_SIZE));
@@ -668,7 +694,11 @@ public class ParameterPanel extends JScrollPane {
     private void addRow(JComponent left, JComponent right) {
         addAt(left, 0, 1);
         addAt(right, 1, 1);
-        row++;
+        if (targetPanel == contentPanel) {
+            row++;
+        } else {
+            sectionRow++;
+        }
     }
 
     // Add vertical filler
@@ -679,22 +709,75 @@ public class ParameterPanel extends JScrollPane {
     // Adds component spanning two columns
     private void addFullWidth(Component component) {
         addAt(component, 0, 2);
-        row++;
+        if (targetPanel == contentPanel) {
+            row++;
+        } else {
+            sectionRow++;
+        }
     }
 
     // Adds component at given col index spanning spanColumns
     private void addAt(Component comp, int col, int spanColumns) {
-        gbc.gridx = col;
-        gbc.gridy = row;
-        gbc.gridwidth = spanColumns;
-        gbc.weightx = (col == 1 || spanColumns == 2) ? 1.0 : 0.0;
-        gbc.anchor = (col == 0) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
-        //gbc.anchor = GridBagConstraints.BASELINE_LEADING;
+        GridBagConstraints newConstraints = new GridBagConstraints();
+        newConstraints.gridx = col;
+        newConstraints.gridy = (targetPanel == contentPanel) ? row : sectionRow;
+        newConstraints.gridwidth = spanColumns;
+        newConstraints.fill = GridBagConstraints.HORIZONTAL;
+        newConstraints.insets = DEFAULT_INSETS;
+        newConstraints.weightx = (col == 1 || spanColumns == 2) ? 1.0 : 0.0;
+        newConstraints.anchor = (col == 0) ? GridBagConstraints.EAST : GridBagConstraints.WEST;
+        targetPanel.add(comp, newConstraints);
+    }
 
-        contentPanel.add(comp, gbc);
+    // Collapsible section panel (reduces space used by parameter panel)
+    private static final class CollapsibleSection extends JPanel {
+        private final JButton headerButton;
+        private final JPanel bodyPanel;
 
-        // Reset
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.0;
+        private String openSymbol = "+  ";
+        private String closeSymbol = "–  ";
+
+        public CollapsibleSection(String title) {
+            super(new BorderLayout());
+            headerButton = new JButton(closeSymbol + title);
+            headerButton.setFocusPainted(false);
+            headerButton.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+            headerButton.setFont(headerButton.getFont().deriveFont(Font.BOLD, TITLE_TEXT_SIZE));
+            headerButton.setHorizontalAlignment(SwingConstants.LEFT);
+
+            // Make it possible to change background color
+            headerButton.setContentAreaFilled(false);
+            headerButton.setOpaque(true);
+
+            bodyPanel = new JPanel(new GridBagLayout());
+            headerButton.addActionListener(e -> toggle());
+
+            add(headerButton, BorderLayout.NORTH);
+            add(bodyPanel, BorderLayout.CENTER);
+
+            setBorder(BorderFactory.createEmptyBorder(5,0,0,0));
+        }
+
+        public JPanel getBodyPanel() {
+            return bodyPanel;
+        }
+
+        public JButton getHeaderButton() {
+            return headerButton;
+        }
+
+        public void toggle() {
+            boolean visible = bodyPanel.isVisible();
+            bodyPanel.setVisible(!visible);
+            headerButton.setText((visible ? openSymbol : closeSymbol) + headerButton.getText().substring(3));
+            revalidate(); repaint();
+
+            Container p = getParent();
+            while (p != null) {
+                p.revalidate();
+                p.repaint();
+                p = p.getParent();
+            }
+        }
     }
 }
