@@ -194,7 +194,7 @@ public class TestSet {
                     model.shuffleArray(normalizedData, shuffleSeeds[run]);
 
                     long preTime1 = System.currentTimeMillis();
-                    double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
+                    double[][] hvgData = model.highlyVariableGenes(normalizedData, Math.min(5000, normalizedData[0].length));
                     int nClusters = getNumberOfClusters(groundTruth);
                     long preTime = System.currentTimeMillis() - preTime1;
 
