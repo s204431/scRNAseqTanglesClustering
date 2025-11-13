@@ -3,6 +3,8 @@ package util;
 import java.awt.*;
 
 public class GlobalConstants {
+    public static final int MAX_PCS_COMPONENTS = 50;
+
     public enum HIGH_LEVEL_CUT_GENERATOR {
         SPLIT,
         NORMAL

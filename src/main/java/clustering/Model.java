@@ -17,14 +17,10 @@ import elki.distance.minkowski.EuclideanDistance;
 import io.jhdf.HdfFile;
 import io.jhdf.api.Dataset;
 import io.jhdf.api.Group;
-import util.Monitor;
+import util.*;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
 import smile.math.matrix.Matrix;
-import util.BitSet;
-import util.Config;
-import util.TestSet;
-import util.Tuple;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,6 +41,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import util.BitSet;
 import visualization.test.TestProgressManager;
 
 
@@ -319,7 +316,7 @@ public class Model {
 
         double[][] reducedPoints;
         if (config.isUsePcaCostFunction()) {
-            reducedPoints = svd(dataset.data, config.getPcaComponentsCostFunction());
+            reducedPoints = svdWithElbow(dataset.data);
         }
         else {
             reducedPoints = tsne(dataset.data, config.getTsneComponentsCostFunction());
@@ -416,7 +413,7 @@ public class Model {
         return pca.getProjection(nComponents).apply(data);
     }
 
-    public static double[][] svd(double[][] data, int nComponents) {
+    public static Tuple<double[][], double[]> svd(double[][] data, int nComponents) {
         int n = data.length;
         int d = data[0].length;
 
@@ -435,17 +432,78 @@ public class Model {
         Matrix X = Matrix.of(centered);
         Matrix.SVD svd = X.svd();
 
+        double[] singularValues = svd.s;
+        int k = Math.min(nComponents, singularValues.length);
+
+        // Take first k columns of V
         Matrix V = svd.V;
-        double[][] V_k_array = new double[X.ncol()][nComponents];
+        double[][] V_k_array = new double[X.ncol()][k];
         for (int i = 0; i < X.ncol(); i++) {
-            for (int j = 0; j < nComponents; j++) {
+            for (int j = 0; j < k; j++) {
                 V_k_array[i][j] = V.get(i, j);
             }
         }
         Matrix V_k = Matrix.of(V_k_array);
-
         Matrix projectedData = X.mm(V_k);
-        return projectedData.toArray();
+
+        // Compute variance explained
+        double[] eigenvalues = new double[singularValues.length];
+        double totalVariance = 0.0;
+        for (int i = 0; i < singularValues.length; i++) {
+            // Covariance eigenvalues: \lambda_i = \sigma_i^2 / (n - 1)
+            double lambda = (singularValues[i] * singularValues[i]) / (n - 1);
+            eigenvalues[i] = lambda;
+            totalVariance += lambda;
+        }
+
+        double[] explainedVarianceRatio = new double[k];
+        for (int i = 0; i < k; i++) {
+            explainedVarianceRatio[i] = eigenvalues[i] / totalVariance;
+        }
+
+        return new Tuple<>(projectedData.toArray(), explainedVarianceRatio);
+    }
+
+    public static int findElbow(double[] evr) {
+        int n = evr.length;
+        if (n < 3) return n;
+
+        // Line from first to last point
+        double x1 = 0, y1 = evr[0];
+        double x2 = n - 1, y2 = evr[n - 1];
+
+        double maxDist = -1.0;
+        int elbowIndex = 0;
+
+        for (int i = 1; i < n - 1; i++) {
+            double x0 = i;
+            double y0 = evr[i];
+
+            // Distance from point to line
+            double num = Math.abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2*y1 - y2*x1);
+            double den = Math.sqrt((y2 - y1)*(y2 - y1) + (x2 - x1)*(x2 - x1));
+            double dist = num / den;
+
+            if (dist > maxDist) {
+                maxDist = dist;
+                elbowIndex = i;
+            }
+        }
+
+        return elbowIndex + 1;
+    }
+
+    public static double[][] svdWithElbow(double[][] data) {
+        Tuple<double[][], double[]> pcaResult = Model.svd(data, GlobalConstants.MAX_PCS_COMPONENTS);
+        double[][] projectedData = pcaResult.x;
+        double[] varianceRatios = pcaResult.y;
+        int pcaComponents = Model.findElbow(varianceRatios);
+        System.out.println("Elbow found at: " + pcaComponents + " components");
+        double[][] reducedPoints = new double[projectedData.length][pcaComponents];
+        for (int i = 0; i < projectedData.length; i++) {
+            System.arraycopy(projectedData[i], 0, reducedPoints[i], 0, pcaComponents);
+        }
+        return reducedPoints;
     }
 
     public static double[][] tsne(double[][] data, int nComponents) {

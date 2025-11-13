@@ -5,6 +5,7 @@ import main.Main;
 import util.BitSet;
 import util.Distance;
 import util.GlobalConstants;
+import util.Tuple;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -245,7 +246,7 @@ public class CostFunctions {
         @Override
         public void run() {
             if (!cacheUsed) {
-                data = usePca ? Model.svd(data, pcaComponents) : Model.tsne(data, tsneComponents);
+                data = usePca ? Model.svdWithElbow(data) : Model.tsne(data, tsneComponents);
                 data = Main.zScoreNorm(data);
                 localReducedPoints = data;
             }
@@ -267,7 +268,7 @@ public class CostFunctions {
             dataPoints = loadFromCache().getFirst();
         }
         else {
-            dataPoints = usePca ? Model.svd(dataPoints, pcaComponents) : Model.tsne(dataPoints, tsneComponents);
+            dataPoints = usePca ? Model.svdWithElbow(dataPoints) : Model.tsne(dataPoints, tsneComponents);
             dataPoints = Main.zScoreNorm(dataPoints);
             if (useCache) {
                 reducedPoints = new ArrayList<>();

@@ -135,14 +135,14 @@ public class CutGenerators {
 
         if (usePca) {
             if (lowLevelCutGenerator.equals(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN)) {
-                double[][] reducedPoints = Model.svd(dataPoints, 10);
+                double[][] reducedPoints = Model.svd(dataPoints, 10).x;
                 bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
                 for (int n : new int[]{5, 4, 3, 2}) {
                     reducedPoints = getFirstDimensions(reducedPoints, n);
                     bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
                 }
             } else {
-                double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA);
+                double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA).x;
                 bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
             }
         }
@@ -171,7 +171,7 @@ public class CutGenerators {
         List<BitSet[]> bitsets = new ArrayList<>();
 
         if (usePca) {
-            double[][] reducedPoints = Model.svd(dataPoints, pcaComponents);
+            double[][] reducedPoints = Model.svd(dataPoints, pcaComponents).x;
             bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
         }
 

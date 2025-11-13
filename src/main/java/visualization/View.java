@@ -180,9 +180,9 @@ public class View {
     public void loadDataset() {
         points = model.getHvgData();
         if (points.length > 4000) {
-            points = Model.svd(points, 2);
+            points = Model.svd(points, 2).x;
         } else {
-            points = Model.svd(points, 100);
+            points = Model.svd(points, 100).x;
             points = Model.tsne(points, 2);
         }
         points = Main.zScoreNorm(points);
