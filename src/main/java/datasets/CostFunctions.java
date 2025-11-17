@@ -375,19 +375,13 @@ public class CostFunctions {
     //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.
     public double[] pairwiseClosestCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
 
-        double threshold = 1.0;
+        //double threshold = 1.0;
 
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
             double cost = 0;
             int size1 = initialCuts[i].count();
-            int size0 = dataPoints.length - size1;
-            int nBad = 0;
-            boolean smallest = false;
-            if (size0 > size1) {
-                smallest = true;
-            }
             for (int j = 0; j < dataPoints.length; j++) {
                 //if (initialCuts[i].get(j) != smallest) {
                 //    continue;
@@ -399,17 +393,9 @@ public class CostFunctions {
                     }
                     closestDist = Math.min(closestDist, getDistance(dataPoints[j], dataPoints[k]));
                 }
-                if (closestDist < threshold) {
-                    cost += Math.exp(-1.0*closestDist);
-                    nBad++;
-                }
+                cost += Math.exp(-1.0*closestDist);
             }
-            if (nBad == 0) {
-                costs[i] = 0.0;
-            }
-            else {
-                costs[i] = cost;//cost/nBad;// / (smallest ? size1 : size0);//(initialCuts[i].count()*(initialCuts[i].size()-initialCuts[i].count()));
-            }
+            costs[i] = cost/initialCuts[i].size();
         }
         //cutCosts = costs;
         return costs;
