@@ -4,8 +4,9 @@ import io
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
-SAVE_FIGURES = False
+SAVE_FIGURES = True
 
 plt.rcParams.update({
     "font.size": 10,
@@ -23,12 +24,18 @@ SAVE_DPI    = 400   # higher DPI for sharpness in LaTeX
 
 
 
-df = pd.read_csv("experiments/test_results_batching_pca.csv")
+df = pd.read_csv("experiments/test_results_cuts_pca.csv")
 
 df = df.rename(columns=lambda c: re.sub(r'^RandIndex', 'ARI', c))
+df = df.replace("TSNE", "t-SNE", regex=True)
 
 for i in range(len(df)):
     df.loc[i, "Config Name"] = df.loc[i, "Config Name"][2:]
+    
+for i in range(len(df)):
+    df.loc[i, "Config Name"] = df.loc[i, "Config Name"] + " only" if df.loc[i, "Config Name"] == "t-SNE" else df.loc[i, "Config Name"]
+    df.loc[i, "Config Name"] = df.loc[i, "Config Name"] + " only" if df.loc[i, "Config Name"] == "PCA" else df.loc[i, "Config Name"]
+    
 
 """
 # Manually set some values
@@ -162,13 +169,171 @@ def grouped_boxplot(ax, df_sub, title,
         for (cfg, metric, xpos), vals in zip(pos_groups, data):
             ax.plot(xpos, np.mean(vals), marker="o", markersize=4, linestyle="None", alpha=0.9)
 
-    # Optional: clamp to [0,1] for NMI/RandIndex
-    #if fix_01 and set(metrics_to_plot).issubset({"NMI", "ARI"}):
-    #    ax.set_ylim(0, 1)
+    # Clamp y-axis
+    if metric == "Time":
+        ax.set_ylim(bottom=0)
+    elif metric != "Clusters":
+        ax.set_ylim(0.5, 1)
 
     ymin = min(min(v) for v in data)
     ymax = max(max(v) for v in data)
     return (ymin, ymax)
+
+
+
+def barplot_per_dataset(df_long, metrics_to_plot=["NMI", "ARI"], configs_order=None, colors=None):
+    """
+    Create one grouped bar plot per dataset (Test Name), showing all configs as bars
+    for each metric in metrics_to_plot, and print mean scores per config.
+    """
+    if configs_order is None:
+        configs_order = df_long["Config Name"].unique().tolist()
+    if colors is None:
+        colors = ["#1f77b4", "#ff7f0e"]  # default colors for metrics
+
+    datasets = df_long["Test Name"].unique()
+
+    # Compute overall best config for each metric
+    for metric in metrics_to_plot:
+        overall_means = []
+        for cfg in configs_order:
+            vals = df_long.query("`Config Name` == @cfg and Metric == @metric")["Value"].dropna()
+            overall_means.append(vals.mean() if len(vals) > 0 else np.nan)
+        max_idx = np.nanargmax(overall_means)
+        best_config = configs_order[max_idx]
+        print(f"Overall highest average {metric} = {overall_means[max_idx]:.4f} → {best_config}")
+
+    counter = 0
+    for dataset in datasets:
+        counter += 1
+        
+        df_sub = df_long.query("`Test Name` == @dataset and Metric in @metrics_to_plot")
+        if df_sub.empty:
+            print(f"{dataset} (no data)")
+            continue
+
+        present_configs = [c for c in configs_order if c in df_sub["Config Name"].unique()]
+        x = np.arange(len(present_configs))  # positions for configs
+        width = 0.35  # width of each bar
+
+        # Print mean score per config for this dataset
+        print(f"\nDataset: {dataset}")
+        for cfg in present_configs:
+            scores = []
+            for metric in metrics_to_plot:
+                vals = df_sub.query("`Config Name` == @cfg and Metric == @metric")["Value"].dropna()
+                scores.append(vals.mean() if len(vals) > 0 else np.nan)
+            score_str = ", ".join([f"{metric}={score:.4f}" for metric, score in zip(metrics_to_plot, scores)])
+            print(f"  {cfg}: {score_str}")
+
+        # Plot grouped bars
+        fig, ax = plt.subplots(figsize=(len(present_configs)*0.8 + 2, 4))
+        for i, metric in enumerate(metrics_to_plot):
+            means = []
+            for cfg in present_configs:
+                vals = df_sub.query("`Config Name` == @cfg and Metric == @metric")["Value"].dropna()
+                means.append(vals.mean() if len(vals) > 0 else np.nan)
+            ax.bar(x + i*width, means, width, color=colors[i], label=metric, zorder=3)
+
+        ax.set_axisbelow(True)
+        ax.grid(True, linestyle="--", alpha=0.5)
+        ax.set_ylabel("Score")
+        ax.set_xticks(x + width*(len(metrics_to_plot)-1)/2)  # center ticks
+        ax.set_xticklabels(present_configs, rotation=30, ha="right")
+        ax.set_xlabel("Config")
+        ax.set_ylim(0,1)
+        ax.set_title(f"Quality - Test {counter}")
+        ax.legend(title="Metric")
+        plt.tight_layout()
+        #plt.savefig(f"plots/Test{counter}.png", dpi=300, bbox_inches="tight")
+        plt.show()
+
+
+def boxplot_per_dataset(df_long, metrics_to_plot=["NMI", "ARI"], configs_order=None, metric_color=None):
+    """
+    Create one grouped box plot per dataset (Test Name), showing all configs as boxes
+    for each metric in metrics_to_plot, print mean scores per config, and display legend.
+    """
+    if configs_order is None:
+        configs_order = df_long["Config Name"].unique().tolist()
+    if metric_color is None:
+        metric_color = {"NMI": "#1f77b4", "ARI": "#ff7f0e"}  # default colors
+
+    datasets = df_long["Test Name"].unique()
+
+    # Compute overall best config for each metric
+    for metric in metrics_to_plot:
+        overall_means = []
+        for cfg in configs_order:
+            vals = df_long.query("`Config Name` == @cfg and Metric == @metric")["Value"].dropna()
+            overall_means.append(vals.mean() if len(vals) > 0 else np.nan)
+        max_idx = np.nanargmax(overall_means)
+        best_config = configs_order[max_idx]
+        print(f"Overall highest average {metric} = {overall_means[max_idx]:.4f} → {best_config}")
+
+    counter = 0
+    for dataset in datasets:
+        counter += 1
+        df_sub = df_long.query("`Test Name` == @dataset and Metric in @metrics_to_plot")
+        if df_sub.empty:
+            print(f"{dataset} (no data)")
+            continue
+
+        present_configs = [c for c in configs_order if c in df_sub["Config Name"].unique()]
+        group_width = 0.8
+        box_width = group_width / max(len(metrics_to_plot), 1)
+
+        # Print mean scores
+        print(f"\nDataset: {dataset}")
+        for cfg in present_configs:
+            scores = []
+            for metric in metrics_to_plot:
+                vals = df_sub.query("`Config Name` == @cfg and Metric == @metric")["Value"].dropna()
+                scores.append(vals.mean() if len(vals) > 0 else np.nan)
+            score_str = ", ".join([f"{metric}={score:.4f}" for metric, score in zip(metrics_to_plot, scores)])
+            print(f"  {cfg}: {score_str}")
+
+        # Prepare data for grouped boxplot
+        positions, data, labels = [], [], []
+        for i, cfg in enumerate(present_configs):
+            center = i + 1
+            start = center - group_width/2 + box_width/2
+            for j, metric in enumerate(metrics_to_plot):
+                vals = df_sub.query("`Config Name` == @cfg and Metric == @metric")["Value"].dropna().tolist()
+                if vals:
+                    positions.append(start + j*box_width)
+                    data.append(vals)
+                    labels.append((cfg, metric))
+
+        # Plot
+        fig, ax = plt.subplots(figsize=(len(present_configs)*0.8 + 2, 4))
+        bplot = ax.boxplot(data, positions=positions, widths=box_width*0.9, patch_artist=True)
+
+        # Color boxes by metric
+        for idx, (_, metric) in enumerate(labels):
+            bplot["boxes"][idx].set(facecolor=metric_color[metric])
+
+        # Optional: mark means
+        for (cfg, metric), vals, pos in zip(labels, data, positions):
+            ax.plot(pos, np.mean(vals), marker="o", markersize=4, linestyle="None", alpha=0.9)
+
+        # X-axis
+        ax.set_xticks(np.arange(len(present_configs)) + 1)
+        ax.set_xticklabels(present_configs, rotation=30, ha="right")
+        ax.set_xlabel("Config")
+        ax.set_ylabel("Score")
+        ax.set_title(f"Quality - Test {counter}")
+        ax.set_ylim(0, 1)
+        ax.grid(True, linestyle="--", alpha=0.5)
+
+        # Legend for metrics
+        handles = [mpatches.Patch(color=metric_color[m], label=m) for m in metrics_to_plot]
+        ax.legend(handles=handles, title="Metric")
+
+        plt.tight_layout()
+        plt.savefig(f"plots/Test{counter}.png", dpi=300, bbox_inches="tight")
+        plt.show()
+
 
 def per_run_means(df_sub):
     # Average across tests for each (Config, Metric, Run)
@@ -192,10 +357,11 @@ grouped_boxplot(axes[0], subset_low_agg,  f"LOW sparsity ≤ {LOW_SPARSITY_MAX}"
 grouped_boxplot(axes[1], subset_high_agg, f"HIGH sparsity > {LOW_SPARSITY_MAX}",
                 metrics_to_plot, metric_color, configs_order, fix_01=True, show_means=True)
 
-axes[0].set_ylabel("Score")
+y_string = metrics_to_plot[0] if metrics_to_plot[0] != "Time" else "Seconds"
+axes[0].set_ylabel(y_string)
 for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
-axes[0].legend(title="Metric", loc="best")
+#axes[0].legend(title="Metric", loc="best")
 
 fig.suptitle("Quality - Sparsity (per-run means)", fontsize=12)
 plt.tight_layout()
@@ -204,7 +370,8 @@ plt.show()
 
 
 # %% Cell count panels — per-run means
-cells_to_plot = sorted(df['Cells'].unique().tolist())
+#cells_to_plot = sorted(df['Cells'].unique().tolist())
+cells_to_plot = [2000]
 
 subsets_cells = [(c, per_run_means(long.query("Metric in @metrics_to_plot and Cells == @c")))
                  for c in cells_to_plot]
@@ -215,22 +382,26 @@ if n == 1:
     axes = [axes]
 
 for ax, (cells, subdf) in zip(axes, subsets_cells):
-    grouped_boxplot(ax, subdf, f"Cells = {cells}",
+    grouped_boxplot(ax, subdf, f"{metrics_to_plot[0]} - Cells = {cells}",
                     metrics_to_plot, metric_color, configs_order, fix_01=True, show_means=True)
 
-axes[0].set_ylabel("Score")
+y_string = metrics_to_plot[0] 
+if metrics_to_plot[0] == "Time":
+    y_string = "Seconds"
+    
+axes[0].set_ylabel(y_string)
 for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
-axes[0].legend(title="Metric", loc="best")
+#axes[0].legend(title="Metric", loc="best")
 
-fig.suptitle("Quality - Cell Counts (per-run means)", fontsize=12)
+#fig.suptitle("Quality - Cell Counts (per-run means)", fontsize=12)
 plt.tight_layout()
 if SAVE_FIGURES: plt.savefig("plots/Quality_Cell_Count.png", dpi=300, bbox_inches="tight")
 plt.show()
 
 
 # %% Complexity panels — per-run means
-complexities_to_plot = ["simple", "complex"]
+complexities_to_plot = ["complex"]#["simple", "complex", "unknown"]
 
 subsets_comp = [(comp, per_run_means(long.query("Metric in @metrics_to_plot and Complexity == @comp")))
                 for comp in complexities_to_plot]
@@ -241,15 +412,16 @@ if n == 1:
     axes = [axes]
 
 for ax, (comp, subdf) in zip(axes, subsets_comp):
-    grouped_boxplot(ax, subdf, f"Complexity = {comp}",
+    grouped_boxplot(ax, subdf, f"{metrics_to_plot[0]} - Structure = {comp}",
                     metrics_to_plot, metric_color, configs_order, fix_01=True, show_means=True)
 
-axes[0].set_ylabel("Score")
+y_string = metrics_to_plot[0] if metrics_to_plot[0] != "Time" else "Seconds"
+axes[0].set_ylabel(y_string)
 for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
-axes[0].legend(title="Metric", loc="best")
+#axes[0].legend(title="Metric", loc="best")
 
-fig.suptitle("Quality - Complexity (per-run means)", fontsize=12)
+#fig.suptitle("Quality - Structure (per-run means)", fontsize=12)
 plt.tight_layout()
 if SAVE_FIGURES: plt.savefig("plots/Quality_Complexity.png", dpi=300, bbox_inches="tight")
 plt.show()
@@ -271,12 +443,13 @@ for ax, (label, subdf) in zip(axes, subsets_bal):
     grouped_boxplot(ax, subdf, label,
                     metrics_to_plot, metric_color, configs_order, fix_01=True, show_means=True)
 
-axes[0].set_ylabel("Score")
+y_string = metrics_to_plot[0] if metrics_to_plot[0] != "Time" else "Seconds"
+axes[0].set_ylabel(y_string)
 for m in metrics_to_plot:
     axes[0].plot([], [], color=metric_color[m], label=m)
-axes[0].legend(title="Metric", loc="best")
+#axes[0].legend(title="Metric", loc="best")
 
-fig.suptitle("Quality - Balanced vs Unbalanced (per-run means)", fontsize=12)
+#fig.suptitle("Quality - Balanced vs Unbalanced (per-run means)", fontsize=12)
 plt.tight_layout()
 if SAVE_FIGURES: plt.savefig("plots/Quality_Balanced.png", dpi=300, bbox_inches="tight")
 plt.show()
@@ -300,7 +473,7 @@ fig, ax = plt.subplots(figsize=(PANEL_WIDTH, FIG_HEIGHT))
 _ = grouped_boxplot(
     ax,
     agg_runs,
-    title="Quality - all tests (per-run means)",
+    title=metrics_to_plot[0] + " - all tests (per-run means)",
     metrics_to_plot=metrics_to_plot,
     metric_color=metric_color,
     configs_order=configs_order,
@@ -308,13 +481,18 @@ _ = grouped_boxplot(
     show_means=True     # mean dot of per-run means
 )
 
-ax.set_ylabel("Score")
+y_string = metrics_to_plot[0] if metrics_to_plot[0] != "Time" else "Seconds"
+ax.set_ylabel(y_string)
 # Legend
 for m in metrics_to_plot:
     ax.plot([], [], color=metric_color[m], label=m)
-ax.legend(title="Metric", loc="best")
+#ax.legend(title="Metric", loc="best")
 
 plt.tight_layout()
 if SAVE_FIGURES: plt.savefig("plots/Quality_AllTests.png", dpi=300, bbox_inches="tight")
 plt.show()
 
+
+#%% Histograms
+#barplot_per_dataset(long, configs_order=configs_order)
+#boxplot_per_dataset(long, configs_order=configs_order)

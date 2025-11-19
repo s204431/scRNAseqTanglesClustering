@@ -5,10 +5,7 @@ import datasets.ScRNAseqDataset;
 import main.Main;
 import smile.validation.metric.AdjustedRandIndex;
 import smile.validation.metric.NormalizedMutualInformation;
-import util.Monitor;
-import util.BitSet;
-import util.Config;
-import util.Tuple;
+import util.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -54,6 +51,45 @@ public class View {
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
             loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv", 0);
+        });
+    }
+
+    public void loadDataset(String filePath, int hvg) {
+        if (loaderThread != null) {
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> window.changeView(MainWindow.LOADING_VIEW));
+
+        loaderThread = new Thread(() -> {
+            try {
+                model.loadDataset(filePath, hvg);
+                loadDataset();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            } finally {
+                loaderThread = null;
+            }
+        });
+        loaderThread.start();
+    }
+
+    public void loadDataset() {
+        points = model.getHvgData();
+        if (points.length > 4000) {
+            points = Model.svd(points, 2).x;
+        } else {
+            points = Model.svd(points, 100).x;
+            points = Model.tsne(points, 2);
+        }
+        points = Main.zScoreNorm(points);
+
+        SwingUtilities.invokeLater(() -> {
+            window.removeScatterTabs();
+            window.removeTrees();
+            window.initializeScatterPlotPanel(points, model.getShuffledGroundTruth());
+            window.showInformation(model.getDataset());
+            window.changeView(MainWindow.DATA_VIEW);
         });
     }
 
@@ -157,45 +193,6 @@ public class View {
         window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree(), removeRedundantCuts);
     }
 
-    public void loadDataset(String filePath, int hvg) {
-        if (loaderThread != null) {
-            return;
-        }
-
-        SwingUtilities.invokeLater(() -> window.changeView(MainWindow.LOADING_VIEW));
-
-        loaderThread = new Thread(() -> {
-            try {
-                model.loadDataset(filePath, hvg);
-                loadDataset();
-            } catch (Throwable t) {
-                t.printStackTrace();
-            } finally {
-                loaderThread = null;
-            }
-        });
-        loaderThread.start();
-    }
-
-    public void loadDataset() {
-        points = model.getHvgData();
-        if (points.length > 4000) {
-            points = Model.svd(points, 2).x;
-        } else {
-            points = Model.svd(points, 100).x;
-            points = Model.tsne(points, 2);
-        }
-        points = Main.zScoreNorm(points);
-
-        SwingUtilities.invokeLater(() -> {
-            window.removeScatterTabs();
-            window.removeTrees();
-            window.initializeScatterPlotPanel(points, model.getShuffledGroundTruth());
-            window.showInformation(model.getDataset());
-            window.changeView(MainWindow.DATA_VIEW);
-        });
-    }
-
     public void showTestSet(List<File> selectedDirs) {
         window.showTestSet(selectedDirs);
     }
@@ -278,7 +275,9 @@ public class View {
     }
 
     public Tuple<int[], Double> getScanpyResult() {
-        Tuple<int[], Double> result = Main.runPython(getCurrentFilePath());
+        ScanpyRunner.startScanpy();
+        Tuple<int[], Double> result = ScanpyRunner.runClustering(getCurrentFilePath());
+        ScanpyRunner.stopScanpy();
 
         long currentTime = System.currentTimeMillis();
         monitor.setClusterStartTime((long) (currentTime - (result.y*1000)));

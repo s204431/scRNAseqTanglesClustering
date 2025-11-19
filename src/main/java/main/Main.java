@@ -179,47 +179,6 @@ public class Main {
         return data;
     }
 
-    public static Tuple<int[], Double> runPython(String filePath) {
-        try {
-            // Python script path
-            String pythonScript = "scRNAseq.py";
-
-            // Start Python process
-            ProcessBuilder pb = new ProcessBuilder("python", pythonScript);
-            Process process = pb.start();
-
-            // Send a string to Python
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-            String message = filePath;
-            writer.write(message);
-            writer.newLine();
-            writer.write('0'); //Whether to use tuning (0 is off, 1 is on)
-            writer.newLine();
-            writer.flush();
-
-            // Read response from Python
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String response = reader.readLine(); // JSON string from Python
-
-            // Parse JSON to Java List<Integer>
-            Gson gson = new Gson();
-            int[] numbers = gson.fromJson(response, int[].class);
-
-            // Read time
-            String responseTime = reader.readLine();
-            double pythonTime = Double.parseDouble(responseTime);
-
-            int exitCode = process.waitFor();
-            System.out.println("Python exited with code: " + exitCode);
-
-            return new Tuple<int[], Double>(numbers, pythonTime);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public static double[][] zScoreNorm(double[][] doubleData) {
         double[][] newData = new double[doubleData.length][doubleData[0].length];
         //Normalization

@@ -2,7 +2,6 @@ package util;
 
 import clustering.Model;
 import datasets.ScRNAseqDataset;
-import main.Main;
 import smile.validation.metric.AdjustedRandIndex;
 import smile.validation.metric.NormalizedMutualInformation;
 import visualization.test.TestProgressManager;
@@ -98,7 +97,10 @@ public class TestSet {
             System.out.println();
 
             if (runPython) {
-                Tuple<int[], Double> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
+                ScanpyRunner.startScanpy();
+                Tuple<int[], Double> pythonResult = ScanpyRunner.runClustering(dirPath + "/" + observedFilePath);
+                ScanpyRunner.stopScanpy();
+
                 double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
                 NMIPythonResults[i] = NMIPython;
@@ -155,15 +157,14 @@ public class TestSet {
         int nConfigs = configs.length;
 
         TestLogger testLogger = new TestLogger(nTests, nConfigs + 1, nRunsPerDataset); //+1 for python
-        progressManager.initializeProgress(nTests, nConfigs, nRunsPerDataset);
+        progressManager.initializeProgress(nTests, nConfigs, nRunsPerDataset, runPython);
+
+        int[][] groundTruths = new int[nTests][];
+        double[] sparsities = new double[nTests];
 
         double[][] averageNMIScores = new double[nTests][nConfigs];
         double[][] averageRandIndexScores = new double[nTests][nConfigs];
         double[][] averageTimes = new double[nTests][nConfigs];
-
-        double[] NMIPythonResults = new double[nTests];
-        double[] randIndexPythonResults = new double[nTests];
-        double[] pythonTimes = new double[nTests];
 
         for (int testIndex = 0; testIndex < nTests; testIndex++) {
             if (progressManager.testingStopped()) return;
@@ -173,8 +174,12 @@ public class TestSet {
             Tuple<float[][], int[]> loaded = model.loadData(dirPath + "/" + observedFilePath);
             float[][] originalData = loaded.x;
             int[] groundTruth = loaded.y;
+
             double sparsity = model.computeSparsity(originalData);
             float[][] normalizedData = model.logNormalize(originalData);
+
+            groundTruths[testIndex] = groundTruth;
+            sparsities[testIndex] = sparsity;
 
             // Prepare shuffling seeds
             Random r = new Random();
@@ -224,7 +229,7 @@ public class TestSet {
 
                     // Save results
                     testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering));
-                    progressManager.markTangleSingleRunFinished();
+                    progressManager.markSingleRunFinished();
 
                     // Unshuffle dataset after each run
                     normalizedData = model.computeUnShuffledArray(normalizedData, shuffleSeeds[run]);
@@ -234,28 +239,12 @@ public class TestSet {
                 averageRandIndexScores[testIndex][configIndex] /= nRunsPerDataset;
                 averageTimes[testIndex][configIndex] /= nRunsPerDataset;
                 progressManager.markTangleFinished(configIndex, testIndex, averageTimes[testIndex][configIndex], averageNMIScores[testIndex][configIndex], averageRandIndexScores[testIndex][configIndex]);
+                if (!runPython) progressManager.markPythonFinished(testIndex, 0.0, 0.0, 0.0);
                 System.out.println("Average results for dataset " + observedPaths[testIndex].replace("observed_counts_", "") + " for config file " + (configIndex + 1));
                 System.out.println("NMI score: " + averageNMIScores[testIndex][configIndex]);
                 System.out.println("Rand Index score: " + averageRandIndexScores[testIndex][configIndex]);
                 System.out.println("Average time (s): " + averageTimes[testIndex][configIndex]);
                 System.out.println();
-            }
-
-            if (runPython) {
-                Tuple<int[], Double> pythonResult = Main.runPython(dirPath + "/" + observedFilePath);
-                double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
-                double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
-                NMIPythonResults[testIndex] = NMIPython;
-                randIndexPythonResults[testIndex] = randIndexPython;
-                pythonTimes[testIndex] = pythonResult.y;
-                testLogger.setResult(observedFilePath, progressManager.getTitle(nConfigs), testIndex, nConfigs, 0, sparsity, pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x));
-                progressManager.markPythonFinished(testIndex, pythonTimes[testIndex], NMIPythonResults[testIndex], randIndexPythonResults[testIndex]);
-                System.out.println("NMI python: " + NMIPython);
-                System.out.println("Rand index python: " + randIndexPython);
-                System.out.println("Python time: " + pythonResult.y);
-                System.out.println();
-            } else {
-                progressManager.markPythonFinished(testIndex, 0, 0, 0);
             }
         }
 
@@ -263,20 +252,12 @@ public class TestSet {
         double overallAverageRandIndex = 0.0;
         double overallAverageTime = 0.0;
 
-        double pythonAverageNMI = 0.0;
-        double pythonAverageRandIndex = 0.0;
-        double pythonAverageTime = 0.0;
-
         for (int i = 0; i < averageNMIScores.length; i++) {
             overallAverageNMI += averageNMIScores[i][0];
             overallAverageRandIndex += averageRandIndexScores[i][0];
             overallAverageTime += averageTimes[i][0];
-            if (runPython) {
-                pythonAverageNMI += NMIPythonResults[i];
-                pythonAverageRandIndex += randIndexPythonResults[i];
-                pythonAverageTime += pythonTimes[i];
-            }
         }
+
         overallAverageNMI /= averageNMIScores.length;
         overallAverageRandIndex /= averageRandIndexScores.length;
         overallAverageTime /= averageTimes.length;
@@ -287,12 +268,8 @@ public class TestSet {
         System.out.println("Time (s): " + overallAverageTime);
 
         if (runPython) {
-            pythonAverageNMI /= NMIPythonResults.length;
-            pythonAverageRandIndex /= randIndexPythonResults.length;
-            pythonAverageTime /= pythonTimes.length;
-            System.out.println("Python NMI score: " + pythonAverageNMI);
-            System.out.println("Python Rand Index score: " + pythonAverageRandIndex);
-            System.out.println("Python Average Time: " + pythonAverageTime);
+            runScanpy(nTests, nRunsPerDataset, groundTruths, sparsities, progressManager, testLogger);
+            System.out.println("Scanpy testing completed.\n");
         }
 
         progressManager.fireAllFinished();
@@ -331,4 +308,48 @@ public class TestSet {
         model.cluster(warmupDataset, warmupConfig);
     }
 
+    private void runScanpy(int nTests, int nRuns, int[][] groundTruths, double[] sparsities, TestProgressManager progressManager, TestLogger testLogger) {
+        ScanpyRunner.startScanpy();
+
+        // Warmup clustering
+        ScanpyRunner.runClustering(dirPath + "/" + observedPaths[0]);
+
+        for (int testIndex = 0; testIndex < nTests; testIndex++) {
+            if (progressManager.testingStopped()) break;
+
+            String observedFilePath = observedPaths[testIndex];
+            String filePath = dirPath + "/" + observedFilePath;
+
+            double[] nmiAverages = new double[nTests];
+            double[] randIndexAverages = new double[nTests];
+            double[] timeAverages = new double[nTests];
+
+            for (int runIndex = 0; runIndex < nRuns; runIndex++) {
+                if (progressManager.testingStopped()) break;
+
+                Tuple<int[], Double> pythonResult = ScanpyRunner.runClustering(filePath);
+                int[] groundTruth = groundTruths[testIndex];
+
+                double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
+                double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
+
+                int pythonTitleIndex = progressManager.getConfigsSize();
+                testLogger.setResult(observedFilePath, progressManager.getTitle(pythonTitleIndex), testIndex, /*pythonTitleIndex*/0, runIndex, sparsities[testIndex], pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x));
+
+                nmiAverages[testIndex] += NMIPython;
+                randIndexAverages[testIndex] += randIndexPython;
+                timeAverages[testIndex] += pythonResult.y;
+
+                progressManager.markSingleRunFinished();
+            }
+
+            nmiAverages[testIndex] /= nRuns;
+            randIndexAverages[testIndex] /= nRuns;
+            timeAverages[testIndex] /= nRuns;
+
+            progressManager.markPythonFinished(testIndex, timeAverages[testIndex], nmiAverages[testIndex], randIndexAverages[testIndex]);
+        }
+
+        ScanpyRunner.stopScanpy();
+    }
 }

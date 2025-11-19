@@ -40,7 +40,7 @@ public class TestProgressManager {
         reset(0, 0);
     }
 
-    public void markTangleSingleRunFinished() {
+    public void markSingleRunFinished() {
         finishedUnits.incrementAndGet();
         fireRunFinished();
     }
@@ -60,15 +60,13 @@ public class TestProgressManager {
         pythonNMI[i].set(nmi);
         pythonRandIndex[i].set(randIndex);
 
-        finishedUnits.incrementAndGet();
-
         firePythonFinished(i, time, nmi, randIndex);
     }
 
-    public void initializeProgress(int tests, int configs, int runs) {
-        int pythonUnits = tests;
+    public void initializeProgress(int tests, int configs, int runs, boolean runPython) {
+        int pythonUnits = tests * runs;
         int perTestUnits = configs * runs;
-        int totalUnits = tests * perTestUnits + pythonUnits;
+        int totalUnits = tests * perTestUnits + (runPython ? pythonUnits : 0);
 
         this.perTestUnits = new AtomicInteger(perTestUnits);
         this.totalUnits = new AtomicInteger(totalUnits);
@@ -76,7 +74,7 @@ public class TestProgressManager {
     }
 
     public int getProgress() {
-        return (int) (((double) finishedUnits.get() / totalUnits.get()) * 100);
+        return (int) (((double) finishedUnits.get() / totalUnits.get()) * 1000);
     }
 
     public boolean testingStopped() {

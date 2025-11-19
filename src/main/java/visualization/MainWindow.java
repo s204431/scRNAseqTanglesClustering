@@ -39,7 +39,7 @@ public class MainWindow extends JFrame {
 
     private String currentView;
 
-    private final JProgressBar testProgressBar = new JProgressBar(0, 100);
+    private final JProgressBar testProgressBar = new JProgressBar(0, 1000);
 
     public MainWindow(View view) {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
