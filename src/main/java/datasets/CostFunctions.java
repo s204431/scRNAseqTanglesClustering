@@ -1,7 +1,9 @@
 package datasets;
 
 import clustering.Model;
+import elki.math.statistics.distribution.GeneralizedLogisticAlternateDistribution;
 import main.Main;
+import smile.classification.KNN;
 import util.BitSet;
 import util.Distance;
 import util.GlobalConstants;
@@ -18,7 +20,8 @@ public class CostFunctions {
 
     private BitSet mask; //Mask of remaining points in case some have been removed.
 
-    private List<double[][]> reducedPoints; //Storing reduced points for reusing.
+    public List<double[][]> reducedPoints; //Storing reduced points for reusing.
+    public List<KNNGraph> cachedKNNGraphs;
 
     public void setMask(BitSet mask) {
         this.mask = mask;
@@ -87,6 +90,9 @@ public class CostFunctions {
             }
             if (useCache) {
                 reducedPoints = new ArrayList<>();
+                if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
+                    cachedKNNGraphs = new ArrayList<>();
+                }
             }
             cacheUsed = false;
         }
@@ -104,6 +110,9 @@ public class CostFunctions {
             runnables[i].pcaComponents = pcaComponents;
             runnables[i].useTsne = useTsne;
             runnables[i].tsneComponents = tsneComponents;
+            if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN) && cachedKNNGraphs != null && cachedKNNGraphs.size() == splits.size()) {
+                runnables[i].localKNNGraph = cachedKNNGraphs.get(i).applyMask(mask);
+            }
             threads[i] = new Thread(runnables[i]);
             threads[i].start();
         }
@@ -122,6 +131,9 @@ public class CostFunctions {
                 }
                 if (useCache && reducedPoints.size() < splits.size()) {
                     reducedPoints.add(runnables[i].localReducedPoints);
+                    if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
+                        cachedKNNGraphs.add(runnables[i].localKNNGraph);
+                    }
                 }
             }
             catch (Exception e) {
@@ -178,6 +190,9 @@ public class CostFunctions {
             splits.add(currentSplit);
             if (useCache) {
                 reducedPoints = new ArrayList<>();
+                if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
+                    cachedKNNGraphs = new ArrayList<>();
+                }
             }
             cacheUsed = false;
         }
@@ -200,6 +215,9 @@ public class CostFunctions {
             runnables[i].pcaComponents = pcaComponents;
             runnables[i].useTsne = useTsne;
             runnables[i].tsneComponents = tsneComponents;
+            if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN) && cachedKNNGraphs != null && cachedKNNGraphs.size() == splits.size()) {
+                runnables[i].localKNNGraph = cachedKNNGraphs.get(i).applyMask(mask);
+            }
             threads[i] = new Thread(runnables[i]);
             threads[i].start();
         }
@@ -218,6 +236,9 @@ public class CostFunctions {
                 }
                 if (useCache && reducedPoints.size() < splits.size()) {
                     reducedPoints.add(runnables[i].localReducedPoints);
+                    if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
+                        cachedKNNGraphs.add(runnables[i].localKNNGraph);
+                    }
                 }
             }
             catch (Exception e) {
@@ -242,6 +263,7 @@ public class CostFunctions {
         public int tsneComponents;
 
         public double[][] localReducedPoints; //For caching.
+        public KNNGraph localKNNGraph; //For caching.
 
         @Override
         public void run() {
@@ -249,8 +271,11 @@ public class CostFunctions {
                 data = usePca ? Model.svdWithElbow(data) : Model.tsne(data, tsneComponents);
                 data = Main.zScoreNorm(data);
                 localReducedPoints = data;
+                if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
+                    localKNNGraph = createKNNGraph(data);
+                }
             }
-            result = runLowLevelCostFunction(data, initialCuts, lowLevelCostFunctionName);
+            result = runLowLevelCostFunction(data, initialCuts, lowLevelCostFunctionName, localKNNGraph);
         }
     }
 
@@ -263,9 +288,12 @@ public class CostFunctions {
                                        int pcaComponents,
                                        boolean useTsne,
                                        int tsneComponents) {
-
+        KNNGraph knnGraph = null;
         if (useCache && reducedPoints != null) {
             dataPoints = loadFromCache().getFirst();
+            if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN) && cachedKNNGraphs != null) {
+                knnGraph = cachedKNNGraphs.getFirst().applyMask(mask);
+            }
         }
         else {
             dataPoints = usePca ? Model.svdWithElbow(dataPoints) : Model.tsne(dataPoints, tsneComponents);
@@ -273,20 +301,25 @@ public class CostFunctions {
             if (useCache) {
                 reducedPoints = new ArrayList<>();
                 reducedPoints.add(dataPoints);
+                if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
+                    cachedKNNGraphs = new ArrayList<>();
+                    knnGraph = createKNNGraph(dataPoints);
+                    cachedKNNGraphs.add(knnGraph);
+                }
             }
         }
 
-        return runLowLevelCostFunction(dataPoints, initialCuts, lowLevelCostFunctionName);
+        return runLowLevelCostFunction(dataPoints, initialCuts, lowLevelCostFunctionName, knnGraph);
     }
 
-    public double[] runLowLevelCostFunction(double[][] dataPoints, BitSet[] initialCuts, String costFunctionName) {
+    public double[] runLowLevelCostFunction(double[][] dataPoints, BitSet[] initialCuts, String costFunctionName, KNNGraph knnGraph) {
         return switch (costFunctionName) {
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE -> pairwiseDistanceCostFunction(dataPoints, initialCuts);
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_SHORTEST -> shortestDistanceCostFunction(dataPoints, initialCuts);
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST -> pairwiseClosestCostFunction(dataPoints, initialCuts);
-            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN -> knnCostFunction(dataPoints, initialCuts);
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN -> knnCostFunction(dataPoints, initialCuts, knnGraph);
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_DISTANCE_TO_MEAN -> distanceToMeanCostFunction(dataPoints, initialCuts);
-            default -> knnCostFunction(dataPoints, initialCuts);
+            default -> knnCostFunction(dataPoints, initialCuts, knnGraph);
         };
     }
 
@@ -306,13 +339,11 @@ public class CostFunctions {
         return result;
     }
 
-    public double[] knnCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
-        int k = 10;
-
-        double maxRange = getMaxRange(dataPoints);
-
+    public double[] knnCostFunction(double[][] dataPoints, BitSet[] initialCuts, KNNGraph knnGraph) {
         double[] costs = new double[initialCuts.length];
-        KNNGraph knnGraph = new KNNGraph(dataPoints, k);
+        if (knnGraph == null) {
+            knnGraph = createKNNGraph(dataPoints);
+        }
         for (int i = 0; i < initialCuts.length; i++) {
             List<Double> distances = knnGraph.getDistancesBetween(initialCuts[i]);
             for (int j = 0; j < distances.size(); j++) {
@@ -322,6 +353,12 @@ public class CostFunctions {
             costs[i] /= initialCuts[i].size();
         }
         return costs;
+    }
+
+    //Creates a KNN graph for KNN cost function. Ensures that the same parameters are used everywhere.
+    public KNNGraph createKNNGraph(double[][] dataPoints) {
+        int k = Math.min(dataPoints.length-1, 10);
+        return new KNNGraph(dataPoints, k);
     }
 
     //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.

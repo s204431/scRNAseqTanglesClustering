@@ -17,6 +17,7 @@ import elki.distance.minkowski.EuclideanDistance;
 import io.jhdf.HdfFile;
 import io.jhdf.api.Dataset;
 import io.jhdf.api.Group;
+import main.Main;
 import util.*;
 import smile.feature.extraction.PCA;
 import smile.manifold.UMAP;
@@ -81,7 +82,9 @@ public class Model {
 
         int maxGenes = originalData[0].length;
         hvg = (hvg <= 0 || hvg >= maxGenes) ? maxGenes : hvg;
-        hvgData = highlyVariableGenes(originalData, hvg);
+        //hvgData = highlyVariableGenes(originalData, hvg);
+        hvgData = extractTopNHighlyVariableGenes(originalData, 20, hvg);
+        System.out.println(hvgData[0].length);
         System.out.println("Finished loading data");
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {
@@ -104,6 +107,86 @@ public class Model {
         System.out.println("NMI python: " + NMIPython);
         System.out.println("Rand index python: " + randIndex);*/
 
+    }
+
+    public static double[][] extractTopNHighlyVariableGenes(
+            float[][] expr,
+            int numBins,
+            int topN
+    ) {
+        int nCells = expr.length;
+        int nGenes = expr[0].length;
+
+        // ---- 1. Compute stats ----
+        class GeneStats {
+            int index;
+            double mean, var, disp, normDisp;
+            GeneStats(int index, double mean, double var, double disp) {
+                this.index = index; this.mean = mean; this.var = var; this.disp = disp;
+            }
+        }
+
+        GeneStats[] stats = new GeneStats[nGenes];
+
+        for (int g = 0; g < nGenes; g++) {
+            double mean = 0;
+            for (int c = 0; c < nCells; c++) mean += expr[c][g];
+            mean /= nCells;
+
+            double var = 0;
+            for (int c = 0; c < nCells; c++) {
+                double diff = expr[c][g] - mean;
+                var += diff * diff;
+            }
+            var /= nCells;
+
+            double disp = mean > 0 ? var / mean : 0.0;
+            stats[g] = new GeneStats(g, mean, var, disp);
+        }
+
+        // ---- 2. Bin by mean and normalize dispersion ----
+        Arrays.sort(stats, Comparator.comparingDouble(s -> s.mean));
+        int binSize = Math.max(1, nGenes / numBins);
+
+        for (int b = 0; b < numBins; b++) {
+            int start = b * binSize;
+            int end = Math.min(nGenes, start + binSize);
+            if (start >= end) break;
+
+            double meanDisp = 0;
+            for (int i = start; i < end; i++) meanDisp += stats[i].disp;
+            meanDisp /= (end - start);
+
+            double sdDisp = 0;
+            for (int i = start; i < end; i++)
+                sdDisp += Math.pow(stats[i].disp - meanDisp, 2);
+            sdDisp = Math.sqrt(sdDisp / (end - start));
+
+            for (int i = start; i < end; i++) {
+                stats[i].normDisp = (sdDisp > 0)
+                        ? (stats[i].disp - meanDisp) / sdDisp
+                        : 0;
+            }
+        }
+
+        // ---- 3. Select top-N genes ranked by normalized dispersion ----
+        Arrays.sort(stats, (a, b) -> Double.compare(b.normDisp, a.normDisp));
+
+        topN = Math.min(topN, nGenes);
+        List<Integer> selected = new ArrayList<>();
+        for (int i = 0; i < topN; i++) {
+            selected.add(stats[i].index);
+        }
+
+        // ---- 4. Build reduced expression matrix ----
+        double[][] out = new double[nCells][topN];
+        for (int c = 0; c < nCells; c++) {
+            for (int j = 0; j < topN; j++) {
+                out[c][j] = expr[c][selected.get(j)];
+            }
+        }
+
+        return out;
     }
 
     // Fisher-Yayes shuffle to limit space usage
@@ -311,8 +394,8 @@ public class Model {
     public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
         monitor.setClusterStartTime(System.currentTimeMillis());
 
-        int maxClusters = 10;
-        int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.667), 1);
+        int maxClusters = 16;
+        int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.55), 1);
 
         double[][] reducedPoints;
         if (config.isUsePcaCostFunction()) {
@@ -321,9 +404,21 @@ public class Model {
         else {
             reducedPoints = tsne(dataset.data, config.getTsneComponentsCostFunction());
         }
+        reducedPoints = Main.zScoreNorm(reducedPoints);
 
         dataset.setA(minA);
         CostFunctions costFunctions = new CostFunctions();
+        if (config.isUseCache() && config.getHighLevelCostFunctionName().equals(GlobalConstants.HIGH_LEVEL_COST_FUNCTION_NORMAL)) {
+            costFunctions.reducedPoints = new ArrayList<>();
+            costFunctions.reducedPoints.add(reducedPoints);
+            BitSet mask = new BitSet(reducedPoints.length);
+            mask.setAll();
+            costFunctions.setMask(mask);
+            if (config.getLowLevelCostFunctionName().equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
+                costFunctions.cachedKNNGraphs = new ArrayList<>();
+                costFunctions.cachedKNNGraphs.add(costFunctions.createKNNGraph(reducedPoints));
+            }
+        }
         dataset.setCostFunctions(costFunctions);
         monitor.setDataset(dataset);
 
@@ -361,11 +456,11 @@ public class Model {
         TangleSearchTree[] bestTrees = null;
 
         double maxPsi = config.isAutoComputePsi() ? 0.0 : 1.0;
-        int minClusters = config.isAutoComputePsi() ? 2 : 2;
+        int minClusters = config.isAutoComputePsi() ? maxClusters : 2;
 
         for (double psi = 0; psi <= maxPsi; psi += 0.05) {
             for (int nClusters = minClusters; nClusters <= maxClusters; nClusters++) {
-                int a2 = Math.max((int)((dataset.data.length/(double)nClusters)*0.667), 1);
+                int a2 = Math.max((int)((dataset.data.length/(double)nClusters)*0.55), 1);
                 config.setA(a2);
                 config.setPsi(psi);
 

@@ -1,6 +1,7 @@
 package datasets;
 
 import org.datavec.api.writable.Text;
+import smile.classification.KNN;
 import smile.neighbor.KDTree;
 import smile.neighbor.Neighbor;
 import smile.math.distance.EuclideanDistance;
@@ -64,6 +65,10 @@ public class KNNGraph {
         }
     }
 
+    public KNNGraph() {
+
+    }
+
     //Returns the k nearest neighbours. This k must be no larger than the k used to generate the graph.
     public List[] getNeighbours(int index, int k, boolean directed) {
         List<Integer> neighbours = new ArrayList<>();
@@ -94,6 +99,34 @@ public class KNNGraph {
             }
         }
         return distancesBetween;
+    }
+
+    //Applies a mask and returns a new KNN graph. For now it only works on directed graphs.
+    public KNNGraph applyMask(BitSet mask) {
+        KNNGraph newKNNGraph = new KNNGraph();
+        int[] newIndex = new int[mask.size()];
+        int index = 0;
+        for (int i = 0; i < mask.size(); i++) {
+            if (mask.get(i)) {
+                newIndex[i] = index;
+                index++;
+            }
+        }
+        for (int i = 0; i < graph.size(); i++) {
+            if (!mask.get(i)) {
+                continue;
+            }
+            newKNNGraph.graph.add(new ArrayList<>());
+            newKNNGraph.distances.add(new ArrayList<>());
+            for (int j = 0; j < graph.get(i).size(); j++) {
+                if (!mask.get(j)) {
+                    continue;
+                }
+                newKNNGraph.graph.getLast().add(newIndex[graph.get(i).get(j)]);
+                newKNNGraph.distances.getLast().add(distances.get(i).get(j));
+            }
+        }
+        return newKNNGraph;
     }
 
     public List<List<Integer>> getConnectedComponents() {

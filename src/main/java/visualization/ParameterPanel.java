@@ -427,7 +427,7 @@ public class ParameterPanel extends JScrollPane {
         if (!testing && !useParameterTuning) {
             try {
                 if (autoComputeACheckBox.isSelected()) {
-                    a = (int) ((view.points.length / 20.0) * 0.7);
+                    a = (int) ((view.points.length / 16.0) * 0.55);
                 } else {
                     a = Integer.parseInt(aField.getText());
                     if (a <= 0) throw new NumberFormatException("Parameter a is 0");
