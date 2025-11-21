@@ -82,8 +82,7 @@ public class Model {
 
         int maxGenes = originalData[0].length;
         hvg = (hvg <= 0 || hvg >= maxGenes) ? maxGenes : hvg;
-        //hvgData = highlyVariableGenes(originalData, hvg);
-        hvgData = extractTopNHighlyVariableGenes(originalData, 20, hvg);
+        hvgData = highlyVariableGenes(originalData, hvg);
         System.out.println(hvgData[0].length);
         System.out.println("Finished loading data");
         /*double[][] newHvgData = new double[hvgData.length][2];
@@ -107,86 +106,6 @@ public class Model {
         System.out.println("NMI python: " + NMIPython);
         System.out.println("Rand index python: " + randIndex);*/
 
-    }
-
-    public static double[][] extractTopNHighlyVariableGenes(
-            float[][] expr,
-            int numBins,
-            int topN
-    ) {
-        int nCells = expr.length;
-        int nGenes = expr[0].length;
-
-        // ---- 1. Compute stats ----
-        class GeneStats {
-            int index;
-            double mean, var, disp, normDisp;
-            GeneStats(int index, double mean, double var, double disp) {
-                this.index = index; this.mean = mean; this.var = var; this.disp = disp;
-            }
-        }
-
-        GeneStats[] stats = new GeneStats[nGenes];
-
-        for (int g = 0; g < nGenes; g++) {
-            double mean = 0;
-            for (int c = 0; c < nCells; c++) mean += expr[c][g];
-            mean /= nCells;
-
-            double var = 0;
-            for (int c = 0; c < nCells; c++) {
-                double diff = expr[c][g] - mean;
-                var += diff * diff;
-            }
-            var /= nCells;
-
-            double disp = mean > 0 ? var / mean : 0.0;
-            stats[g] = new GeneStats(g, mean, var, disp);
-        }
-
-        // ---- 2. Bin by mean and normalize dispersion ----
-        Arrays.sort(stats, Comparator.comparingDouble(s -> s.mean));
-        int binSize = Math.max(1, nGenes / numBins);
-
-        for (int b = 0; b < numBins; b++) {
-            int start = b * binSize;
-            int end = Math.min(nGenes, start + binSize);
-            if (start >= end) break;
-
-            double meanDisp = 0;
-            for (int i = start; i < end; i++) meanDisp += stats[i].disp;
-            meanDisp /= (end - start);
-
-            double sdDisp = 0;
-            for (int i = start; i < end; i++)
-                sdDisp += Math.pow(stats[i].disp - meanDisp, 2);
-            sdDisp = Math.sqrt(sdDisp / (end - start));
-
-            for (int i = start; i < end; i++) {
-                stats[i].normDisp = (sdDisp > 0)
-                        ? (stats[i].disp - meanDisp) / sdDisp
-                        : 0;
-            }
-        }
-
-        // ---- 3. Select top-N genes ranked by normalized dispersion ----
-        Arrays.sort(stats, (a, b) -> Double.compare(b.normDisp, a.normDisp));
-
-        topN = Math.min(topN, nGenes);
-        List<Integer> selected = new ArrayList<>();
-        for (int i = 0; i < topN; i++) {
-            selected.add(stats[i].index);
-        }
-
-        // ---- 4. Build reduced expression matrix ----
-        double[][] out = new double[nCells][topN];
-        for (int c = 0; c < nCells; c++) {
-            for (int j = 0; j < topN; j++) {
-                out[c][j] = expr[c][selected.get(j)];
-            }
-        }
-
-        return out;
     }
 
     // Fisher-Yayes shuffle to limit space usage
@@ -780,15 +699,12 @@ public class Model {
                 sum += data[j][i];
             }
             double mean = sum/data.length;
-            if (mean == 0) {
-                mean = 0.000000001;
-            }
             double varSum = 0.0;
             for (int j = 0; j < data.length; j++) {
                 varSum += (data[j][i] - mean)*(data[j][i] - mean);
             }
-            double variance = varSum/(data.length - 1);
-            dispersions[i] = Math.log(variance/mean);
+            double variance = varSum/data.length;
+            dispersions[i] = mean == 0.0 ? 0.0 : Math.log(variance/mean);
             means[i] = Math.log(1+mean);
             indices[i] = i;
         }
@@ -796,50 +712,36 @@ public class Model {
         Arrays.sort(indices, Comparator.comparingDouble(a -> means[a]));
 
         int nBins = 20;
-        int currentBin = 0;
-        int currentBinSize = 0;
-        int[] binIndices = new int[indices.length];
-
-        int binSize = data[0].length/nBins;
-        int leftOver = data[0].length%nBins;
-
-        for (int i = 0; i < indices.length; i++) {
-            if (currentBinSize >= (binSize + (leftOver > 0 ? 1 : 0))) {
-                currentBinSize = 0;
-                currentBin++;
-                leftOver--;
-            }
-            binIndices[i] = currentBin;
-            currentBinSize++;
-        }
-
-        leftOver = data[0].length%nBins;
+        int binSize = Math.max(1, data[0].length / nBins);
 
         double[] binMeanDispersions = new double[nBins];
-        for (int i = 0; i < indices.length; i++) {
-            binMeanDispersions[binIndices[i]] += dispersions[indices[i]];
-        }
-
-        for (int i = 0; i < binMeanDispersions.length; i++) {
-            binMeanDispersions[i] /= binSize + (i < leftOver ? 1 : 0);
-        }
-
         double[] binStdDispersions = new double[nBins];
-        for (int i = 0; i < indices.length; i++) {
-            int index = indices[i];
-            int binIndex = binIndices[i];
-            binStdDispersions[binIndex] += (dispersions[index] - binMeanDispersions[binIndex])*(dispersions[index] - binMeanDispersions[binIndex]);
-        }
-
-        for (int i = 0; i < binStdDispersions.length; i++) {
-            binStdDispersions[i] /= (binSize + (i < leftOver ? 1 : 0) - 1);
-            binStdDispersions[i] = Math.sqrt(binStdDispersions[i]);
-        }
-
         double[] zScores = new double[data[0].length];
 
-        for (int i = 0; i < data[0].length; i++) {
-            zScores[i] = (dispersions[i] - binMeanDispersions[binIndices[indices[i]]])/binStdDispersions[binIndices[indices[i]]];
+        for (int b = 0; b < nBins; b++) {
+            int start = b*binSize;
+            int end = (b == nBins - 1) ? data[0].length : start + binSize;
+
+            for (int i = start; i < end; i++) {
+                binMeanDispersions[b] += dispersions[indices[i]];
+            }
+            binMeanDispersions[b] /= (end - start);
+
+            for (int i = start; i < end; i++) {
+                int index = indices[i];
+                binStdDispersions[b] += (dispersions[index] - binMeanDispersions[b])*(dispersions[index] - binMeanDispersions[b]);
+            }
+            binStdDispersions[b] = Math.sqrt(binStdDispersions[b]/(end-start));
+
+            for (int i = start; i < end; i++) {
+                int index = indices[i];
+                if (binStdDispersions[b] == 0.0) {
+                    zScores[index] = 0.0;
+                }
+                else {
+                    zScores[index] = (dispersions[index] - binMeanDispersions[b])/binStdDispersions[b];
+                }
+            }
         }
 
         indices = new Integer[data[0].length];
