@@ -4,6 +4,7 @@ import clustering.Model;
 import smile.base.mlp.Cost;
 import util.BitSet;
 import util.GlobalConstants;
+import util.Monitor;
 
 import java.util.Arrays;
 
@@ -20,10 +21,10 @@ public class ScRNAseqDataset {
 
     //This class should be a dataset object containing the data and other representations.
 
-    public ScRNAseqDataset(double[][] data) {
+    public ScRNAseqDataset(double[][] data, Monitor monitor) {
         this.data = data;
-        this.cutGenerators = new CutGenerators();
-        this.costFunctions = new CostFunctions();
+        this.cutGenerators = new CutGenerators(monitor);
+        this.costFunctions = new CostFunctions(monitor);
     }
 
     public void setCostFunctions(CostFunctions costFunctions) {

@@ -11,7 +11,7 @@ public class TestDistance {
 
     public void runTest(boolean normalize) {
         System.out.println("Running " + (normalize ? "with" : "without") + " normalization");
-        Model model = new Model();
+        Model model = new Model(new Monitor());
 
         String[] dataPaths = new String[] {"data/symsim_observed_counts_5000genes_500cells_complex5.csv", "data/symsim_observed_counts_5000genes_1000cells_complex.csv", "data/symsim_observed_counts_5000genes_500cells_simple2.csv"};
 

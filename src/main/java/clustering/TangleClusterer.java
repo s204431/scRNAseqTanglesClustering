@@ -33,14 +33,16 @@ public class TangleClusterer {
     private List<Double> splitCosts; //The cost for each splitting cut in the tree.
 
     //Ensure that it can only be created within this package.
-    public TangleClusterer() {}
+    public TangleClusterer(Monitor monitor) {
+        this.monitor = monitor;
+    }
 
     //Generates a soft- and hard clustering for the provided dataset with a specific value of a and psi, and a specific initial cut generator and cost function.
     public void generateClusters(ScRNAseqDataset dataset, Config config) {
         updateClusteringParameters(config);
 
         splitCosts = new ArrayList<>();
-        costFunctions = new CostFunctions();
+        costFunctions = new CostFunctions(monitor);
         dataset.setCostFunctions(costFunctions);
         dataset.setA(config.getA());
 
@@ -298,7 +300,7 @@ public class TangleClusterer {
                             Tuple<double[][], BitSet[]> redundantPointsRemoved = removeRedundantPoints(data, initialCuts, childNode.intersection);
                             double[][] newData = redundantPointsRemoved.x;
                             BitSet[] newCuts = redundantPointsRemoved.y;
-                            ScRNAseqDataset newDataset = new ScRNAseqDataset(newData);
+                            ScRNAseqDataset newDataset = new ScRNAseqDataset(newData, monitor);
                             newDataset.setCostFunctions(costFunctions);
                             costFunctions.setMask(childNode.intersection);
                             newDataset.setInitialCuts(newCuts);
@@ -513,7 +515,7 @@ public class TangleClusterer {
                             Tuple<double[][], BitSet[]> redundantPointsRemoved = removeRedundantPoints(data, initialCuts, childNode.intersection);
                             double[][] newData = redundantPointsRemoved.x;
                             BitSet[] newCuts = redundantPointsRemoved.y;
-                            ScRNAseqDataset newDataset = new ScRNAseqDataset(newData);
+                            ScRNAseqDataset newDataset = new ScRNAseqDataset(newData, monitor);
                             newDataset.setCostFunctions(costFunctions);
                             costFunctions.setMask(childNode.intersection);
                             newDataset.setInitialCuts(newCuts);
@@ -813,9 +815,4 @@ public class TangleClusterer {
         indices[h] = temp2;
         return i;
     }
-
-    public void setMonitor(Monitor monitor) {
-        this.monitor = monitor;
-    }
-
 }

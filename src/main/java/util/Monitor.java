@@ -14,6 +14,7 @@ public class Monitor {
     private List<double[]> branchCosts;
     private long clusterStartTime;
     private long clusterEndTime;
+    private long dimReductionTime;
 
     public void setDataset(ScRNAseqDataset dataset) {
         this.dataset = dataset;
@@ -73,5 +74,17 @@ public class Monitor {
 
     public long getClusterTime() {
         return clusterEndTime - clusterStartTime;
+    }
+
+    public void setDimReductionTime(long time) {
+        this.dimReductionTime = time;
+    }
+
+    public void addDimReductionTime(long time) {
+        this.dimReductionTime += time;
+    }
+
+    public long getDimReductionTime() {
+        return dimReductionTime;
     }
 }

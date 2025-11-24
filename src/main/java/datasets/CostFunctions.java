@@ -4,10 +4,7 @@ import clustering.Model;
 import elki.math.statistics.distribution.GeneralizedLogisticAlternateDistribution;
 import main.Main;
 import smile.classification.KNN;
-import util.BitSet;
-import util.Distance;
-import util.GlobalConstants;
-import util.Tuple;
+import util.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +19,12 @@ public class CostFunctions {
 
     public List<double[][]> reducedPoints; //Storing reduced points for reusing.
     public List<KNNGraph> cachedKNNGraphs;
+
+    private Monitor monitor;
+
+    public CostFunctions(Monitor monitor) {
+        this.monitor = monitor;
+    }
 
     public void setMask(BitSet mask) {
         this.mask = mask;
@@ -227,9 +230,11 @@ public class CostFunctions {
             bitSets.add(combinedCutGenerator(splits.get(i), a));
         }*/
 
+        long maxTime = 0;
         for (int i = 0; i < splits.size(); i++) {
             try {
                 threads[i].join();
+                maxTime = Math.max(maxTime, runnables[i].dimReductionTime);
                 double[] splitCosts = runnables[i].result;
                 for (int j = 0; j < costs.length; j++) {
                     costs[j] = Math.min(costs[j], splitCosts[j]);
@@ -261,6 +266,7 @@ public class CostFunctions {
         public int pcaComponents;
         public boolean useTsne;
         public int tsneComponents;
+        public long dimReductionTime;
 
         public double[][] localReducedPoints; //For caching.
         public KNNGraph localKNNGraph; //For caching.
@@ -268,7 +274,10 @@ public class CostFunctions {
         @Override
         public void run() {
             if (!cacheUsed) {
+                long startTime = System.currentTimeMillis();
                 data = usePca ? Model.svdWithElbow(data) : Model.tsne(data, tsneComponents);
+                dimReductionTime = System.currentTimeMillis() - startTime;
+
                 data = Main.zScoreNorm(data);
                 localReducedPoints = data;
                 if (lowLevelCostFunctionName.equals(GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN)) {
@@ -296,7 +305,10 @@ public class CostFunctions {
             }
         }
         else {
+            long startTime = System.currentTimeMillis();
             dataPoints = usePca ? Model.svdWithElbow(dataPoints) : Model.tsne(dataPoints, tsneComponents);
+            monitor.addDimReductionTime(System.currentTimeMillis() - startTime);
+
             dataPoints = Main.zScoreNorm(dataPoints);
             if (useCache) {
                 reducedPoints = new ArrayList<>();

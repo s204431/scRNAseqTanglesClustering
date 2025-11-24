@@ -24,12 +24,9 @@ import visualization.View;
 
 public class Main {
     public static void main(String[] args) {
-        Model model = new Model();
-        View view = new View(model);
-
         Monitor monitor = new Monitor();
-        model.setMonitor(monitor);
-        view.setMonitor(monitor);
+        Model model = new Model(monitor);
+        View view = new View(model, monitor);
 
         //model.runTestset();
 

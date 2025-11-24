@@ -78,7 +78,7 @@ public class TestSet {
             int nClusters = getNumberOfClusters(groundTruth);
             for (int j = 0; j < nRunsPerDataset; j++) {
 
-                ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
+                ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData, model.getMonitor());
 
                 int a = (int)(((double)dataset.data.length/nClusters)*0.667);
                 Config config = new Config();
@@ -199,13 +199,13 @@ public class TestSet {
                     model.shuffleArray(normalizedData, shuffleSeeds[run]);
 
                     long preTime1 = System.currentTimeMillis();
-                    double[][] hvgData = model.highlyVariableGenes(normalizedData, Math.min(5000, normalizedData[0].length));
+                    double[][] hvgData = model.highlyVariableGenes(normalizedData, Math.min(2000, normalizedData[0].length));
                     int nClusters = getNumberOfClusters(groundTruth);
                     long preTime = System.currentTimeMillis() - preTime1;
 
                     // Clustering
                     long time1 = System.currentTimeMillis();
-                    ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData);
+                    ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData, model.getMonitor());
 
                     int a;
                     if (config.isAutoComputeA()) {
@@ -228,7 +228,7 @@ public class TestSet {
                     averageRandIndexScores[testIndex][configIndex] += randIndex;
 
                     // Save results
-                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering));
+                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering), (double) model.getMonitor().getDimReductionTime() / 1000);
                     progressManager.markSingleRunFinished();
 
                     // Unshuffle dataset after each run
@@ -302,7 +302,7 @@ public class TestSet {
         int nClusters = getNumberOfClusters(groundTruth);
 
         // Single warmup clustering
-        ScRNAseqDataset warmupDataset = new ScRNAseqDataset(hvgData);
+        ScRNAseqDataset warmupDataset = new ScRNAseqDataset(hvgData, model.getMonitor());
         int warmupA = (int)(((double)warmupDataset.data.length/nClusters)*0.667);
         warmupConfig.setA(warmupA);
         model.cluster(warmupDataset, warmupConfig);
@@ -334,7 +334,7 @@ public class TestSet {
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
 
                 int pythonTitleIndex = progressManager.getConfigsSize();
-                testLogger.setResult(observedFilePath, progressManager.getTitle(pythonTitleIndex), testIndex, /*pythonTitleIndex*/0, runIndex, sparsities[testIndex], pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x));
+                testLogger.setResult(observedFilePath, progressManager.getTitle(pythonTitleIndex), testIndex, /*pythonTitleIndex*/0, runIndex, sparsities[testIndex], pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x), 0);
 
                 nmiAverages[testIndex] += NMIPython;
                 randIndexAverages[testIndex] += randIndexPython;

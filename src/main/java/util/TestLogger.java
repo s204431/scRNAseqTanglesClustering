@@ -13,11 +13,11 @@ public class TestLogger {
         this.results = new TestResult[tests][configs];
     }
 
-    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double sparsity, double time, double nmi, double randIndex, int nClusters) {
+    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double sparsity, double time, double nmi, double randIndex, int nClusters, double dimReducTime) {
         if (results[testIndex][configIndex] == null) {
             results[testIndex][configIndex] = new TestResult(testName, configName, runs, sparsity);
         }
-        results[testIndex][configIndex].setResult(runIndex, time, nmi, randIndex, nClusters);
+        results[testIndex][configIndex].setResult(runIndex, time, nmi, randIndex, nClusters, dimReducTime);
     }
 
     public void printResults() {
@@ -40,6 +40,7 @@ public class TestLogger {
         for (int k = 1; k <= maxRuns; k++) sb.append(",NMI_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",RandIndex_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",Clusters_").append(k);
+        for (int k = 1; k <= maxRuns; k++) sb.append(",DimReducTime_").append(k);
         sb.append("\n");
 
         // Rows
@@ -109,6 +110,12 @@ public class TestLogger {
                     if (k < result.times.length) sb.append(result.nClusters[k]);
                 }
 
+                // Dimensionality reduction times
+                for (int k = 0; k < maxRuns; k++) {
+                    sb.append(",");
+                    if (k < result.dimReductionTimes.length) sb.append(result.dimReductionTimes[k]);
+                }
+
                 sb.append("\n");
             }
         }
@@ -128,6 +135,7 @@ public class TestLogger {
         public final double[] nmis;
         public final double[] randIndices;
         public final int[] nClusters;
+        public final double[] dimReductionTimes;
 
         public TestResult(String testName, String configName, int runs, double sparsity) {
             this.testName = testName;
@@ -137,13 +145,15 @@ public class TestLogger {
             this.nmis = new double[runs];
             this.randIndices = new double[runs];
             this.nClusters = new int[runs];
+            this.dimReductionTimes = new double[runs];
         }
 
-        public void setResult(int runIndex, double time, double nmi, double randIndex, int nClusters) {
+        public void setResult(int runIndex, double time, double nmi, double randIndex, int nClusters, double dimReducTime) {
             this.times[runIndex] = time;
             this.nmis[runIndex] = nmi;
             this.randIndices[runIndex] = randIndex;
             this.nClusters[runIndex] = nClusters;
+            this.dimReductionTimes[runIndex] = dimReducTime;
         }
 
         @Override
@@ -156,7 +166,8 @@ public class TestLogger {
                 sb.append(" Run ").append(i + 1).append(": Time = ").append(times[i])
                   .append(", NMI = ").append(nmis[i])
                   .append(", Rand Index = ").append(randIndices[i])
-                  .append("  Clusters = ").append(nClusters[i]).append("\n");
+                  .append("  Clusters = ").append(nClusters[i])
+                  .append(" Dimention Reduction Time = ").append("\n");
             }
             return sb.toString();
         }

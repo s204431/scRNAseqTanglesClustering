@@ -28,8 +28,9 @@ public class View {
 
     private TestProgressManager testProgressManager;
 
-    public View(Model model) {
+    public View(Model model, Monitor monitor) {
         this.model = model;
+        this.monitor = monitor;
 
         FlatLightLaf.setup();
         UIManager.put("FileChooser.readOnly", Boolean.TRUE);
@@ -200,10 +201,6 @@ public class View {
 
     public void changeView(String viewName) {
         window.changeView(viewName);
-    }
-
-    public void setMonitor(Monitor monitor) {
-        this.monitor = monitor;
     }
 
     public List<double[]> getBranchCosts() {

@@ -59,9 +59,11 @@ public class Model {
 
     private Monitor monitor;
 
-    private TangleClusterer tangleClusterer = new TangleClusterer();
+    private TangleClusterer tangleClusterer;
 
-    public Model() {
+    public Model(Monitor monitor) {
+        this.monitor = monitor;
+        tangleClusterer = new TangleClusterer(monitor);
         //loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
     }
 
@@ -95,7 +97,7 @@ public class Model {
 
         //projectedData = tsne(hvgData, 2);
 
-        dataset = new ScRNAseqDataset(hvgData);
+        dataset = new ScRNAseqDataset(hvgData, monitor);
         dataset.setSparsity(computeSparsity(originalData));
         //cluster(dataset, 70, 0, "Range", "Distance To Mean");
 
@@ -299,6 +301,7 @@ public class Model {
 
     public int[] cluster(ScRNAseqDataset dataset, Config config) {
         monitor.setDataset(dataset);
+        monitor.setDimReductionTime(0);
 
         monitor.setClusterStartTime(System.currentTimeMillis());
         tangleClusterer.generateClusters(dataset, config);
@@ -307,26 +310,33 @@ public class Model {
         softClustering = tangleClusterer.getSoftClustering();
         hardClustering = tangleClusterer.getHardClustering();
 
+        System.out.println("Dimensionality reduction time: " + monitor.getDimReductionTime());
+
         return hardClustering;
     }
 
     public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
         monitor.setClusterStartTime(System.currentTimeMillis());
+        monitor.setDimReductionTime(0);
 
         int maxClusters = 16;
         int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.55), 1);
 
         double[][] reducedPoints;
         if (config.isUsePcaCostFunction()) {
+            long startTime = System.currentTimeMillis();
             reducedPoints = svdWithElbow(dataset.data);
+            monitor.addDimReductionTime(System.currentTimeMillis() - startTime);
         }
         else {
+            long startTime = System.currentTimeMillis();
             reducedPoints = tsne(dataset.data, config.getTsneComponentsCostFunction());
+            monitor.addDimReductionTime(System.currentTimeMillis() - startTime);
         }
         reducedPoints = Main.zScoreNorm(reducedPoints);
 
         dataset.setA(minA);
-        CostFunctions costFunctions = new CostFunctions();
+        CostFunctions costFunctions = new CostFunctions(monitor);
         if (config.isUseCache() && config.getHighLevelCostFunctionName().equals(GlobalConstants.HIGH_LEVEL_COST_FUNCTION_NORMAL)) {
             costFunctions.reducedPoints = new ArrayList<>();
             costFunctions.reducedPoints.add(reducedPoints);
@@ -419,6 +429,7 @@ public class Model {
         System.out.println("Best psi: " + bestPsi);
         //System.out.println(NMIScore);
         //System.out.println(randIndex);
+        System.out.println("Dimensionality reduction time: " + monitor.getDimReductionTime());
         return hardClustering;
     }
 
@@ -888,11 +899,6 @@ public class Model {
         return seed;
     }
 
-    public void setMonitor(Monitor monitor) {
-        this.monitor = monitor;
-        tangleClusterer.setMonitor(monitor);
-    }
-
     public double[][] getSoftClustering() {
         return softClustering;
     }
@@ -907,5 +913,9 @@ public class Model {
             }
         }
         return ((double)nZeros)/(originalData.length*originalData[0].length);
+    }
+
+    public Monitor getMonitor() {
+        return monitor;
     }
 }

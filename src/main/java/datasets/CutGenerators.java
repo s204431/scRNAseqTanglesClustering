@@ -3,9 +3,8 @@ package datasets;
 import clustering.Model;
 import main.Main;
 import org.bytedeco.javacv.JavaCvErrorCallback;
+import util.*;
 import util.BitSet;
-import util.Distance;
-import util.GlobalConstants;
 
 import java.util.*;
 
@@ -17,6 +16,11 @@ public class CutGenerators {
 
     public double[] cutCosts; //For local means only
 
+    private Monitor monitor;
+
+    public CutGenerators(Monitor monitor) {
+        this.monitor = monitor;
+    }
 
     public BitSet[] splitCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, int splitSize, boolean usePca, int pcaComponents, boolean useTsne, int tsneComponents) {
         int nSplits = (int)Math.ceil(dataPoints[0].length/(double)splitSize);
@@ -83,15 +87,18 @@ public class CutGenerators {
             bitSets.add(combinedCutGenerator(splits.get(i), a));
         }*/
 
+        long maxTime = 0;
         for (int i = 0; i < splits.size(); i++) {
             try {
                 threads[i].join();
                 bitSets.add(runnables[i].result);
+                maxTime = Math.max(maxTime, runnables[i].dimReductionTime.x + runnables[i].dimReductionTime.y);
             }
             catch (Exception e) {
 
             }
         }
+        monitor.addDimReductionTime(maxTime);
 
         return mergeCuts(bitSets);
     }
@@ -107,13 +114,16 @@ public class CutGenerators {
         public int tsneComponents;
         public String lowLevelCutGenerator;
 
+        // Use Tuple as a long holder to pass by reference, where x = PCA time, y = t-SNE time
+        private Tuple<Long, Long> dimReductionTime = new Tuple<>(0L, 0L);
+
         @Override
         public void run() {
-            result = combinedCutGenerator(data, lowLevelCutGenerator, a, usePca, pcaComponents, useTsne, tsneComponents);
+            result = combinedCutGenerator(data, lowLevelCutGenerator, a, usePca, pcaComponents, useTsne, tsneComponents, dimReductionTime);
         }
     }
 
-    public BitSet[] combinedCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, boolean usePca, int nComponentsPCA, boolean useTsne, int nComponentsTSNE) {
+    public BitSet[] combinedCutGenerator(double[][] dataPoints, String lowLevelCutGenerator, int a, boolean usePca, int nComponentsPCA, boolean useTsne, int nComponentsTSNE, Tuple dimReductionTime) {
 
         //dataPoints = Model.pca(dataPoints, 100);
 
@@ -128,24 +138,39 @@ public class CutGenerators {
         catch (Exception e) {
 
         }*/
+        long tsneTime = 0;
+        long pcaTime = 0;
+
         if (useTsne) {
+            Long startTime = System.currentTimeMillis();
             double[][] reducedPoints = Model.tsne(dataPoints, nComponentsTSNE);
+            tsneTime += (Long) (System.currentTimeMillis() - startTime);
+
             bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, true));
         }
 
         if (usePca) {
             if (lowLevelCutGenerator.equals(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN)) {
+                Long startTime = System.currentTimeMillis();
                 double[][] reducedPoints = Model.svd(dataPoints, 10).x;
+                pcaTime += (System.currentTimeMillis() - startTime);
+
                 bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
                 for (int n : new int[]{5, 4, 3, 2}) {
                     reducedPoints = getFirstDimensions(reducedPoints, n);
                     bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
                 }
             } else {
+                Long startTime = System.currentTimeMillis();
                 double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA).x;
+                pcaTime += (System.currentTimeMillis() - startTime);
+
                 bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
             }
         }
+
+        dimReductionTime.x = pcaTime;
+        dimReductionTime.y = tsneTime;
 
         return mergeCuts(bitSets);
     }
@@ -170,15 +195,26 @@ public class CutGenerators {
 
         List<BitSet[]> bitsets = new ArrayList<>();
 
+        long pcaTime = 0;
+        long tsneTime = 0;
+
         if (usePca) {
+            long startTime = System.currentTimeMillis();
             double[][] reducedPoints = Model.svd(dataPoints, pcaComponents).x;
+            pcaTime = System.currentTimeMillis() - startTime;
+
             bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
         }
 
         if (useTsne) {
+            long startTime = System.currentTimeMillis();
             double[][] reducedPoints = Model.tsne(dataPoints, tsneComponents);
+            tsneTime = System.currentTimeMillis() - startTime;
+
             bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
         }
+
+        monitor.addDimReductionTime(pcaTime + tsneTime);
 
         return mergeCuts(bitsets);
     }
