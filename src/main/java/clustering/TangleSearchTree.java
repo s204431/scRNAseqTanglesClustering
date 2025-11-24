@@ -373,7 +373,9 @@ public class TangleSearchTree {
             limitSplitCosts(root, bestSplitCost);
         }
         else {
-            double maxSplitCost = calculateMaxSplitCost(splitCosts);
+            //double maxSplitCost = calculateMaxSplitCost(splitCosts);
+            int index = Model.findElbow(splitCosts)-1;
+            double maxSplitCost = splitCosts[index];
             limitSplitCosts(root, maxSplitCost);
         }
     }
