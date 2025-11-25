@@ -152,10 +152,17 @@ public class View {
     }
 
     public void showClustering() {
-        showClustering(model.getHardClustering());
+        double[][] softClustering = model.getSoftClustering();
+        if (softClustering != null) showClustering(softClustering);
+        else showClustering(model.getHardClustering());
+
     }
 
     public void showClustering(int[] clustering) {
+        showClustering(clustering, true);
+    }
+
+    public void showClustering(double[][] clustering) {
         showClustering(clustering, true);
     }
 
@@ -164,7 +171,11 @@ public class View {
             // Shuffle python's result to match the order of the data points
             model.shuffleArray(clustering, model.getSeed());
         }
-        window.drawClusters(points, clustering, tangle);
+        window.drawClusters(points, clustering, null, tangle);
+    }
+
+    public void showClustering(double[][] clustering, boolean tangle) {
+        window.drawClusters(points, null, clustering, tangle);
     }
 
     public void showGroundTruth() {
@@ -253,6 +264,14 @@ public class View {
 
     public double getDavisBouldin(int[] clustering) {
         return Model.daviesBouldinIndex(points, clustering);
+    }
+
+    public void shuffleClustering(int[] clustering) {
+        model.shuffleArray(clustering, model.getSeed());
+    }
+
+    public void shuffleClustering(double[][] clustering) {
+        model.shuffleArray(clustering, model.getSeed());
     }
 
     public int[] unshuffleClustering(int[] clustering) {

@@ -76,7 +76,7 @@ public class Model {
 
         shuffledGroundTruth = groundTruth.clone();
         Random r = new Random();
-        seed = r.nextInt();
+        seed = r.nextInt(Integer.MAX_VALUE);
         shuffleArray(originalData, seed);
         shuffleArray(shuffledGroundTruth, seed);
 
@@ -117,6 +117,16 @@ public class Model {
         for (int i = array.length - 1; i > 0; i--) {
             int j = rand.nextInt(i + 1);
             float[] temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
+    public void shuffleArray(double[][] array, int seed) {
+        Random rand = new Random(seed);
+        for (int i = array.length - 1; i > 0; i--) {
+            int j = rand.nextInt(i + 1);
+            double[] temp = array[i];
             array[i] = array[j];
             array[j] = temp;
         }

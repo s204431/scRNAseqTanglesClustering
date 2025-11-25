@@ -7,10 +7,13 @@ import smile.validation.metric.NormalizedMutualInformation;
 import visualization.test.TestProgressManager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Random;
 
 public class TestSet {
+
+    private static final boolean SAVE_CLUSTERINGS = true;
 
     private String dirPath;
     public String[] observedPaths;
@@ -184,7 +187,7 @@ public class TestSet {
             // Prepare shuffling seeds
             Random r = new Random();
             int[] shuffleSeeds = new int[nRunsPerDataset];
-            for (int i = 0; i < nRunsPerDataset; i++) shuffleSeeds[i] = r.nextInt();
+            for (int i = 0; i < nRunsPerDataset; i++) shuffleSeeds[i] = r.nextInt(Integer.MAX_VALUE);
 
 
             for (int configIndex = 0; configIndex < configs.length; configIndex++) {
@@ -230,6 +233,21 @@ public class TestSet {
                     // Save results
                     testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering), (double) model.getMonitor().getDimReductionTime() / 1000);
                     progressManager.markSingleRunFinished();
+                    if (SAVE_CLUSTERINGS) {
+                        File folder = new File("results");
+                        if (!folder.exists()) folder.mkdirs();
+
+                        String name = "Test" + (testIndex) + "_" + progressManager.getTitle(configIndex) + "_Run" + run;
+                        //File hardFile = new File(folder, name + "_Hard.csv");
+                        File softFile = new File(folder, name + "_Soft.csv");
+
+                        try {
+                            //ClusteringIO.saveHard(model.computeUnShuffledArray(hardClustering, shuffleSeeds[run]), hardFile);
+                            ClusteringIO.saveSoft(model.computeUnShuffledArray(model.getSoftClustering(), shuffleSeeds[run]), softFile);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
 
                     // Unshuffle dataset after each run
                     normalizedData = model.computeUnShuffledArray(normalizedData, shuffleSeeds[run]);
@@ -341,6 +359,19 @@ public class TestSet {
                 timeAverages[testIndex] += pythonResult.y;
 
                 progressManager.markSingleRunFinished();
+
+                if (SAVE_CLUSTERINGS) {
+                    File folder = new File("results");
+                    if (!folder.exists()) folder.mkdirs();
+
+                    String name = "Test" + (testIndex) + "_Scanpy" + "_Run" + runIndex;
+                    File hardFile = new File(folder, name + "_Hard.csv");
+                    try {
+                        ClusteringIO.saveHard(pythonResult.x, hardFile);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
 
             nmiAverages[testIndex] /= nRuns;

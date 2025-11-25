@@ -37,8 +37,12 @@ public class TopPanel extends JPanel {
         JButton loadConfigButton = new JButton("Load Config");
         loadConfigButton.addActionListener(this::loadConfigAction);
 
+        JButton loadClusteringButton = new JButton("Load Clustering");
+        loadClusteringButton.addActionListener(this::loadClusteringAction);
+
         addButton(openButton);
         addButton(testSetButton);
+        addButton(loadClusteringButton);
 
         add(Box.createHorizontalGlue());
 
@@ -209,4 +213,61 @@ public class TopPanel extends JPanel {
 
         view.loadConfig(config);
     }
+
+    private void loadClusteringAction(ActionEvent e) {
+        JFileChooser chooser = new JFileChooser();
+
+        // Start in project folder or 'clusterings'
+        Path clusterDir = Paths.get("clusterings");
+        chooser.setCurrentDirectory(Files.isDirectory(clusterDir)
+                ? clusterDir.toFile()
+                : Paths.get(System.getProperty("user.dir")).toFile());
+
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".csv");
+            }
+            @Override
+            public String getDescription() {
+                return "Clustering CSV files (*.csv)";
+            }
+        });
+
+        int result = chooser.showOpenDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) return;
+
+        File selected = chooser.getSelectedFile();
+        if (selected == null || !selected.isFile()) return;
+
+        try {
+            Object clustering = util.ClusteringIO.load(selected);
+
+            if (clustering instanceof int[]) {
+                view.shuffleClustering((int[]) clustering);
+                view.showClustering((int[]) clustering);
+            } else if (clustering instanceof double[][]) {
+                view.shuffleClustering((double[][]) clustering);
+                view.showClustering((double[][]) clustering);
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Invalid clustering file format.",
+                        "Load Clustering",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Error loading clustering: " + ex.getMessage(),
+                    "Load Clustering",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            ex.printStackTrace();
+        }
+    }
+
 }

@@ -132,8 +132,8 @@ public class MainWindow extends JFrame {
         scatterPanel.drawScatterPlot(points);
     }
 
-    public void drawClusters(double[][] points, int[] clustering, boolean tangle) {
-        scatterPanel.drawClusters(points, clustering, view.getSoftClustering(), tangle);
+    public void drawClusters(double[][] points, int[] clustering, double[][] softClustering, boolean tangle) {
+        scatterPanel.drawClusters(points, clustering, softClustering, tangle);
     }
 
     public void drawGroundTruth(double[][] points, int[] groundTruth) {

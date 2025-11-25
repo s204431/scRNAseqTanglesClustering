@@ -9,6 +9,7 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleInsets;
+import util.ClusteringIO;
 import util.Config;
 import util.GlobalConstants;
 import visualization.View;
@@ -125,7 +126,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     public void drawClusters(double[][] points, int[] clusters, double[][] softClusters, boolean tangle) {
         String title = tangle ? "Tangle" + (++tangleCounter) : SCANPY_TITLE;
 
-        if (tangle && softClusters != null) drawSoftClustering(points, clusters, softClusters, title);
+        if (tangle && softClusters != null) drawSoftClustering(points, softClusters, title);
         else drawClusters(points, clusters, title);
     }
 
@@ -244,9 +245,23 @@ public class ScatterPlotPanel extends JTabbedPane {
 
     // Draws a soft clustering where each cluster has a color
     // and the alpha and gamma values are adjusted based on the probabilities.
-    public void drawSoftClustering(double[][] points, int[] clustering, double[][] softClustering, String title) {
+    public void drawSoftClustering(double[][] points, double[][] softClustering, String title) {
         int n = points.length;
         int k = softClustering[0].length;
+
+        // Recreate hard clustering from the soft clustering
+        int[] clustering = new int[softClustering.length];
+        for (int i = 0; i < softClustering.length; i++) {
+            int maxIdx = 0;
+            double maxVal = softClustering[i][0];
+            for (int j = 1; j < softClustering[i].length; j++) {
+                if (softClustering[i][j] > maxVal) {
+                    maxVal = softClustering[i][j];
+                    maxIdx = j;
+                }
+            }
+            clustering[i] = maxIdx;
+        }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
         List<double[]> perSeriesProbs = new ArrayList<>(k);
@@ -527,11 +542,12 @@ public class ScatterPlotPanel extends JTabbedPane {
     }
 
     private void saveHardClusteringAsCsv(int[] clustering) {
-        int[] labels = view.unshuffleClustering(clustering);
-        if (labels == null || labels.length == 0) {
+        if (clustering == null || clustering.length == 0) {
             System.out.println("Error when saving hard clustering in ScatterPlotPanel: Clustering is null");
             return;
         }
+
+        int[] labels = view.unshuffleClustering(clustering);
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Save hard clustering as CSV");
@@ -549,22 +565,13 @@ public class ScatterPlotPanel extends JTabbedPane {
             if (overwrite != JOptionPane.YES_OPTION) return;
         }
 
-        // Write file
-        try (BufferedWriter out = Files.newBufferedWriter(file.toPath())) {
-            out.write("cell,cluster");
-            out.newLine();
-            for (int i = 0; i < labels.length; i++) {
-                out.write(i + "," + labels[i]);
-                out.newLine();
-            }
-
+        try {
+            ClusteringIO.saveHard(labels, file);
+            System.out.println("Saved hard clustering:\n" + file.getAbsolutePath());
         } catch (Exception e) {
-            System.out.println("Error when writing hard clustering to CSV in ScatterPlotPanel");
+            System.out.println("Error when writing hard clustering to CSV");
             e.printStackTrace();
-            return;
         }
-
-        System.out.println("Saved hard clustering:\n" + file.getAbsolutePath());
     }
 
     private void saveSoftClusteringAsCsv(double[][] softClustering) {
@@ -591,31 +598,12 @@ public class ScatterPlotPanel extends JTabbedPane {
             if (overwrite != JOptionPane.YES_OPTION) return;
         }
 
-        // Write file
-        try (BufferedWriter out = Files.newBufferedWriter(file.toPath())) {
-
-            // Header
-            out.write("cell");
-            for (int i = 1; i <= probabilities[0].length; i++) {
-                out.write(",cluster_" + i);
-            }
-            out.newLine();
-
-            for (int i = 0; i < probabilities.length; i++) {
-                out.write(i+"");
-                for (int j = 0; j < probabilities[0].length; j++) {
-                    out.write(",");
-                    out.write(Double.toString(probabilities[i][j]));
-                }
-                out.newLine();
-            }
-
+        try {
+            ClusteringIO.saveSoft(probabilities, file);
+            System.out.println("Saved soft clustering:\n" + file.getAbsolutePath());
         } catch (Exception e) {
-            System.out.println("Error when writing soft clustering to CSV in ScatterPlotPanel");
+            System.out.println("Error when writing soft clustering to CSV");
             e.printStackTrace();
-            return;
         }
-
-        System.out.println("Saved soft clustering:\n" + file.getAbsolutePath());
     }
 }
