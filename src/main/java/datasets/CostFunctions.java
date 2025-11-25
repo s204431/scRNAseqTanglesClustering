@@ -369,7 +369,7 @@ public class CostFunctions {
 
     //Creates a KNN graph for KNN cost function. Ensures that the same parameters are used everywhere.
     public KNNGraph createKNNGraph(double[][] dataPoints) {
-        int k = Math.min(dataPoints.length-1, 10);
+        int k = Math.min(dataPoints.length-1, 15);
         return new KNNGraph(dataPoints, k);
     }
 

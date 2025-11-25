@@ -146,26 +146,26 @@ public class CutGenerators {
             double[][] reducedPoints = Model.tsne(dataPoints, nComponentsTSNE);
             tsneTime += (Long) (System.currentTimeMillis() - startTime);
 
-            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, true));
+            bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, 5));
         }
 
         if (usePca) {
             if (lowLevelCutGenerator.equals(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN)) {
                 Long startTime = System.currentTimeMillis();
-                double[][] reducedPoints = Model.svd(dataPoints, 10).x;
+                double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA).x;
                 pcaTime += (System.currentTimeMillis() - startTime);
 
-                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
-                for (int n : new int[]{5, 4, 3, 2}) {
+                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, 1));
+                for (int n : new int[]{8, 6, 4, 2}) {
                     reducedPoints = getFirstDimensions(reducedPoints, n);
-                    bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
+                    bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, 1));
                 }
             } else {
                 Long startTime = System.currentTimeMillis();
                 double[][] reducedPoints = Model.svd(dataPoints, nComponentsPCA).x;
                 pcaTime += (System.currentTimeMillis() - startTime);
 
-                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, false));
+                bitSets.add(runLowLevelCutGenerator(reducedPoints, lowLevelCutGenerator, a, 1));
             }
         }
 
@@ -199,11 +199,23 @@ public class CutGenerators {
         long tsneTime = 0;
 
         if (usePca) {
-            long startTime = System.currentTimeMillis();
-            double[][] reducedPoints = Model.svd(dataPoints, pcaComponents).x;
-            pcaTime = System.currentTimeMillis() - startTime;
+            if (cutGeneratorName.equals(GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN)) {
+                long startTime = System.currentTimeMillis();
+                double[][] reducedPoints = Model.svd(dataPoints, pcaComponents).x;
+                pcaTime = System.currentTimeMillis() - startTime;
 
-            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
+                bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, 1));
+                for (int n : new int[]{5, 4, 3, 2}) {
+                    reducedPoints = getFirstDimensions(reducedPoints, n);
+                    bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, 1));
+                }
+            } else {
+                long startTime = System.currentTimeMillis();
+                double[][] reducedPoints = Model.svd(dataPoints, pcaComponents).x;
+                pcaTime = System.currentTimeMillis() - startTime;
+
+                bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, 1));
+            }
         }
 
         if (useTsne) {
@@ -211,7 +223,7 @@ public class CutGenerators {
             double[][] reducedPoints = Model.tsne(dataPoints, tsneComponents);
             tsneTime = System.currentTimeMillis() - startTime;
 
-            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, true));
+            bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, 5));
         }
 
         monitor.addDimReductionTime(pcaTime + tsneTime);
@@ -219,15 +231,15 @@ public class CutGenerators {
         return mergeCuts(bitsets);
     }
 
-    public BitSet[] runLowLevelCutGenerator(double[][] reducedData, String cutGeneratorName, int a, boolean moreIterations) {
+    public BitSet[] runLowLevelCutGenerator(double[][] reducedData, String cutGeneratorName, int a, int nIterationsKNN) {
         int timesMoreCuts = 1; //Generate this many times more cuts using shifting
         return switch (cutGeneratorName) {
-            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN -> getInitialCutsKNN(reducedData, a, moreIterations ? 5 : 1);
+            case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_KNN -> getInitialCutsKNN(reducedData, a, nIterationsKNN);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_SIMPLE -> getInitialCutsSimple(reducedData, a, timesMoreCuts);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_RANGE -> getInitialCutsRange(reducedData, a, timesMoreCuts);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_LOCAL_MEANS -> getInitialCutsLocalMeans(reducedData, a, timesMoreCuts);
             case GlobalConstants.LOW_LEVEL_CUT_GENERATOR_DISTANCE_BETWEEN_MEANS -> getInitialCutsDistanceBetweenMeans(reducedData, a, timesMoreCuts);
-            default -> getInitialCutsKNN(reducedData, a, moreIterations ? 5 : 1);
+            default -> getInitialCutsKNN(reducedData, a, nIterationsKNN);
         };
     }
 
