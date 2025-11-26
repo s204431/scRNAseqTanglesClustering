@@ -85,7 +85,6 @@ public class Model {
         int maxGenes = originalData[0].length;
         hvg = (hvg <= 0 || hvg >= maxGenes) ? maxGenes : hvg;
         hvgData = highlyVariableGenes(originalData, hvg);
-        System.out.println(hvgData[0].length);
         System.out.println("Finished loading data");
         /*double[][] newHvgData = new double[hvgData.length][2];
         for (int i = 0; i < hvgData.length; i++) {
@@ -394,7 +393,7 @@ public class Model {
         double bestPsi = -1;
         TangleSearchTree[] bestTrees = null;
 
-        double maxPsi = config.isAutoComputePsi() ? 0.0 : 1.0;
+        double maxPsi = config.isAutoComputePsi() ? 0.0 : 0.95;
         int minClusters = config.isAutoComputePsi() ? maxClusters : 2;
 
         for (double psi = 0; psi <= maxPsi; psi += 0.05) {

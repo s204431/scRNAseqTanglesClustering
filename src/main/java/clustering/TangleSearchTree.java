@@ -373,9 +373,11 @@ public class TangleSearchTree {
             limitSplitCosts(root, bestSplitCost);
         }
         else {
-            //double maxSplitCost = calculateMaxSplitCost(splitCosts);
-            int index = Model.findElbow(splitCosts)-1;
-            double maxSplitCost = splitCosts[index];
+            double maxSplitCost = calculateMaxSplitCost(splitCosts);
+            //int index = Model.findElbow(splitCosts)-1;
+            //System.out.println(Arrays.toString(splitCosts));
+            //System.out.println(index);
+            //double maxSplitCost = splitCosts[index];
             limitSplitCosts(root, maxSplitCost);
         }
     }
@@ -426,7 +428,7 @@ public class TangleSearchTree {
 
     //Calculates the maximum split cost to keep based on the mean cost in a window of a certain size.
     private double calculateMaxSplitCost(double[] splitCosts) {
-        int windowSize = 4;
+        int windowSize = 3;
 
         double[] sumArray = new double[splitCosts.length]; //Sum of costs in window ending on a given index.
         sumArray[0] = splitCosts[0];

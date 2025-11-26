@@ -364,7 +364,24 @@ public class CostFunctions {
             //costs[i] = distances.size();
             costs[i] /= initialCuts[i].size();
         }
+        normalizeCosts(costs);
+        //System.out.println(Arrays.toString(costs));
         return costs;
+    }
+
+    public void normalizeCosts(double[] costs) {
+        double max = getMaxCost(costs);
+        for (int i = 0; i < costs.length; i++) {
+            costs[i] /= max <= 0.0 ? 1.0 : max;
+        }
+    }
+
+    public double getMaxCost(double[] costs) {
+        double max = -1.0;
+        for (int i = 0; i < costs.length; i++) {
+            max = Math.max(max, costs[i]);
+        }
+        return max;
     }
 
     //Creates a KNN graph for KNN cost function. Ensures that the same parameters are used everywhere.
@@ -393,6 +410,7 @@ public class CostFunctions {
             }
             costs[i] = Math.exp(-1.0*cost);
         }
+        normalizeCosts(costs);
         //cutCosts = costs;
         return costs;
     }
@@ -417,6 +435,7 @@ public class CostFunctions {
             }
             costs[i] = cost/(initialCuts[i].count()*(initialCuts[i].size()-initialCuts[i].count()));
         }
+        normalizeCosts(costs);
         //cutCosts = costs;
         return costs;
     }
@@ -446,6 +465,7 @@ public class CostFunctions {
             }
             costs[i] = cost/initialCuts[i].size();
         }
+        normalizeCosts(costs);
         //cutCosts = costs;
         return costs;
     }
@@ -489,6 +509,7 @@ public class CostFunctions {
             }
             costs[i] /= initialCuts[i].size();
         }
+        normalizeCosts(costs);
         //cutCosts = costs;
         return costs;
     }
