@@ -24,6 +24,7 @@ public class TangleClusterer {
     protected boolean removeRedundantCutsIteratively = false;
     protected boolean autoLimitSplitCosts = false;
 
+    private TangleSearchTree tangleSearchTreeNotPruned;
     private TangleSearchTree tangleSearchTree;
 
     private CostFunctions costFunctions;
@@ -104,6 +105,7 @@ public class TangleClusterer {
             tangleSearchTree = generateTangleSearchTree(cuts, costs, config.getA(), config.getPsi());
         }
         monitor.setUncondensedTree(tangleSearchTree.copy());
+        tangleSearchTreeNotPruned = tangleSearchTree.copy();
 
         //Optional split pruning
         if (autoLimitSplitCosts) {
@@ -116,6 +118,26 @@ public class TangleClusterer {
         //Condense tangle search tree
         try {
             tangleSearchTree.condenseTree(autoLimitSplitCosts ? 0 : 1);
+        } catch (NullPointerException e) {
+            tangleSearchTree.generateDefaultClustering();
+            return;
+        }
+        monitor.setCondensedTree(tangleSearchTree.copy());
+
+        //Contract tangle search tree
+        tangleSearchTree.contractTree();
+
+        //Compute hard and soft clustering
+        tangleSearchTree.calculateSoftClustering();
+        tangleSearchTree.calculateHardClustering();
+    }
+
+    public void clusterWithNewPsi(double psi) {
+        tangleSearchTree = tangleSearchTreeNotPruned.copy();
+        tangleSearchTree.limitPsi(tangleSearchTree.root, psi);
+        //Condense tangle search tree
+        try {
+            tangleSearchTree.condenseTree(1);
         } catch (NullPointerException e) {
             tangleSearchTree.generateDefaultClustering();
             return;

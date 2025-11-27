@@ -458,6 +458,50 @@ public class TangleSearchTree {
         return splitCosts[maxDifferenceIndex-1];
     }
 
+    protected void limitPsi(Node node, double psi) {
+
+        // Split node
+        if (node.leftChild != null && node.rightChild != null) {
+            if ((branchCosts != null && branchCosts.get(node.branchId)[node.leftChild.originalOrientation] > psi) || (branchCosts == null && cutCosts[node.leftChild.originalOrientation] > psi)) { //Local cost
+                //Remove child nodes since
+                node.leftChild = null;
+                node.rightChild = null;
+            }
+        }
+
+
+        // Vote cuts (internal nodes)
+        else {
+            if (node.parent != null) {
+
+                // Search for lowest node in parent branch
+                Node lowestParentBranchNode = node.parent;
+                while ((lowestParentBranchNode.leftChild == null || lowestParentBranchNode.rightChild == null) && lowestParentBranchNode.parent != null) {
+                    lowestParentBranchNode = lowestParentBranchNode.parent;
+                }
+
+                if (node.leftChild != null) {
+                    if ((branchCosts != null && branchCosts.get(lowestParentBranchNode.branchId)[node.leftChild.originalOrientation] > psi) || (branchCosts == null && cutCosts[node.leftChild.originalOrientation] > psi)) { //Local cost
+                        node.leftChild = null;
+                    }
+                }
+                if (node.rightChild != null) {
+                    if ((branchCosts != null && branchCosts.get(lowestParentBranchNode.branchId)[node.rightChild.originalOrientation] > psi) || (branchCosts == null && cutCosts[node.rightChild.originalOrientation] > psi)) { //Local cost
+                        node.rightChild = null;
+                    }
+                }
+            }
+        }
+
+        // Recursive calls
+        if (node.leftChild != null) {
+            limitPsi(node.leftChild, psi);
+        }
+        if (node.rightChild != null) {
+            limitPsi(node.rightChild, psi);
+        }
+    }
+
     //Removes internal nodes with exactly one child and removes branches of length "pruneDepth" or lower from the tree.
     protected void condenseTree(int pruneDepth) {
         removeInternalNodes(root);

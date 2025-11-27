@@ -393,16 +393,26 @@ public class Model {
         double bestPsi = -1;
         TangleSearchTree[] bestTrees = null;
 
-        double maxPsi = config.isAutoComputePsi() ? 0.0 : 0.95;
+        double maxPsi = config.isAutoComputePsi() ? 0.0 : 0.96;
         int minClusters = config.isAutoComputePsi() ? maxClusters : 2;
 
-        for (double psi = 0; psi <= maxPsi; psi += 0.05) {
-            for (int nClusters = minClusters; nClusters <= maxClusters; nClusters++) {
-                int a2 = Math.max((int)((dataset.data.length/(double)nClusters)*0.55), 1);
-                config.setA(a2);
+        int run = 1;
+        for (int nClusters = minClusters; nClusters <= maxClusters; nClusters++) {
+            int a2 = Math.max((int)((dataset.data.length/(double)nClusters)*0.55), 1);
+            config.setA(a2);
+            for (double psi = 0; psi <= maxPsi; psi += 0.05) {
+                System.out.println("Run " + run + " n = " + nClusters + " psi = " + psi);
+                run++;
+
                 config.setPsi(psi);
 
-                tangleClusterer.generateClusters(dataset, config, initialCuts, costs, costFunctions, reducedPoints);
+                if (psi == 0) {
+                    tangleClusterer.generateClusters(dataset, config, initialCuts, costs, costFunctions, reducedPoints);
+                }
+                else {
+                    tangleClusterer.clusterWithNewPsi(psi);
+                }
+
                 softClustering = tangleClusterer.getSoftClustering();
                 hardClustering = tangleClusterer.getHardClustering();
                 //double NMIScore = NormalizedMutualInformation.joint(hardClustering, shuffledGroundTruth);

@@ -141,7 +141,7 @@ public class TopPanel extends JPanel {
                     try (Stream<Path> s = Files.walk(f.toPath())) {
                         s.filter(p -> Files.isRegularFile(p))
                                 .filter(p -> (p.toString().contains("observed_counts") || p.toString().contains("obs")))
-                                .filter(p -> p.toString().endsWith(".csv"))
+                                .filter(p -> p.toString().endsWith(".csv") || p.toString().endsWith(".h5ad"))
                                 .forEach(p -> allFiles.add(p.toFile()));
                     } catch (IOException ex) {
                         System.out.println("Failed to read " + f + ": " + ex.getMessage());
