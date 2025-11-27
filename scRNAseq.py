@@ -59,7 +59,7 @@ while not RUN_FROM_JAVA or int(sys.stdin.readline().strip()) == 1:
     
     SEED = np.random.randint(0, 100000)
     
-    n_pcs = 100
+    n_pcs = 100 if use_pca else 3
     if use_pca: sc.tl.pca(adata, n_comps=n_pcs)
     else: sc.tl.tsne(adata, n_pcs=n_pcs, random_state=SEED)
     
