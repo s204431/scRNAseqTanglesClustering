@@ -137,7 +137,7 @@ while not RUN_FROM_JAVA or int(sys.stdin.readline().strip()) == 1:
             else:
                 sc.pp.neighbors(adata, n_neighbors=n_neighbors, use_rep=use_rep, random_state=SEED)
             
-            for resolution in np.arange(0.1, 3.2, 0.1):
+            for resolution in np.arange(0.1, 3.1, 0.1):
                 # Using the igraph implementation and a fixed number of iterations can be significantly faster, especially for larger datasets
                 sc.tl.leiden(adata, flavor="igraph", n_iterations=-1, resolution=resolution, random_state=SEED)
                 if len(np.unique(adata.obs["leiden"])) >= 2:
