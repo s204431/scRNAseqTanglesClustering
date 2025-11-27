@@ -237,7 +237,7 @@ public class TestSet {
                         File folder = new File("results");
                         if (!folder.exists()) folder.mkdirs();
 
-                        String name = "Test" + (testIndex) + "_" + progressManager.getTitle(configIndex) + "_Run" + run;
+                        String name = "Test" + (testIndex + 1) + "_" + progressManager.getTitle(configIndex) + "_Run" + (run + 1);
                         //File hardFile = new File(folder, name + "_Hard.csv");
                         File softFile = new File(folder, name + "_Soft.csv");
 
@@ -352,7 +352,7 @@ public class TestSet {
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
 
                 int pythonTitleIndex = progressManager.getConfigsSize();
-                testLogger.setResult(observedFilePath, progressManager.getTitle(pythonTitleIndex), testIndex, /*pythonTitleIndex*/0, runIndex, sparsities[testIndex], pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x), 0);
+                testLogger.setResult(observedFilePath, progressManager.getTitle(pythonTitleIndex), testIndex, pythonTitleIndex, runIndex, sparsities[testIndex], pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x), 0);
 
                 nmiAverages[testIndex] += NMIPython;
                 randIndexAverages[testIndex] += randIndexPython;
@@ -364,7 +364,7 @@ public class TestSet {
                     File folder = new File("results");
                     if (!folder.exists()) folder.mkdirs();
 
-                    String name = "Test" + (testIndex) + "_Scanpy" + "_Run" + runIndex;
+                    String name = "Test" + (testIndex + 1) + "_Scanpy" + "_Run" + (runIndex + 1);
                     File hardFile = new File(folder, name + "_Hard.csv");
                     try {
                         ClusteringIO.saveHard(pythonResult.x, hardFile);
