@@ -205,17 +205,36 @@ public class Model {
 
     public static double silhouetteScore(double[][] data, int[] labels) {
         int n = data.length;
-        double[] silhouettes = new double[n];
+
+        //Precompute all distances
+        double[][] dist = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                double d = getDistance(data[i], data[j]);
+                dist[i][j] = d;
+                dist[j][i] = d;
+            }
+        }
+
+        //Group indices by cluster
+        Map<Integer, List<Integer>> clusterMap = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            clusterMap.computeIfAbsent(labels[i], k -> new ArrayList<>()).add(i);
+        }
+
+        double scoreSum = 0.0;
 
         for (int i = 0; i < n; i++) {
-            double[] point = data[i];
             int cluster = labels[i];
+            List<Integer> sameCluster = clusterMap.get(cluster);
 
+            //Intra-cluster average distance
             double a = 0.0;
             int sameClusterCount = 0;
-            for (int j = 0; j < n; j++) {
-                if (i != j && labels[j] == cluster) {
-                    a += getDistance(point, data[j]);
+
+            for (int j : sameCluster) {
+                if (j != i) {
+                    a += dist[i][j];
                     sameClusterCount++;
                 }
             }
@@ -223,39 +242,29 @@ public class Model {
                 a /= sameClusterCount;
             }
 
+            //Minimum average distance to another cluster
             double b = Double.MAX_VALUE;
-            Map<Integer, List<Integer>> clusterMembers = new HashMap<>();
 
-            for (int j = 0; j < n; j++) {
-                if (labels[j] != cluster) {
-                    clusterMembers.computeIfAbsent(labels[j], k -> new ArrayList<>()).add(j);
-                }
-            }
+            for (var entry : clusterMap.entrySet()) {
+                int otherCluster = entry.getKey();
+                if (otherCluster == cluster) continue;
 
-            for (int otherCluster : clusterMembers.keySet()) {
+                List<Integer> members = entry.getValue();
                 double distSum = 0.0;
-                List<Integer> members = clusterMembers.get(otherCluster);
+
                 for (int idx : members) {
-                    distSum += getDistance(point, data[idx]);
+                    distSum += dist[i][idx];
                 }
-                double avgDist = distSum / members.size();
-                b = Math.min(b, avgDist);
+
+                double avg = distSum / members.size();
+                if (avg < b) b = avg;
             }
 
-            double s;
-            if (sameClusterCount == 0) {
-                s = 0;
-            } else {
-                s = (b - a) / Math.max(a, b);
-            }
-            silhouettes[i] = s;
+            double s = (sameClusterCount == 0) ? 0 : (b - a) / Math.max(a, b);
+            scoreSum += s;
         }
 
-        double total = 0.0;
-        for (double s : silhouettes) {
-            total += s;
-        }
-        return total / n;
+        return scoreSum / n;
     }
 
 
@@ -392,6 +401,7 @@ public class Model {
         int bestA = -1;
         double bestPsi = -1;
         TangleSearchTree[] bestTrees = null;
+        long silhouetteTime = 0;
 
         double maxPsi = config.isAutoComputePsi() ? 0.0 : 0.96;
         int minClusters = config.isAutoComputePsi() ? maxClusters : 2;
@@ -420,7 +430,10 @@ public class Model {
 
                 //System.out.println(NMIScore);
                 //System.out.println(randIndex);
+                long startTime = System.currentTimeMillis();
                 double silhouetteScore = silhouetteScore(reducedPoints, hardClustering);
+                silhouetteTime += (System.currentTimeMillis() - startTime);
+
                 if (silhouetteScore < 1.0 && silhouetteScore > bestSilhuetteScore) {
                     bestSilhuetteScore = silhouetteScore;
                     bestSoftClustering = softClustering;
@@ -433,6 +446,7 @@ public class Model {
             }
         }
 
+        monitor.setSilhouetteTime(silhouetteTime);
         monitor.setClusterEndTime(System.currentTimeMillis());
         monitor.setUncondensedTree(bestTrees[0]);
         monitor.setSplitPrunedTree(bestTrees[1]);
@@ -449,6 +463,7 @@ public class Model {
         //System.out.println(NMIScore);
         //System.out.println(randIndex);
         System.out.println("Dimensionality reduction time: " + monitor.getDimReductionTime());
+        System.out.println("Silhouette time: " + monitor.getSilhouetteTime());
         return hardClustering;
     }
 

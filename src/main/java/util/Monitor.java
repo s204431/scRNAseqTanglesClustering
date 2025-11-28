@@ -15,6 +15,7 @@ public class Monitor {
     private long clusterStartTime;
     private long clusterEndTime;
     private long dimReductionTime;
+    private long silhouetteTime;
 
     public void setDataset(ScRNAseqDataset dataset) {
         this.dataset = dataset;
@@ -86,5 +87,13 @@ public class Monitor {
 
     public long getDimReductionTime() {
         return dimReductionTime;
+    }
+
+    public void setSilhouetteTime(long time) {
+        this.silhouetteTime = time;
+    }
+
+    public long getSilhouetteTime() {
+        return silhouetteTime;
     }
 }
