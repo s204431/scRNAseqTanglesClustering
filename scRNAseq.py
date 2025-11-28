@@ -10,7 +10,7 @@ from sklearn.metrics import silhouette_score, davies_bouldin_score
 from kneed import KneeLocator
 
 
-RUN_FROM_JAVA = True
+RUN_FROM_JAVA = False
 
 while not RUN_FROM_JAVA or int(sys.stdin.readline().strip()) == 1:
     
@@ -18,7 +18,7 @@ while not RUN_FROM_JAVA or int(sys.stdin.readline().strip()) == 1:
     else: input_str = "testSet/symsim_observed_counts_5000genes_500cells_complex2.csv"
     
     if RUN_FROM_JAVA: use_tuning = int(sys.stdin.readline().strip()) == 1
-    else: use_tuning = False
+    else: use_tuning = True
     
     print(f"[PY] Clustering dataset: {input_str}", file=sys.stderr, flush=True)
     
@@ -122,6 +122,7 @@ while not RUN_FROM_JAVA or int(sys.stdin.readline().strip()) == 1:
     
     #sc.tl.umap(adata)
     
+    silTime = 0
     best_score = -1
     best_neighbors = -1
     best_resolution = -1
@@ -141,7 +142,10 @@ while not RUN_FROM_JAVA or int(sys.stdin.readline().strip()) == 1:
                 # Using the igraph implementation and a fixed number of iterations can be significantly faster, especially for larger datasets
                 sc.tl.leiden(adata, flavor="igraph", n_iterations=-1, resolution=resolution, random_state=SEED)
                 if len(np.unique(adata.obs["leiden"])) >= 2:
+                    silStart = time.time()
                     silhouette = silhouette_score(X_k, adata.obs["leiden"])
+                    silTime += time.time() - silStart
+                    
                     #davies_bouldin = davies_bouldin_score(X_k, adata.obs["leiden"])
                     #print(silhouette)
                     if silhouette > best_score:
@@ -175,6 +179,7 @@ while not RUN_FROM_JAVA or int(sys.stdin.readline().strip()) == 1:
     #clusters = adata.obs["leiden"]
     print(json.dumps(clusters.tolist()))
     print(end_time - start_time)
+    print("Silhouette time: ", silTime)
     #print(best_neighbors)
     #print(best_resolution)
     #print(best_score)
