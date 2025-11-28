@@ -89,8 +89,6 @@ public class GlobalConstants {
             new Color(166, 86, 40),    // Brown
             new Color(247, 129, 191),  // Pink
             new Color(153, 153, 153),  // Gray
-            new Color(31, 120, 180),   // Deep Blue
-            new Color(51, 160, 44),    // Deep Green
             new Color(251, 154, 153),  // Light Red
             new Color(227, 26, 28),    // Crimson
             new Color(253, 191, 111),  // Light Orange

@@ -188,7 +188,7 @@ public class TestSet {
             Random r = new Random();
             int[] shuffleSeeds = new int[nRunsPerDataset];
             for (int i = 0; i < nRunsPerDataset; i++) shuffleSeeds[i] = r.nextInt(Integer.MAX_VALUE);
-
+            
 
             for (int configIndex = 0; configIndex < configs.length; configIndex++) {
                 Config config = configs[configIndex];
@@ -231,7 +231,7 @@ public class TestSet {
                     averageRandIndexScores[testIndex][configIndex] += randIndex;
 
                     // Save results
-                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering), (double) model.getMonitor().getDimReductionTime() / 1000);
+                    testLogger.setResult(observedFilePath, progressManager.getTitle(configIndex), testIndex, configIndex, run, sparsity, postTime, NMI, randIndex, getNumberOfClusters(hardClustering), (double) model.getMonitor().getDimReductionTime() / 1000, (double) model.getMonitor().getSilhouetteTime() / 1000);
                     progressManager.markSingleRunFinished();
                     if (SAVE_CLUSTERINGS) {
                         File folder = new File("results");
@@ -315,8 +315,8 @@ public class TestSet {
         int seed = r.nextInt();
         model.shuffleArray(originalData, seed);
 
-        float[][] normalizedData = model.logNormalize(originalData);
-        double[][] hvgData = model.highlyVariableGenes(normalizedData, normalizedData[0].length);
+        float[][] normalizedData = originalData;//model.logNormalize(originalData);
+        double[][] hvgData = model.highlyVariableGenes(normalizedData, Math.min(2000, normalizedData[0].length));
         int nClusters = getNumberOfClusters(groundTruth);
 
         // Single warmup clustering
@@ -352,7 +352,7 @@ public class TestSet {
                 double randIndexPython = AdjustedRandIndex.of(groundTruth, pythonResult.x);
 
                 int pythonTitleIndex = progressManager.getConfigsSize();
-                testLogger.setResult(observedFilePath, progressManager.getTitle(pythonTitleIndex), testIndex, pythonTitleIndex, runIndex, sparsities[testIndex], pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x), 0);
+                testLogger.setResult(observedFilePath, progressManager.getTitle(pythonTitleIndex), testIndex, pythonTitleIndex, runIndex, sparsities[testIndex], pythonResult.y, NMIPython, randIndexPython, getNumberOfClusters(pythonResult.x), 0, 0);
 
                 nmiAverages[testIndex] += NMIPython;
                 randIndexAverages[testIndex] += randIndexPython;

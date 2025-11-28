@@ -13,11 +13,11 @@ public class TestLogger {
         this.results = new TestResult[tests][configs];
     }
 
-    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double sparsity, double time, double nmi, double randIndex, int nClusters, double dimReducTime) {
+    public void setResult(String testName, String configName, int testIndex, int configIndex, int runIndex, double sparsity, double time, double nmi, double randIndex, int nClusters, double dimReducTime, double silhouetteTime) {
         if (results[testIndex][configIndex] == null) {
             results[testIndex][configIndex] = new TestResult(testName, configName, runs, sparsity);
         }
-        results[testIndex][configIndex].setResult(runIndex, time, nmi, randIndex, nClusters, dimReducTime);
+        results[testIndex][configIndex].setResult(runIndex, time, nmi, randIndex, nClusters, dimReducTime, silhouetteTime);
     }
 
     public void printResults() {
@@ -41,6 +41,7 @@ public class TestLogger {
         for (int k = 1; k <= maxRuns; k++) sb.append(",RandIndex_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",Clusters_").append(k);
         for (int k = 1; k <= maxRuns; k++) sb.append(",DimReducTime_").append(k);
+        for (int k = 1; k <= maxRuns; k++) sb.append(",SilhouetteTime_").append(k);
         sb.append("\n");
 
         // Rows
@@ -116,6 +117,12 @@ public class TestLogger {
                     if (k < result.dimReductionTimes.length) sb.append(result.dimReductionTimes[k]);
                 }
 
+                // Silhouette times
+                for (int k = 0; k < maxRuns; k++) {
+                    sb.append(",");
+                    if (k < result.silhouetteTimes.length) sb.append(result.silhouetteTimes[k]);
+                }
+
                 sb.append("\n");
             }
         }
@@ -136,6 +143,7 @@ public class TestLogger {
         public final double[] randIndices;
         public final int[] nClusters;
         public final double[] dimReductionTimes;
+        public final double[] silhouetteTimes;
 
         public TestResult(String testName, String configName, int runs, double sparsity) {
             this.testName = testName;
@@ -146,14 +154,16 @@ public class TestLogger {
             this.randIndices = new double[runs];
             this.nClusters = new int[runs];
             this.dimReductionTimes = new double[runs];
+            this.silhouetteTimes = new double[runs];
         }
 
-        public void setResult(int runIndex, double time, double nmi, double randIndex, int nClusters, double dimReducTime) {
+        public void setResult(int runIndex, double time, double nmi, double randIndex, int nClusters, double dimReducTime, double silhouetteTime) {
             this.times[runIndex] = time;
             this.nmis[runIndex] = nmi;
             this.randIndices[runIndex] = randIndex;
             this.nClusters[runIndex] = nClusters;
             this.dimReductionTimes[runIndex] = dimReducTime;
+            this.silhouetteTimes[runIndex] = silhouetteTime;
         }
 
         @Override
@@ -167,7 +177,9 @@ public class TestLogger {
                   .append(", NMI = ").append(nmis[i])
                   .append(", Rand Index = ").append(randIndices[i])
                   .append("  Clusters = ").append(nClusters[i])
-                  .append(" Dimention Reduction Time = ").append("\n");
+                  .append(" Dimention Reduction Time = ").append(dimReductionTimes[i])
+                  .append(" Silhouette Time = ").append(silhouetteTimes[i])
+                  .append("\n");
             }
             return sb.toString();
         }

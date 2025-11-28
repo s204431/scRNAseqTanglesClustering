@@ -197,21 +197,25 @@ public class TangleClusterer {
                     node.rightChild.cost = costsOrdered[i];
                     splitCosts.add(costs[indices[i]]);
                 }
-                else if (autoLimitSplitCosts && node.leftChild != null) {
-                    int newA = (int) (node.intersection.count()*0.667);
-                    tree.a = newA;
-                    node.leftChild = null;
-                    consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
-                    tree.a = a;
-                    if (node.leftChild != null) node.leftChild.cost = newA;
+                else if (node.leftChild != null) {
+                    node.leftChild.cost = costsOrdered[i];
+                    if (autoLimitSplitCosts) {
+                        int newA = (int) (node.intersection.count() * 0.667);
+                        tree.a = newA;
+                        node.leftChild = null;
+                        consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
+                        tree.a = a;
+                    }
                 }
-                else if (autoLimitSplitCosts && node.rightChild != null) {
-                    int newA = (int) (node.intersection.count()*0.667);
-                    tree.a = newA;
-                    node.rightChild = null;
-                    consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
-                    tree.a = a;
-                    if (node.leftChild != null) node.leftChild.cost = newA;
+                else if (node.rightChild != null) {
+                    node.rightChild.cost = costsOrdered[i];
+                    if (autoLimitSplitCosts) {
+                        int newA = (int) (node.intersection.count() * 0.667);
+                        tree.a = newA;
+                        node.rightChild = null;
+                        consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
+                        tree.a = a;
+                    }
                 }
             }
             if (earlyStop && !consistent) { //Stop if no nodes were added to the tree.
@@ -378,7 +382,6 @@ public class TangleClusterer {
                         node.leftChild = null;
                         consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
-                        if (node.leftChild != null) node.leftChild.cost = newA;
                     }
                     else if (autoLimitSplitCosts && node.rightChild != null) {
                         int newA = (int) (node.intersection.count()*0.667);
@@ -386,7 +389,6 @@ public class TangleClusterer {
                         node.rightChild = null;
                         consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
-                        if (node.rightChild != null) node.rightChild.cost = newA;
                     }
 
                     branchPointer++;
