@@ -173,9 +173,9 @@ public class ScatterPlotPanel extends JTabbedPane {
             renderer.setUseOutlinePaint(true);
             Color fill = (Color) fillPaint;
             Color outline = new Color(
-                    (int)(fill.getRed() * 0.6),
-                    (int)(fill.getGreen() * 0.6),
-                    (int)(fill.getBlue() * 0.6)
+                    (int)(fill.getRed() * 0.8),
+                    (int)(fill.getGreen() * 0.8),
+                    (int)(fill.getBlue() * 0.8)
             );
             renderer.setSeriesOutlinePaint(c, outline);
             renderer.setSeriesOutlineStroke(c, new BasicStroke(1f));

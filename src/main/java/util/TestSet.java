@@ -315,7 +315,7 @@ public class TestSet {
         int seed = r.nextInt();
         model.shuffleArray(originalData, seed);
 
-        float[][] normalizedData = originalData;//model.logNormalize(originalData);
+        float[][] normalizedData = model.logNormalize(originalData);
         double[][] hvgData = model.highlyVariableGenes(normalizedData, Math.min(2000, normalizedData[0].length));
         int nClusters = getNumberOfClusters(groundTruth);
 
