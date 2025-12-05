@@ -212,7 +212,7 @@ public class TestSet {
 
                     int a;
                     if (config.isAutoComputeA()) {
-                        a = (int) ((hvgData.length / 20.0) * 0.7);
+                        a = (int) ((hvgData.length / 16.0) * 0.55);
                     } else {
                         a = (int) (((double) dataset.data.length / nClusters) * config.getaFactor());
                     }

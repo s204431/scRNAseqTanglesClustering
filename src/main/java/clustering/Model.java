@@ -389,7 +389,7 @@ public class Model {
                 config.getTsneComponentsCostFunction());
 
 
-        if (tangleClusterer.removeRedundantCuts) {
+        if (config.isRemoveRedundantCuts()) {
             Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
             initialCuts = redundancyRemoved.x;
             costs = redundancyRemoved.y;
