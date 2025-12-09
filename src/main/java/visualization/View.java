@@ -10,6 +10,7 @@ import util.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 
 import com.formdev.flatlaf.FlatLightLaf;
@@ -98,7 +99,81 @@ public class View {
         ScRNAseqDataset dataSet = model.getDataset();
         if (config.isTuneParameters()) model.clusterAuto(dataSet, config);
         else model.cluster(dataSet, config);
-        showClustering(model.getHardClustering());
+        showClustering();
+    }
+
+    public void removeUncertainPoints(double certainty) {
+        double[][] softClustering = window.getCurrentSoftClustering();
+        if (softClustering == null) return;
+
+        int[] hardClustering = softToHardClustering(softClustering);
+        double lastNmi = NormalizedMutualInformation.joint(hardClustering, model.getShuffledGroundTruth());
+        double lastAri = AdjustedRandIndex.of(model.getShuffledGroundTruth(), hardClustering);
+        System.out.println("NMI BEFORE: " + lastNmi);
+        System.out.println("ARI BEFORE: " + lastAri);
+
+        HashSet<Integer> indicesToRemove = new HashSet<>();
+        for (int cellIdx = 0; cellIdx < softClustering.length; cellIdx++) {
+            double maxProb = 0;
+            for (double prob : softClustering[cellIdx]) {
+                if (prob > maxProb) maxProb = prob;
+            }
+            if (maxProb < certainty) indicesToRemove.add(cellIdx);
+        }
+
+        int removeSize = indicesToRemove.size();
+
+        int[] GT = model.getShuffledGroundTruth();
+        int[] HARD = model.getHardClustering();
+        double[][] SOFT = model.getSoftClustering();
+
+        double[][] newPoints = points.clone();
+        int[] newGT = GT.clone();
+        int[] newHARD = HARD.clone();
+        double[][] newSOFT = SOFT.clone();
+
+        int improvements = 0;
+        int nRemove = 0;//removeSize - 1;   // Set to 0 to remove one point at a time
+        while (nRemove < removeSize) {
+            nRemove++;
+
+            newPoints = new double[points.length - nRemove][points[0].length];
+            newGT = new int[GT.length - nRemove];
+            newHARD = new int[HARD.length - nRemove];
+            newSOFT = new double[SOFT.length - nRemove][SOFT[0].length];
+
+            int idx = 0;
+            int removed = 0;
+            for (int i = 0; i < points.length; i++) {
+                if (indicesToRemove.contains(i) && removed < nRemove) {
+                    removed++;
+                    continue;
+                }
+                newPoints[idx] = points[i];
+                newGT[idx] = GT[i];
+                newHARD[idx] = HARD[i];
+                newSOFT[idx] = SOFT[i];
+                idx++;
+            }
+
+            double nmi = NormalizedMutualInformation.joint(newHARD, newGT);
+            double ari = AdjustedRandIndex.of(newGT, newHARD);
+            if (ari > lastAri && nmi > lastNmi) improvements++;
+            lastNmi = nmi;
+            lastAri = ari;
+            //System.out.println("NMI: " + nmi + "   ARI: " + ari);
+        }
+
+        double nmi = NormalizedMutualInformation.joint(newHARD, newGT);
+        double ari = AdjustedRandIndex.of(newGT, newHARD);
+        System.out.println("NMI: " + nmi + "   ARI: " + ari);
+        System.out.println("Removed points: " + removeSize + " Improvements: " + improvements);
+
+        double[][] temp = points;
+        points = newPoints;
+        window.updateClustering(newPoints, newSOFT);
+        window.updatePerformanceMetrics(nmi, ari);
+        points = temp;
     }
 
     public void runTestSetWithUI(Config config, int runs, boolean compareWithStandardPipeline) {
@@ -159,14 +234,18 @@ public class View {
     }
 
     public void showClustering(int[] clustering) {
-        showClustering(clustering, true);
-    }
-
-    public void showClustering(double[][] clustering) {
-        showClustering(clustering, true);
+        showClustering(points, clustering, true);
     }
 
     public void showClustering(int[] clustering, boolean tangle) {
+        showClustering(points, clustering, tangle);
+    }
+
+    public void showClustering(double[][] clustering) {
+        showClustering(points, null, clustering, true);
+    }
+
+    public void showClustering(double[][] points, int[] clustering, boolean tangle) {
         if (!tangle) {
             // Shuffle python's result to match the order of the data points
             model.shuffleArray(clustering, model.getSeed());
@@ -174,8 +253,9 @@ public class View {
         window.drawClusters(points, clustering, null, tangle);
     }
 
-    public void showClustering(double[][] clustering, boolean tangle) {
-        window.drawClusters(points, null, clustering, tangle);
+    public void showClustering(double[][] points, int[] hardClustering, double[][] softClustering, boolean tangle) {
+        if (hardClustering == null) hardClustering = softToHardClustering(softClustering);
+        window.drawClusters(points, hardClustering, softClustering, tangle);
     }
 
     public void showGroundTruth() {
@@ -253,16 +333,21 @@ public class View {
     }
 
     public Tuple<Double, Double> getClusteringQuality(int[] clustering) {
-        double nmi = NormalizedMutualInformation.joint(clustering, model.getShuffledGroundTruth());
-        double randIndex = AdjustedRandIndex.of(model.getShuffledGroundTruth(), clustering);
+        int[] GT = model.getShuffledGroundTruth();
+        if (GT.length != clustering.length) return new Tuple<>(0.0, 0.0);
+
+        double nmi = NormalizedMutualInformation.joint(clustering, GT);
+        double randIndex = AdjustedRandIndex.of(GT, clustering);
         return new Tuple<>(nmi, randIndex);
     }
 
     public double getSilhouetteScore(int[] clustering) {
+        if (points.length != clustering.length) return 0.0;
         return Model.silhouetteScore(points, clustering);
     }
 
     public double getDavisBouldin(int[] clustering) {
+        if (points.length != clustering.length) return 0.0;
         return Model.daviesBouldinIndex(points, clustering);
     }
 
@@ -299,5 +384,21 @@ public class View {
         monitor.setClusterStartTime((long) (currentTime - (result.y*1000)));
         monitor.setClusterEndTime(currentTime);
         return result;
+    }
+
+    public int[] softToHardClustering(double[][] softClustering) {
+        int[] hardClustering = new int[softClustering.length];
+        for (int i = 0; i < softClustering.length; i++) {
+            double maxProb = -1;
+            int bestCluster = -1;
+            for (int j = 0; j < softClustering[i].length; j++) {
+                if (softClustering[i][j] > maxProb) {
+                    maxProb = softClustering[i][j];
+                    bestCluster = j;
+                }
+            }
+            hardClustering[i] = bestCluster;
+        }
+        return hardClustering;
     }
 }

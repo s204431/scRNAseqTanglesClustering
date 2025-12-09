@@ -135,6 +135,7 @@ public class TangleClusterer {
     public void clusterWithNewPsi(double psi) {
         tangleSearchTree = tangleSearchTreeNotPruned.copy();
         tangleSearchTree.limitPsi(tangleSearchTree.root, psi);
+        monitor.setUncondensedTree(tangleSearchTree.copy());
         //Condense tangle search tree
         try {
             tangleSearchTree.condenseTree(1);

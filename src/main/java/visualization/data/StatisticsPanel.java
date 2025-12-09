@@ -22,6 +22,8 @@ public class StatisticsPanel extends JScrollPane {
     private final Section tangleSection;
     private final Section performanceSection;
 
+    private long lastTimeHolder = 0;
+
     public StatisticsPanel(View view) {
         this.view = view;
 
@@ -83,7 +85,7 @@ public class StatisticsPanel extends JScrollPane {
 
         // Performance cell
         Tuple<Double, Double> result = view.getClusteringQuality(clustering);
-        updatePerformance(result.x, result.y, clusterTime);
+        if (result != null) updatePerformance(result.x, result.y, clusterTime);
 
         // Clustering cell
         HashMap<Integer, Integer> clusterMap = computeClusterMapping(clustering);
@@ -147,10 +149,19 @@ public class StatisticsPanel extends JScrollPane {
     }
 
     public void updatePerformance(double nmi, double randIndex, long clusterTime) {
+        lastTimeHolder = clusterTime;
         performanceSection.clear()
                 .put("Cluster Time (s)", format((double) clusterTime / 1000))
                 .put("NMI Score", format(nmi))
                 .put("Rand Index Score", format(randIndex))
+                .render();
+    }
+
+    public void updatePerformance(double nmi, double ari) {
+        performanceSection.clear()
+                .put("Cluster Time (s)", format((double) lastTimeHolder / 1000))
+                .put("NMI Score", format(nmi))
+                .put("ARI Score", format(ari))
                 .render();
     }
 

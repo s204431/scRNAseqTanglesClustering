@@ -136,6 +136,10 @@ public class MainWindow extends JFrame {
         scatterPanel.drawClusters(points, clustering, softClustering, tangle);
     }
 
+    public void updateClustering(double[][] points, double[][] softClustering) {
+        scatterPanel.updateClustering(points, softClustering);
+    }
+
     public void drawGroundTruth(double[][] points, int[] groundTruth) {
         scatterPanel.drawGroundTruth(points, groundTruth);
     }
@@ -257,5 +261,13 @@ public class MainWindow extends JFrame {
         statsPanel.updateClusteringStats(clustering, clusterTime);
         TangleSearchTree[] trees = tangleTreePanel.getTrees(clusterIndex);
         statsPanel.updateTangleStats(trees);
+    }
+
+    public void updatePerformanceMetrics(double nmi, double randIndex) {
+        statsPanel.updatePerformance(nmi, randIndex);
+    }
+
+    public double[][] getCurrentSoftClustering() {
+        return scatterPanel.getCurrentSoftClustering();
     }
 }

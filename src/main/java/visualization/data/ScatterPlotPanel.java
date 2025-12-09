@@ -51,6 +51,9 @@ public class ScatterPlotPanel extends JTabbedPane {
     private int attachmentIndex = 0;
     private int tangleCounter = 0;
 
+    private JComponent tempComponentHolder = null;
+    private int lastSelectedIndex = -1;
+
     public ScatterPlotPanel(View view) {
         this.view = view;
         setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);    // Should differ only a little from white
@@ -111,29 +114,33 @@ public class ScatterPlotPanel extends JTabbedPane {
         panel.setOpaque(true);
         panel.setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
 
-        insertTab(panel, POINTS_TITLE, null);
+        insertTab(panel, POINTS_TITLE, null, null);
         setSelectedIndex(getTabCount() - 1);
     }
 
     public void drawCut(double[][] points, int[] clustering) {
-        drawClusters(points, clustering, CUT_TITLE);
+        ChartPanel panel = drawClusters(points, clustering);
+        insertTab(panel, CUT_TITLE, clustering, null);
     }
 
     public void drawGroundTruth(double[][] points, int[] groundTruth) {
-        drawClusters(points, groundTruth, GROUND_TRUTH_TITLE);
+        ChartPanel panel = drawClusters(points, groundTruth);
+        insertTab(panel, GROUND_TRUTH_TITLE, groundTruth, null);
     }
 
-    public void drawClusters(double[][] points, int[] clusters, double[][] softClusters, boolean tangle) {
+    public void drawClusters(double[][] points, int[] hardClusters, double[][] softClusters, boolean tangle) {
         String title = tangle ? "Tangle" + (++tangleCounter) : SCANPY_TITLE;
 
-        if (tangle && softClusters != null) drawSoftClustering(points, softClusters, title);
-        else drawClusters(points, clusters, title);
+        ChartPanel panel;
+        if (tangle && softClusters != null) panel = drawSoftClustering(points, softClusters);
+        else panel = drawClusters(points, hardClusters);
+        insertTab(panel, title, hardClusters, softClusters);
     }
 
-    public void drawClusters(double[][] points, int[] clusters, String title) {
+    public ChartPanel drawClusters(double[][] points, int[] clusters) {
         if (clusters == null || clusters.length != points.length) {
             drawScatterPlot(points);
-            return;
+            return null;
         }
 
         // Find clusters
@@ -203,7 +210,7 @@ public class ScatterPlotPanel extends JTabbedPane {
         panel.setOpaque(true);
         panel.setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
 
-        insertTab(panel, title, clusters);
+        return panel;
     }
 
     // Renders per-item alpha using provided probabilities for each series
@@ -245,7 +252,7 @@ public class ScatterPlotPanel extends JTabbedPane {
 
     // Draws a soft clustering where each cluster has a color
     // and the alpha and gamma values are adjusted based on the probabilities.
-    public void drawSoftClustering(double[][] points, double[][] softClustering, String title) {
+    public ChartPanel drawSoftClustering(double[][] points, double[][] softClustering) {
         int n = points.length;
         int k = softClustering[0].length;
 
@@ -339,11 +346,16 @@ public class ScatterPlotPanel extends JTabbedPane {
         panel.setOpaque(true);
         panel.setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
 
-        insertTab(panel, title, clustering);
+        return panel;
     }
 
-    public void insertTab(JComponent component, String title, int[] clustering) {
-        attachTabData(component, title, clustering);
+    public void updateClustering(double[][] points, double[][] softClustering) {
+        ChartPanel panel = drawSoftClustering(points, softClustering);
+        updateTab(panel);
+    }
+
+    public void insertTab(JComponent component, String title, int[] hardClustering, double[][] softClustering) {
+        attachTabData(component, title, hardClustering, softClustering);
 
         if (title.equals(GROUND_TRUTH_TITLE) || title.equals(CUT_TITLE)) {
             int i = indexOfTab(title);
@@ -363,19 +375,50 @@ public class ScatterPlotPanel extends JTabbedPane {
         }
     }
 
+    public void updateTab(JComponent component) {
+        int idx = getSelectedIndex();
+        if (idx < 0) return;
+        JComponent oldComponent = (JComponent) getComponentAt(idx);
+        copyTabData(oldComponent, component);
+        setComponentAt(idx, component);
+
+        if (tempComponentHolder == null) {
+            tempComponentHolder = oldComponent;
+            lastSelectedIndex = idx;
+        }
+    }
+
     public void removeAllTabs() {
         removeAll();
         tangleCounter = 0;
+        tempComponentHolder = null;
+        lastSelectedIndex = -1;
     }
 
-    private void attachTabData(JComponent component, String title, int[] clusters) {
+    private void attachTabData(JComponent component, String title, int[] hardCusters, double[][] softClusters) {
         component.putClientProperty(PROPERTY_TITLE, title);
         component.putClientProperty(INDEX_TITLE, attachmentIndex++);
-        component.putClientProperty(SOFT_CLUSTER_TITLE, view.getSoftClustering());
-        component.putClientProperty(HARD_CLUSTER_TITLE, clusters);
+        component.putClientProperty(SOFT_CLUSTER_TITLE, softClusters);
+        component.putClientProperty(HARD_CLUSTER_TITLE, hardCusters);
         long clusteringTime = (title.equals(POINTS_TITLE) || title.equals(CUT_TITLE) || title.equals(GROUND_TRUTH_TITLE)) ? 0 : view.getClusteringTime();
         component.putClientProperty(CLUSTER_TIME_TITLE, clusteringTime);
         component.putClientProperty(CONFIG_TITLE, view.getCurrentConfigurations());
+    }
+
+    private void copyTabData(JComponent source, JComponent target) {
+        Object title = source.getClientProperty(PROPERTY_TITLE);
+        Object index = source.getClientProperty(INDEX_TITLE);
+        Object softClusters = source.getClientProperty(SOFT_CLUSTER_TITLE);
+        Object hardClusters = source.getClientProperty(HARD_CLUSTER_TITLE);
+        Object clusterTime = source.getClientProperty(CLUSTER_TIME_TITLE);
+        Object config = source.getClientProperty(CONFIG_TITLE);
+
+        target.putClientProperty(PROPERTY_TITLE, title);
+        target.putClientProperty(INDEX_TITLE, index);
+        target.putClientProperty(SOFT_CLUSTER_TITLE, softClusters);
+        target.putClientProperty(HARD_CLUSTER_TITLE, hardClusters);
+        target.putClientProperty(CLUSTER_TIME_TITLE, clusterTime);
+        target.putClientProperty(CONFIG_TITLE, config);
     }
 
     public void addClosableTab(String title, Component comp) {
@@ -470,6 +513,12 @@ public class ScatterPlotPanel extends JTabbedPane {
             // Draw tangle search trees and load the tangle configuration
             view.loadAndDrawTrees(clusterIndex);
             view.loadConfig((Config) c.getClientProperty(CONFIG_TITLE));
+
+            if (tempComponentHolder != null) {
+                setComponentAt(lastSelectedIndex, tempComponentHolder);
+                tempComponentHolder = null;
+                lastSelectedIndex = -1;
+            }
         });
     }
 
@@ -605,5 +654,12 @@ public class ScatterPlotPanel extends JTabbedPane {
             System.out.println("Error when writing soft clustering to CSV");
             e.printStackTrace();
         }
+    }
+
+    public double[][] getCurrentSoftClustering() {
+        int idx = getSelectedIndex();
+        if (idx < 0) return null;
+        JComponent c = (JComponent) getComponentAt(idx);
+        return (double[][]) c.getClientProperty(SOFT_CLUSTER_TITLE);
     }
 }

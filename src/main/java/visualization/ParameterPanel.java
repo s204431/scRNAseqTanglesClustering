@@ -65,11 +65,13 @@ public class ParameterPanel extends JScrollPane {
     private JButton clusterButton;
     private JButton pythonClusterButton;
 
-    // Cut section components
+    // Visualization section components
     private JTextField cutNumberField;
     private JButton minusButton;
     private JButton plusButton;
     private JButton cutButton;
+    private JTextField uncertaintyTextField;
+    private JButton removeUncertaintyButton;
 
     // Test section components
     private JTextField runNumberField;
@@ -98,7 +100,7 @@ public class ParameterPanel extends JScrollPane {
         buildAlgorithmSection();
         buildClusteringSection();
         if (dataPanel) {
-            buildCutsSection();
+            buildVisualizationSection();
         } else {
             buildTestSection();
         }
@@ -249,8 +251,8 @@ public class ParameterPanel extends JScrollPane {
         endSection();
     }
 
-    private void buildCutsSection() {
-        beginSection("Cut Visualization");
+    private void buildVisualizationSection() {
+        beginSection("Visualization");
 
         // A counter for cuts ( - [number] + )
         cutNumberField = new JTextField("0", 3);
@@ -265,6 +267,10 @@ public class ParameterPanel extends JScrollPane {
 
         cutButton = new JButton("Show Cut");
         addRow(counterPanel, cutButton);
+
+        uncertaintyTextField = new JTextField("1.0", 3);
+        removeUncertaintyButton = new JButton("<html>Remove<br>Uncertainty</html>");
+        addRow(uncertaintyTextField, removeUncertaintyButton);
 
         endSection();
     }
@@ -291,6 +297,7 @@ public class ParameterPanel extends JScrollPane {
             minusButton.addActionListener(e -> stepCutCounter(-1));
             cutButton.addActionListener(e -> readAndShowCut());
             pythonClusterButton.addActionListener(this::pythonClusterAction);
+            removeUncertaintyButton.addActionListener(this::removeUncertaintyAction);
         } else {
             testButton.addActionListener(this::testAction);
         }
@@ -373,6 +380,26 @@ public class ParameterPanel extends JScrollPane {
 
         view.showClustering(result.x, false);
         cutNumberField.setText("0");
+    }
+
+    private void removeUncertaintyAction(ActionEvent e) {
+        double certaintyThreshold;
+        try {
+            certaintyThreshold = Double.parseDouble(uncertaintyTextField.getText());
+            System.out.println("Certainty threshold: " + certaintyThreshold);
+            if (certaintyThreshold < 0.0 || certaintyThreshold > 1.0)
+                throw new NumberFormatException("Certainty threshold out of bounds");
+
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Certainty Threshold must be a double between 0.0 and 1.0.",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+        view.removeUncertainPoints(certaintyThreshold);
     }
 
     private void clusterAction(ActionEvent e) {
