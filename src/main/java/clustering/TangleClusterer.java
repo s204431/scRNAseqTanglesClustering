@@ -830,6 +830,7 @@ public class TangleClusterer {
                 }
 
                 // ========== VOTE CUTS ==========
+                boolean addSplitCut = splitCutFound;
                 if (parentCosts != null) {
                     double splitCost = splitCutFound ? localCosts[branchIndicesOrdered[branchPointer]] : Double.MAX_VALUE;
                     double[] parentCostsOrdered = parentCosts.clone();
@@ -863,16 +864,14 @@ public class TangleClusterer {
                         consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
 
-                        if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
-                            node.leftChild = null;
-                        }
-                        if (node.rightChild != null && node.rightChild.intersection.count() == 0) {
-                            node.rightChild = null;
-                        }
-
                         if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
                             continue;
                         } else if (node.leftChild == null && node.rightChild == null || !consistent) {     // No child was added
+                            if (earlyStop) {
+                                System.out.println("Stopping on branch: " + node.branchId);
+                                addSplitCut = false;
+                                break;
+                            }
                             continue;
                         }
 
@@ -884,7 +883,6 @@ public class TangleClusterer {
                                 rightUsedCuts.add(cutIndex);
                                 node = node.leftChild;
                             }
-
                         } else if (node.rightChild != null) {
                             node.rightChild.cost = cutCost;
                             if (consistent) {
@@ -897,7 +895,7 @@ public class TangleClusterer {
                 }
 
                 // Try to add split cut
-                if (splitCutFound) {
+                if (addSplitCut) {
                     int cutIndex = splitCut;
                     boolean consistent = false;
                     consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
