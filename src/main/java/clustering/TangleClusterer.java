@@ -868,7 +868,7 @@ public class TangleClusterer {
                             continue;
                         } else if (node.leftChild == null && node.rightChild == null || !consistent) {     // No child was added
                             if (earlyStop) {
-                                System.out.println("Stopping on branch: " + node.branchId);
+                                //System.out.println("Stopping on branch: " + node.branchId);
                                 addSplitCut = false;
                                 break;
                             }
