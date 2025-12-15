@@ -868,7 +868,17 @@ public class Model {
                 System.out.println("Key: " + entry.getKey() + " -> " + entry.getValue().getClass().getSimpleName());
             }*/
 
-            float[] data = (float[]) ((Dataset) xGroup.getChildren().get("data")).getData();
+            float[] data;
+            if (((Dataset) xGroup.getChildren().get("data")).getJavaType() == int.class) {
+                int[] intData = (int[]) ((Dataset) xGroup.getChildren().get("data")).getData();
+                data = new float[intData.length];
+                for (int i = 0; i < data.length; i++) {
+                    data[i] = intData[i];
+                }
+            }
+            else {
+                data = (float[]) ((Dataset) xGroup.getChildren().get("data")).getData();
+            }
             int[] indices = (int[]) ((Dataset) xGroup.getChildren().get("indices")).getData();
             int[] indptr = (int[]) ((Dataset) xGroup.getChildren().get("indptr")).getData();
 
