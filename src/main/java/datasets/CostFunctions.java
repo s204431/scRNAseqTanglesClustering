@@ -125,9 +125,11 @@ public class CostFunctions {
             bitSets.add(combinedCutGenerator(splits.get(i), a));
         }*/
 
+        long maxTime = 0;
         for (int i = 0; i < splits.size(); i++) {
             try {
                 threads[i].join();
+                maxTime = Math.max(maxTime, runnables[i].dimReductionTime);
                 double[] splitCosts = runnables[i].result;
                 for (int j = 0; j < costs.length; j++) {
                     costs[j] += splitCosts[j];
@@ -143,6 +145,7 @@ public class CostFunctions {
 
             }
         }
+        monitor.addDimReductionTime(maxTime);
 
         for (int i = 0; i < costs.length; i++) {
             costs[i] /= splits.size();
@@ -250,6 +253,7 @@ public class CostFunctions {
 
             }
         }
+        monitor.addDimReductionTime(maxTime);
 
         return costs;
     }

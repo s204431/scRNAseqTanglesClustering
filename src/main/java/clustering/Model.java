@@ -584,20 +584,18 @@ public class Model {
         db.initialize();
         Relation<DoubleVector> rel = db.getRelation(TypeUtil.DOUBLE_VECTOR_FIELD);
 
-        // Affinity matrix builder (perplexity 30, Euclidean distance)
         AffinityMatrixBuilder<DoubleVector> affinity =
                 new PerplexityAffinityMatrixBuilder<>(EuclideanDistance.STATIC, perplexity);
 
-        // Construct Barnes-Hut t-SNE
         BarnesHutTSNE<DoubleVector> tsne = new BarnesHutTSNE<>(
                 affinity,
                 nComponents,
-                0.8,              // finalMomentum
-                200.0,            // learningRate
-                maxIterations,             // maxIterations
+                0.8,
+                200.0,
+                maxIterations,
                 RandomFactory.DEFAULT,
-                false,            // keep original data
-                0.5               // theta (Barnes-Hut approximation)
+                false,
+                0.5
         );
 
         // Run algorithm
