@@ -511,7 +511,7 @@ public class ScatterPlotPanel extends JTabbedPane {
             }
 
             // Draw tangle search trees and load the tangle configuration
-            view.loadAndDrawTrees(clusterIndex);
+            view.loadAndDrawTrees(clusterIndex, clustering);
             view.loadConfig((Config) c.getClientProperty(CONFIG_TITLE));
 
             if (tempComponentHolder != null) {

@@ -282,7 +282,7 @@ public class View {
     }
 
     public void drawTangleSearchTree(boolean removeRedundantCuts) {
-        window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree(), removeRedundantCuts);
+        window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree(), removeRedundantCuts, model.getHardClustering());
     }
 
     public void showTestSet(List<File> selectedDirs) {
@@ -308,8 +308,8 @@ public class View {
         return monitor.getFilePath();
     }
 
-    public void loadAndDrawTrees(int clusterIndex) {
-        window.loadAndDrawTrees(clusterIndex);
+    public void loadAndDrawTrees(int clusterIndex, int[] clustering) {
+        window.loadAndDrawTrees(clusterIndex, clustering, model.getShuffledGroundTruth());
     }
 
     public void removeTree(int clusterIndex) {

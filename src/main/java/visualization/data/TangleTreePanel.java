@@ -28,6 +28,7 @@ public class TangleTreePanel extends JPanel {
 
     private final JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     private final JCheckBox intersectionCheckBox = new JCheckBox("Toggle intersections");
+    private final JCheckBox clusteringCheckBox = new JCheckBox("Toggle clusters below");
 
     private final JPanel treePanelOriginal = new JPanel(new BorderLayout());
     private final JPanel treePanelSplitPruned = new JPanel(new BorderLayout());
@@ -42,10 +43,15 @@ public class TangleTreePanel extends JPanel {
     private final HashMap<Integer, Integer> originalCutIndexToSortedCutIndex = new HashMap<>();
     private final HashMap<Integer, Integer> sortedCutIndexToOriginalCutIndex = new HashMap<>();
 
+    private final HashMap<Integer, Integer[]> clusterIndexToHardClustering = new HashMap<>();
     private final HashMap<Integer, TangleSearchTree[]> clusterIndexToTrees = new HashMap<>();
     private final HashMap<Integer, BitSet[]> clusterIndexToCuts = new HashMap<>();
     private final HashMap<Integer, double[]> clusterIndexToCutCosts = new HashMap<>();
     private final HashMap<Integer, List<double[]>> clusterIndexToBranchCosts = new HashMap<>();
+
+    private int[] hardClustering;
+    private int[] groundTruth;
+    HashMap<Integer, Integer> map;
 
     private BitSet[] cuts;
     private double[] cutCosts;
@@ -68,6 +74,15 @@ public class TangleTreePanel extends JPanel {
 
         //topPanel.setBackground(Color.WHITE);
         topPanel.add(intersectionCheckBox);
+        topPanel.add(clusteringCheckBox);
+
+        intersectionCheckBox.addActionListener(e -> {
+            if (intersectionCheckBox.isSelected()) clusteringCheckBox.setSelected(false);
+        });
+
+        clusteringCheckBox.addActionListener(e -> {
+            if (clusteringCheckBox.isSelected()) intersectionCheckBox.setSelected(false);
+        });
     }
 
     public void removeTree(int clusterIndex) {
@@ -94,8 +109,35 @@ public class TangleTreePanel extends JPanel {
         treeTabs.removeAll();
     }
 
-    public void loadTrees(int clusterIndex) {
+    public void loadTrees(int clusterIndex, int[] clustering, int[] GT) {
         if (!clusterIndexToTrees.containsKey(clusterIndex)) return;
+
+        hardClustering = clustering;
+        groundTruth = GT;
+        map = new HashMap<>();
+
+        int[][] similarity = new int[8][8];
+        for (int i = 0; i < hardClustering.length; i++) {
+            similarity[hardClustering[i]][GT[i]-1]++;
+        }
+
+        for (int i = 0; i < similarity.length; i++) {
+            int maxIndex = -1;
+            int maxValue = -1;
+            for (int j = 0; j < similarity.length; j++) {
+                if (similarity[i][j] > maxValue) {
+                    maxValue = similarity[i][j];
+                    maxIndex = j;
+                }
+            }
+            map.put(maxIndex, i);
+        }
+
+        for (int key : map.keySet()) {
+            int value = map.get(key);
+            System.out.println(key + " -> " + value);
+        }
+
 
         cuts = clusterIndexToCuts.get(clusterIndex);
         cutCosts = clusterIndexToCutCosts.get(clusterIndex);
@@ -106,7 +148,8 @@ public class TangleTreePanel extends JPanel {
         drawTrees(trees[0], trees[1], trees[2]);
     }
 
-    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, int clusterIndex, boolean removeRedundantCuts) {
+    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, int clusterIndex, boolean removeRedundantCuts, int[] clustering) {
+        hardClustering = clustering;
         getCutsAndCosts(removeRedundantCuts);
         sortCutsAndCosts();
 
@@ -187,7 +230,15 @@ public class TangleTreePanel extends JPanel {
                     return;
                 }
 
-                BitSet cut = intersectionCheckBox.isSelected() ? idToIntersection.get(uniqueId) : idToCut.get(uniqueId);
+                BitSet cut = null;
+                if (intersectionCheckBox.isSelected()) {
+                    cut = idToIntersection.get(uniqueId);
+                } else if (clusteringCheckBox.isSelected()) {
+                    cut = findClusteringCut(tst, idToNode.get(uniqueId), hardClustering, false);
+                } else {
+                    cut = findClusteringCut(tst, idToNode.get(uniqueId), groundTruth, true);
+                    //cut = idToCut.get(uniqueId);
+                }
                 int cutIndex = idToCutIndex.get(uniqueId);
                 view.showCut(cut, cutIndex);
 
@@ -293,6 +344,47 @@ public class TangleTreePanel extends JPanel {
 
         sortedCuts = cutsSorted;
         sortedCutCosts = costsSorted;
+    }
+
+    private BitSet findClusteringCut(TangleSearchTree tst, TangleSearchTree.Node node, int[] hardClustering, boolean gt) {
+        TangleSearchTree.Node root = tst.getRoot();
+        computeLeafIndices(root, 0);
+
+        BitSet out = new BitSet(hardClustering.length);
+        for (int i = 0; i < hardClustering.length; i++) {
+            int cluster = hardClustering[i];
+            if (gt) cluster = map.get(cluster - 1);
+            if (node.leafIndices.contains(cluster)) {
+                out.setValue(i, true);
+            }
+        }
+
+        return out;
+    }
+
+    private int computeLeafIndices(TangleSearchTree.Node node, int index) {
+        if (node.leftChild == null && node.rightChild == null) {
+            node.leafIndices = new ArrayList<>();
+            node.leafIndices.add(index);
+            return index + 1;
+        }
+
+        node.leafIndices = new ArrayList<>();
+        if (node.leftChild != null) {
+            index = computeLeafIndices(node.leftChild, index);
+            for (int i : node.leftChild.leafIndices) {
+                node.leafIndices.add(i);
+            }
+        }
+
+        if (node.rightChild != null) {
+            index = computeLeafIndices(node.rightChild, index);
+            for (int i : node.rightChild.leafIndices) {
+                node.leafIndices.add(i);
+            }
+        }
+
+        return index;
     }
 
     public TangleSearchTree[] getTrees(int clusterIndex) {

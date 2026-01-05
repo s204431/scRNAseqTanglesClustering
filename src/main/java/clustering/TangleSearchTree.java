@@ -656,6 +656,7 @@ public class TangleSearchTree {
         public int branchId;
         public BitSet intersection;
         public double cost;
+        public List<Integer> leafIndices;
 
         //Creates a default node (used to generate the root).
         private Node() {
