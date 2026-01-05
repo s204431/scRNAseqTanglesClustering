@@ -52,11 +52,11 @@ public class View {
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
-            loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv", 0);
+            loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv", 0, true);
         });
     }
 
-    public void loadDataset(String filePath, int hvg) {
+    public void loadDataset(String filePath, int hvg, boolean normalizeData) {
         if (loaderThread != null) {
             return;
         }
@@ -65,7 +65,7 @@ public class View {
 
         loaderThread = new Thread(() -> {
             try {
-                model.loadDataset(filePath, hvg);
+                model.loadDataset(filePath, hvg, normalizeData);
                 loadDataset();
             } catch (Throwable t) {
                 t.printStackTrace();

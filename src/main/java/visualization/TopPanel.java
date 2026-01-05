@@ -89,10 +89,23 @@ public class TopPanel extends JPanel {
 
             // Ask user for number of highly variable genes
             JFormattedTextField input = new JFormattedTextField(new NumberFormatter(NumberFormat.getIntegerInstance()));
+
+            // Ask use if they want to log-normalize the data
+            JCheckBox normalizeCheckBox = new JCheckBox("Log-normalize data");
+            normalizeCheckBox.setSelected(true);
+
+            // Merge components in panel
+            JPanel panel = new JPanel();
+            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+            panel.add(new JLabel("Number of highly variable genes:"));
+            panel.add(input);
+            panel.add(Box.createVerticalStrut(10));
+            panel.add(normalizeCheckBox);
+
             int option = JOptionPane.showConfirmDialog(
                     this,
-                    input,
-                    "Enter number of highly variable genes:",
+                    panel,
+                    "Data set options",
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.PLAIN_MESSAGE
             );
@@ -100,7 +113,8 @@ public class TopPanel extends JPanel {
             if (option == JOptionPane.OK_OPTION) {
                 Number v = (Number) input.getValue();
                 int hvg = v == null ? 0 : v.intValue();
-                view.loadDataset(selected.getAbsolutePath(), hvg);
+                boolean normalizeData = normalizeCheckBox.isSelected();
+                view.loadDataset(selected.getAbsolutePath(), hvg, normalizeData);
                 view.changeView(MainWindow.DATA_VIEW);
             }
         }

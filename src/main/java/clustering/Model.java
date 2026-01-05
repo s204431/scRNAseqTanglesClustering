@@ -67,7 +67,7 @@ public class Model {
         //loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
     }
 
-    public void loadDataset(String observedFilePath, int hvg) {
+    public void loadDataset(String observedFilePath, int hvg, boolean normalizeData) {
         monitor.setFilePath(observedFilePath);
 
         Tuple<float[][], int[]> data = loadData(observedFilePath);
@@ -80,7 +80,7 @@ public class Model {
         shuffleArray(originalData, seed);
         shuffleArray(shuffledGroundTruth, seed);
 
-        logNormalize(originalData);
+        if (normalizeData) logNormalize(originalData);
 
         int maxGenes = originalData[0].length;
         hvg = (hvg <= 0 || hvg >= maxGenes) ? maxGenes : hvg;

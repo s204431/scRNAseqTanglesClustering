@@ -171,32 +171,28 @@ public class ParameterPanel extends JScrollPane {
         beginSection("Algorithm Modifications");
 
         consistencyCheckbox = new JCheckBox("<html>" +
-                "Consistency<br>" +
-                "Modification" +
+                "Local<br>" +
+                "Consistency" +
             "</html>");
-        wernerModificationCheckbox = new JCheckBox("<html>" +
-                "Werner<br>" +
-                "Modification" +
-            "</html>");
+        wernerModificationCheckbox = new JCheckBox("Local Costs");
         consistencyCheckbox.setSelected(true);
         wernerModificationCheckbox.setSelected(true);
         addRow(consistencyCheckbox, wernerModificationCheckbox);
 
         useSplitFirstCheckbox = new JCheckBox("Split First");
-        disableEarlyStopCheckbox = new JCheckBox("<html>Disable<br>Early Stop</html>");
+        disableEarlyStopCheckbox = new JCheckBox("<html>Skip<br>Inconsistent Cuts</html>");
         useSplitFirstCheckbox.setSelected(true);
         disableEarlyStopCheckbox.setSelected(true);
         addRow(useSplitFirstCheckbox, disableEarlyStopCheckbox);
 
-        useCacheCheckBox = new JCheckBox("Use Cache");
-        removeRedundantCutsCheckbox = new JCheckBox("Remove Cuts");
-        useCacheCheckBox.setSelected(true);
-        removeRedundantCutsCheckbox.setSelected(true);
-        addRow(useCacheCheckBox, removeRedundantCutsCheckbox);
+        //useCacheCheckBox = new JCheckBox("Use Cache");
+        //useCacheCheckBox.setSelected(true);
 
+        removeRedundantCutsCheckbox = new JCheckBox("<html>Remove<br>Redundant Cuts</html>");
+        removeRedundantCutsCheckbox.setSelected(true);
         removeRedundantCutsIterativelyCheckBox = new JCheckBox("<html>Remove Cuts<br>Iteratively</html>");
         removeRedundantCutsIterativelyCheckBox.setSelected(false);
-        addFullWidth(removeRedundantCutsIterativelyCheckBox);
+        addRow(removeRedundantCutsCheckbox, removeRedundantCutsIterativelyCheckBox);
 
         highLevelCutGeneratorDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_CUT_GENERATOR_NAMES);
         addRow("<html>Cut Generator<br>Batching</html>", highLevelCutGeneratorDropdown);
@@ -521,7 +517,7 @@ public class ParameterPanel extends JScrollPane {
                 wernerModificationCheckbox.isSelected(),
                 useSplitFirstCheckbox.isSelected(),
                 !disableEarlyStopCheckbox.isSelected(),
-                useCacheCheckBox.isSelected(),
+                true,//useCacheCheckBox.isSelected(),
                 (String) highLevelCutGeneratorDropdown.getSelectedItem(),
                 (String) lowLevelCutGeneratorDropdown.getSelectedItem(),
                 (String) highLevelCostFunctionDropdown.getSelectedItem(),
@@ -552,7 +548,7 @@ public class ParameterPanel extends JScrollPane {
         wernerModificationCheckbox.setSelected(config.isUseWernerModification());
         useSplitFirstCheckbox.setSelected(config.isUseSplitFirst());
         disableEarlyStopCheckbox.setSelected(!config.isUseEarlyStop());
-        useCacheCheckBox.setSelected(config.isUseCache());
+        //useCacheCheckBox.setSelected(config.isUseCache());
         removeRedundantCutsCheckbox.setSelected(config.isRemoveRedundantCuts());
         removeRedundantCutsIterativelyCheckBox.setSelected(config.isRemoveRedundantCutsIteratively());
 
