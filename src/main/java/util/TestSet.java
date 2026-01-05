@@ -211,7 +211,7 @@ public class TestSet {
                     ScRNAseqDataset dataset = new ScRNAseqDataset(hvgData, model.getMonitor());
 
                     int a;
-                    if (config.isAutoComputeA()) {
+                    if (config.isUseSplitPruning()) {
                         a = (int) ((hvgData.length / 16.0) * 0.55);
                     } else {
                         a = (int) (((double) dataset.data.length / nClusters) * config.getaFactor());

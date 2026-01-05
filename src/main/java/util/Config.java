@@ -19,8 +19,7 @@ public final class Config {
     private int a;
     private double aFactor;
     private double psi;
-    private boolean autoComputeA;
-    private boolean autoComputePsi;
+    private boolean useSplitPruning;
     private boolean tuneParameters;
     private boolean removeRedundantCuts;
     private boolean removeRedundantCutsIteratively;
@@ -48,7 +47,7 @@ public final class Config {
         this.a = 0;
         this.aFactor = 0.667;
         this.psi = 0;
-        setAutoCompute(true, true);
+        this.useSplitPruning = false;
         setTuneParameters(false);
         setRemoveRedundantCuts(true);
         setRemoveRedundantCutsIteratively(false);
@@ -68,8 +67,7 @@ public final class Config {
                   int a,
                   double aFactor,
                   double psi,
-                  boolean autoComputeA,
-                  boolean autoComputePsi,
+                  boolean useSplitPruning,
                   boolean tuneParameters,
                   boolean removeRedundantCuts,
                   boolean removeRedundantCutsIteratively,
@@ -95,8 +93,7 @@ public final class Config {
         this.a = a;
         this.aFactor = aFactor;
         this.psi = psi;
-        this.autoComputeA = autoComputeA;
-        this.autoComputePsi = autoComputePsi;
+        this.useSplitPruning = useSplitPruning;
         this.tuneParameters = tuneParameters;
         this.removeRedundantCuts = removeRedundantCuts;
         this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
@@ -125,8 +122,7 @@ public final class Config {
         this.a = config.a;
         this.aFactor = config.aFactor;
         this.psi = config.psi;
-        this.autoComputeA = config.autoComputeA;
-        this.autoComputePsi = config.autoComputePsi;
+        this.useSplitPruning = config.useSplitPruning;
         this.tuneParameters = config.tuneParameters;
         this.removeRedundantCuts = config.removeRedundantCuts;
         this.removeRedundantCutsIteratively = config.removeRedundantCutsIteratively;
@@ -140,11 +136,6 @@ public final class Config {
         this.pcaComponentsCostFunction = config.pcaComponentsCostFunction;
         this.useTSNECostFunction = config.useTSNECostFunction;
         this.tsneComponentsCostFunction = config.tsneComponentsCostFunction;
-    }
-
-    public void setAutoCompute(boolean a, boolean psi) {
-        this.autoComputeA = a;
-        this.autoComputePsi = psi;
     }
 
     public void setTuneParameters(boolean tuneParameters) {
@@ -189,8 +180,7 @@ public final class Config {
         A_INDEX,
         PSI_INDEX,
         A_FACTOR_INDEX,
-        AUTO_COMPUTE_A_INDEX,
-        AUTO_COMPUTE_PSI_INDEX,
+        SPLIT_PRUNING_INDEX,
         TUNE_PARAMETERS,
         REMOVE_REDUNDANT_CUTS_INDEX,
         REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX,
@@ -220,8 +210,7 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.A_INDEX.ordinal()] = "a";
         CONFIG_DESCRIPTIONS[ConfigIndices.PSI_INDEX.ordinal()] = "psi";
         CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()] = "a_factor";
-        CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] = "auto_compute_a";
-        CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] = "auto_compute_psi";
+        CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()] = "use_split_pruning";
         CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] = "remove_redundant_cuts_iteratively";
@@ -273,8 +262,7 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.A_INDEX.ordinal()] + ":" + formatValue(a));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.PSI_INDEX.ordinal()] + ":" + formatValue(psi));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()] + ":" + formatValue(aFactor));
-                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()] + ":" + formatValue(autoComputeA));
-                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()] + ":" + formatValue(autoComputePsi));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()] + ":" + formatValue(useSplitPruning));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundantCuts));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] + ":" + formatValue(removeRedundantCutsIteratively));
@@ -308,8 +296,7 @@ public final class Config {
         int a = 0;
         double aFactor = 0;
         double psi = 0;
-        boolean autoComputeA = false;
-        boolean autoComputePsi = false;
+        boolean useSplitPruning = false;
         boolean tuneParameters = false;
         boolean removeRedundantCuts = false;
         boolean removeRedundantCutsIteratively = false;
@@ -345,8 +332,7 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.A_INDEX.ordinal()])) a = Integer.parseInt(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.PSI_INDEX.ordinal()])) psi = Double.parseDouble(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()])) aFactor = Double.parseDouble(value);
-                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_A_INDEX.ordinal()])) autoComputeA = Boolean.parseBoolean(value);
-                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.AUTO_COMPUTE_PSI_INDEX.ordinal()])) autoComputePsi = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()])) useSplitPruning = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundantCuts = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()])) removeRedundantCutsIteratively = Boolean.parseBoolean(value);
@@ -386,8 +372,7 @@ public final class Config {
         newConfig.a = a;
         newConfig.aFactor = aFactor;
         newConfig.psi = psi;
-        newConfig.autoComputeA = autoComputeA;
-        newConfig.autoComputePsi = autoComputePsi;
+        newConfig.useSplitPruning = useSplitPruning;
         newConfig.tuneParameters = tuneParameters;
         newConfig.removeRedundantCuts = removeRedundantCuts;
         newConfig.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
@@ -418,8 +403,7 @@ public final class Config {
                 "Parameter a: " + a + "\n" +
                 "Parameter psi: " + psi + "\n" +
                 "Factor a: " + aFactor + "\n" +
-                "Auto Compute a: " + autoComputeA + "\n" +
-                "Auto Compute psi: " + autoComputePsi + "\n" +
+                "Split Pruning: " + useSplitPruning + "\n" +
                 "Tune Parameters: " + tuneParameters + "\n" +
                 "Remove Redundant Cuts: " + removeRedundantCuts + "\n" +
                 "Remove Redundant Cuts Iteratively: " + removeRedundantCutsIteratively + "\n" +
@@ -531,20 +515,12 @@ public final class Config {
         this.psi = psi;
     }
 
-    public boolean isAutoComputeA() {
-        return autoComputeA;
+    public boolean isUseSplitPruning() {
+        return useSplitPruning;
     }
 
-    public void setAutoComputeA(boolean autoComputeA) {
-        this.autoComputeA = autoComputeA;
-    }
-
-    public boolean isAutoComputePsi() {
-        return autoComputePsi;
-    }
-
-    public void setAutoComputePsi(boolean autoComputePsi) {
-        this.autoComputePsi = autoComputePsi;
+    public void setUseSplitPruning(boolean useSplitPruning) {
+        this.useSplitPruning = useSplitPruning;
     }
 
     public boolean isTuneParameters() {

@@ -133,10 +133,12 @@ public class TangleTreePanel extends JPanel {
             map.put(maxIndex, i);
         }
 
+        /*
         for (int key : map.keySet()) {
             int value = map.get(key);
             System.out.println(key + " -> " + value);
         }
+         */
 
 
         cuts = clusterIndexToCuts.get(clusterIndex);

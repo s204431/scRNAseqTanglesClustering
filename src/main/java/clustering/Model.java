@@ -403,8 +403,8 @@ public class Model {
         TangleSearchTree[] bestTrees = null;
         long silhouetteTime = 0;
 
-        double maxPsi = config.isAutoComputePsi() ? 0.0 : 0.96;
-        int minClusters = config.isAutoComputePsi() ? maxClusters : 2;
+        double maxPsi = config.isUseSplitPruning() ? 0.0 : 0.96;
+        int minClusters = config.isUseSplitPruning() ? maxClusters : 2;
 
         int run = 1;
         for (int nClusters = minClusters; nClusters <= maxClusters; nClusters++) {

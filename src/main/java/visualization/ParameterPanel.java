@@ -58,8 +58,7 @@ public class ParameterPanel extends JScrollPane {
     private JCheckBox parameterTuningCheckBox;
 
     // Cluster section components
-    private JCheckBox autoComputeACheckBox;
-    private JCheckBox autoComputePsiCheckBox;
+    private JCheckBox splitPruningCheckBox;
     private JTextField aField;
     private JTextField psiField;
     private JButton clusterButton;
@@ -112,10 +111,6 @@ public class ParameterPanel extends JScrollPane {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         contentPanel.add(Box.createGlue(), gbc);
-
-        // Placed at the end to trigger change actions of check boxes
-        autoComputeACheckBox.setSelected(true);
-        autoComputePsiCheckBox.setSelected(true);
 
         // Make parameter panel scrollable
         setViewportView(contentPanel);
@@ -218,25 +213,24 @@ public class ParameterPanel extends JScrollPane {
             aField.setText("0.667");
             //aFieldText += "(0-1) ";
         }
-        autoComputeACheckBox = new JCheckBox("<html>Automatically<br> Compute a</html>");
-        autoComputeACheckBox.setSelected(false);
+
         JPanel aComponent = new JPanel(new BorderLayout());
         aComponent.add(new JLabel(aFieldText), BorderLayout.WEST);
-        aComponent.add(aField, BorderLayout.EAST);
-        addRow(aComponent, autoComputeACheckBox);
+        aComponent.add(aField, BorderLayout.CENTER);
+        addFullWidth(aComponent);
 
         psiField = new JTextField(6);
         psiField.setText("0");
-        autoComputePsiCheckBox = new JCheckBox("<html>Automatically<br> Compute ψ</html>");
-        autoComputePsiCheckBox.setSelected(false);
         JPanel psiComponent = new JPanel(new BorderLayout());
         psiComponent.add(new JLabel(" ψ "), BorderLayout.WEST);
-        psiComponent.add(psiField, BorderLayout.EAST);
-        addRow(psiComponent, autoComputePsiCheckBox);
+        psiComponent.add(psiField, BorderLayout.CENTER);
+        addFullWidth(psiComponent);
 
+        splitPruningCheckBox = new JCheckBox("Split Pruning");
+        splitPruningCheckBox.setSelected(false);
         parameterTuningCheckBox = new JCheckBox("Tune Parameters");
         parameterTuningCheckBox.setSelected(false);
-        addFullWidth(parameterTuningCheckBox);
+        addRow(splitPruningCheckBox, parameterTuningCheckBox);
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster Tangles");
@@ -264,9 +258,13 @@ public class ParameterPanel extends JScrollPane {
         cutButton = new JButton("Show Cut");
         addRow(counterPanel, cutButton);
 
+        addFullWidth(Box.createVerticalStrut(10));
+
         uncertaintyTextField = new JTextField("1.0", 3);
-        removeUncertaintyButton = new JButton("<html>Remove<br>Uncertainty</html>");
-        addRow(uncertaintyTextField, removeUncertaintyButton);
+        addRow(new JLabel("Uncertainty Factor"), uncertaintyTextField);
+
+        removeUncertaintyButton = new JButton("<html>Remove Uncertainty</html>");
+        addFullWidth(removeUncertaintyButton);
 
         endSection();
     }
@@ -300,28 +298,22 @@ public class ParameterPanel extends JScrollPane {
 
 
         // ==================== Check Box Logic ==================== //
-        autoComputeACheckBox.addItemListener(e -> {
+        splitPruningCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            aField.setEditable(!parameterTuningCheckBox.isSelected() && !isChecked);
-            aField.setEnabled(!parameterTuningCheckBox.isSelected() && !isChecked);
-        });
-
-        autoComputePsiCheckBox.addItemListener(e -> {
-            boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            psiField.setEditable(!parameterTuningCheckBox.isSelected() && !isChecked);
-            psiField.setEnabled(!parameterTuningCheckBox.isSelected() && !isChecked);
+            if (isChecked) parameterTuningCheckBox.setSelected(false);
+            aField.setEditable(!isChecked);
+            aField.setEnabled(!isChecked);
+            psiField.setEditable(!isChecked);
+            psiField.setEnabled(!isChecked);
         });
 
         parameterTuningCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            //autoComputeACheckBox.setSelected(false);
-            //autoComputeACheckBox.setEnabled(!isChecked);
-            //autoComputePsiCheckBox.setSelected(false);
-            //autoComputePsiCheckBox.setEnabled(!isChecked);
-            aField.setEditable(!autoComputeACheckBox.isSelected() && !isChecked);
-            aField.setEnabled(!autoComputeACheckBox.isSelected() && !isChecked);
-            psiField.setEditable(!autoComputePsiCheckBox.isSelected() && !isChecked);
-            psiField.setEnabled(!autoComputePsiCheckBox.isSelected() && !isChecked);
+            if (isChecked) splitPruningCheckBox.setSelected(false);
+            aField.setEditable(!isChecked);
+            aField.setEnabled(!isChecked);
+            psiField.setEditable(!isChecked);
+            psiField.setEnabled(!isChecked);
         });
 
         usePcaCostFunctionCheckbox.addItemListener(e -> {
@@ -449,7 +441,7 @@ public class ParameterPanel extends JScrollPane {
         double psi = 0;
         if (!testing && !useParameterTuning) {
             try {
-                if (autoComputeACheckBox.isSelected()) {
+                if (splitPruningCheckBox.isSelected()) {
                     a = (int) ((view.points.length / 16.0) * 0.55);
                 } else {
                     a = Integer.parseInt(aField.getText());
@@ -525,8 +517,7 @@ public class ParameterPanel extends JScrollPane {
                 a,
                 aFactor,
                 psi,
-                autoComputeACheckBox.isSelected(),
-                autoComputePsiCheckBox.isSelected(),
+                splitPruningCheckBox.isSelected(),
                 useParameterTuning,
                 removeRedundantCutsCheckbox.isSelected(),
                 removeRedundantCutsIterativelyCheckBox.isSelected(),
@@ -563,8 +554,7 @@ public class ParameterPanel extends JScrollPane {
             aField.setText(Double.toString(config.getaFactor()));
         }
         psiField.setText(Double.toString(config.getPsi()));
-        autoComputeACheckBox.setSelected(config.isAutoComputeA());
-        autoComputePsiCheckBox.setSelected(config.isAutoComputePsi());
+        splitPruningCheckBox.setSelected(config.isUseSplitPruning());
         parameterTuningCheckBox.setSelected(config.isTuneParameters());
         splitSizeCutGenerationField.setText(Integer.toString(config.getSplitSizeCutGeneration()));
         usePcaCutGenerationCheckbox.setSelected(config.isUsePcaCutGeneration());

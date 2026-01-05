@@ -159,7 +159,7 @@ public class TangleClusterer {
         useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
         useOscarWerner = config.isUseWernerModification();
         useSplitFirst = config.isUseSplitFirst();
-        autoLimitSplitCosts = config.isAutoComputePsi();
+        autoLimitSplitCosts = config.isUseSplitPruning();
         removeRedundantCuts = config.isRemoveRedundantCuts();
         removeRedundantCutsIteratively = config.isRemoveRedundantCutsIteratively();
     }
