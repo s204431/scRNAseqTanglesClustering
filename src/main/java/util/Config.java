@@ -22,6 +22,7 @@ public final class Config {
     private boolean useSplitPruning;
     private String splitPruneMethod;
     private String performanceMetric;
+    private int maxClusters;
     private boolean tuneParameters;
     private boolean removeRedundantCuts;
     private boolean removeRedundantCutsIteratively;
@@ -52,6 +53,7 @@ public final class Config {
         this.useSplitPruning = false;
         this.splitPruneMethod = "Default";
         this.performanceMetric = "Default";
+        this.maxClusters = 16;
         setTuneParameters(false);
         setRemoveRedundantCuts(true);
         setRemoveRedundantCutsIteratively(false);
@@ -74,6 +76,7 @@ public final class Config {
                   boolean useSplitPruning,
                   String splitPruneMethod,
                   String performanceMetric,
+                  int maxClusters,
                   boolean tuneParameters,
                   boolean removeRedundantCuts,
                   boolean removeRedundantCutsIteratively,
@@ -102,6 +105,7 @@ public final class Config {
         this.useSplitPruning = useSplitPruning;
         this.splitPruneMethod = splitPruneMethod;
         this.performanceMetric = performanceMetric;
+        this.maxClusters = maxClusters;
         this.tuneParameters = tuneParameters;
         this.removeRedundantCuts = removeRedundantCuts;
         this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
@@ -133,6 +137,7 @@ public final class Config {
         this.useSplitPruning = config.useSplitPruning;
         this.splitPruneMethod = config.splitPruneMethod;
         this.performanceMetric = config.performanceMetric;
+        this.maxClusters = config.maxClusters;
         this.tuneParameters = config.tuneParameters;
         this.removeRedundantCuts = config.removeRedundantCuts;
         this.removeRedundantCutsIteratively = config.removeRedundantCutsIteratively;
@@ -193,6 +198,7 @@ public final class Config {
         SPLIT_PRUNING_INDEX,
         SPLIT_PRUNE_METHOD_INDEX,
         PERFORMANCE_METRIC_INDEX,
+        MAX_CLUSTERS_INDEX,
         TUNE_PARAMETERS,
         REMOVE_REDUNDANT_CUTS_INDEX,
         REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX,
@@ -225,6 +231,7 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()] = "use_split_pruning";
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNE_METHOD_INDEX.ordinal()] = "split_prune_method";
         CONFIG_DESCRIPTIONS[ConfigIndices.PERFORMANCE_METRIC_INDEX.ordinal()] = "performance_metric";
+        CONFIG_DESCRIPTIONS[ConfigIndices.MAX_CLUSTERS_INDEX.ordinal()] = "max_clusters";
         CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] = "remove_redundant_cuts_iteratively";
@@ -279,6 +286,7 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()] + ":" + formatValue(useSplitPruning));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNE_METHOD_INDEX.ordinal()] + ":" + formatValue(splitPruneMethod));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.PERFORMANCE_METRIC_INDEX.ordinal()] + ":" + formatValue(performanceMetric));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.MAX_CLUSTERS_INDEX.ordinal()] + ":" + formatValue(maxClusters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundantCuts));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] + ":" + formatValue(removeRedundantCutsIteratively));
@@ -315,6 +323,7 @@ public final class Config {
         boolean useSplitPruning = false;
         String splitPruneMethod = "Default";
         String performanceMetric = "Default";
+        int maxClusters = 16;
         boolean tuneParameters = false;
         boolean removeRedundantCuts = false;
         boolean removeRedundantCutsIteratively = false;
@@ -353,6 +362,7 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()])) useSplitPruning = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNE_METHOD_INDEX.ordinal()])) splitPruneMethod = value;
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.PERFORMANCE_METRIC_INDEX.ordinal()])) performanceMetric = value;
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.MAX_CLUSTERS_INDEX.ordinal()])) maxClusters = Integer.parseInt(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundantCuts = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()])) removeRedundantCutsIteratively = Boolean.parseBoolean(value);
@@ -395,6 +405,7 @@ public final class Config {
         newConfig.useSplitPruning = useSplitPruning;
         newConfig.splitPruneMethod = splitPruneMethod;
         newConfig.performanceMetric = performanceMetric;
+        newConfig.maxClusters = maxClusters;
         newConfig.tuneParameters = tuneParameters;
         newConfig.removeRedundantCuts = removeRedundantCuts;
         newConfig.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
@@ -428,6 +439,7 @@ public final class Config {
                 "Split Pruning: " + useSplitPruning + "\n" +
                 "Split Prune Method: " + splitPruneMethod + "\n" +
                 "Performance Metric: " + performanceMetric + "\n" +
+                "Max Clusters: " + maxClusters + "\n" +
                 "Tune Parameters: " + tuneParameters + "\n" +
                 "Remove Redundant Cuts: " + removeRedundantCuts + "\n" +
                 "Remove Redundant Cuts Iteratively: " + removeRedundantCutsIteratively + "\n" +
@@ -561,6 +573,14 @@ public final class Config {
 
     public void setPerformanceMetric(String performanceMetric) {
         this.performanceMetric = performanceMetric;
+    }
+
+    public int getMaxClusters() {
+        return maxClusters;
+    }
+
+    public void setMaxClusters(int maxClusters) {
+        this.maxClusters = maxClusters;
     }
 
     public boolean isTuneParameters() {

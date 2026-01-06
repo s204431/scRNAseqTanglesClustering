@@ -107,7 +107,6 @@ public class TangleClusterer {
         //Optional split pruning
         if (autoLimitSplitCosts) {
             boolean usePerformanceMetric = config.isTuneParameters() || (config.isUseSplitPruning() && config.getSplitPruneMethod().equals(GlobalConstants.SPLIT_PRUNE_PERFORMANCE_METRIC));
-            System.out.println("Use metric: " + usePerformanceMetric + " Metric: " + config.getPerformanceMetric());
             tangleSearchTree.limitSplitCosts(splitCosts, reducedPoints, usePerformanceMetric, config.getPerformanceMetric());
             monitor.setSplitPrunedTree(tangleSearchTree.copy());
         } else {

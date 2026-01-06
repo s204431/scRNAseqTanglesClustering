@@ -63,6 +63,7 @@ public class ParameterPanel extends JScrollPane {
     private JCheckBox parameterTuningCheckBox;
     private JComboBox<String> splitPruneMethodDropdown;
     private JComboBox<String> performanceMetricDropdown;
+    private JTextField maxClusterField;
     private JButton clusterButton;
     private JButton pythonClusterButton;
 
@@ -245,6 +246,10 @@ public class ParameterPanel extends JScrollPane {
 
         performanceMetricDropdown = new JComboBox<>(GlobalConstants.PERFORMANCE_METRIC_NAMES);
         addRow("<html>Performance Metric</html>", performanceMetricDropdown);
+
+        maxClusterField = new JTextField(6);
+        maxClusterField.setText("16");
+        addRow(new JLabel("<html>Choose max<br>clusters:</html>"), maxClusterField);
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster Tangles");
@@ -502,6 +507,8 @@ public class ParameterPanel extends JScrollPane {
         int pcaComponentsCostFunction;
         boolean useTsneCostFunction = useTsneCostFunctionCheckbox.isSelected();
         int tsneComponentsCostFunction;
+
+        int maxClusters;
         try {
             splitSizeCutGeneration = Integer.parseInt(splitSizeCutGenerationField.getText());
             pcaComponentsCutGeneration = Integer.parseInt(pcaComponentsCutGenerationField.getText());
@@ -511,10 +518,12 @@ public class ParameterPanel extends JScrollPane {
             pcaComponentsCostFunction = Integer.parseInt(pcaComponentsCostFunctionField.getText());
             tsneComponentsCostFunction = Integer.parseInt(tsneComponentsCostFunctionField.getText());
 
+            maxClusters = Integer.parseInt(maxClusterField.getText());
+
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Split sizes and component values must be integers.",
+                    "Split sizes, component values and max clusters must be integers.",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -537,6 +546,7 @@ public class ParameterPanel extends JScrollPane {
                 splitPruningCheckBox.isSelected(),
                 (String) splitPruneMethodDropdown.getSelectedItem(),
                 (String) performanceMetricDropdown.getSelectedItem(),
+                maxClusters,
                 useParameterTuning,
                 removeRedundantCutsCheckbox.isSelected(),
                 removeRedundantCutsIterativelyCheckBox.isSelected(),
@@ -576,6 +586,7 @@ public class ParameterPanel extends JScrollPane {
         splitPruningCheckBox.setSelected(config.isUseSplitPruning());
         selectDropdown(splitPruneMethodDropdown, config.getSplitPruneMethod());
         selectDropdown(performanceMetricDropdown, config.getPerformanceMetric());
+        maxClusterField.setText(Integer.toString(config.getMaxClusters()));
         parameterTuningCheckBox.setSelected(config.isTuneParameters());
         splitSizeCutGenerationField.setText(Integer.toString(config.getSplitSizeCutGeneration()));
         usePcaCutGenerationCheckbox.setSelected(config.isUsePcaCutGeneration());

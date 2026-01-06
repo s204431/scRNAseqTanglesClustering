@@ -337,7 +337,7 @@ public class Model {
         monitor.setClusterStartTime(System.currentTimeMillis());
         monitor.setDimReductionTime(0);
 
-        int maxClusters = 16;
+        int maxClusters = config.getMaxClusters();
         int minA = Math.max((int)((dataset.data.length/(double)maxClusters)*0.55), 1);
 
         double[][] reducedPoints;
@@ -445,7 +445,7 @@ public class Model {
                         bestPsi = psi;
                         bestTrees = new TangleSearchTree[]{monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree()};
                     }
-                    System.out.println("Silhouette score: " + silhouetteScore);
+                    //System.out.println("Silhouette score: " + silhouetteScore);
                 } else {
                     double dbi = daviesBouldinIndex(reducedPoints, hardClustering);
                     metricTime += (System.currentTimeMillis() - startTime);
@@ -458,7 +458,7 @@ public class Model {
                         bestPsi = psi;
                         bestTrees = new TangleSearchTree[]{monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree()};
                     }
-                    System.out.println("Davies-Boldin Index: " + dbi);
+                    //System.out.println("Davies-Boldin Index: " + dbi);
                 }
             }
         }
