@@ -2,11 +2,9 @@ package clustering;
 
 import clustering.TangleSearchTree.Node;
 import datasets.CostFunctions;
-import util.Config;
-import util.Monitor;
-import util.BitSet;
-import util.Tuple;
+import util.*;
 import datasets.ScRNAseqDataset;
+import util.BitSet;
 
 import java.util.*;
 
@@ -73,7 +71,7 @@ public class TangleClusterer {
         }
 
         //Run the main clustering pipeline without precomputed inputs
-        runClusteringPipeline(dataset, config, initialCuts, costs, null, false);
+        runClusteringPipeline(dataset, config, initialCuts, costs, null);
     }
 
     //This is used when tuning parameters in order to reuse initial cuts and costs
@@ -86,15 +84,14 @@ public class TangleClusterer {
         dataset.setA(config.getA());
 
         //Run main clustering pipeline with precomputed inputs
-        runClusteringPipeline(dataset, config, initialCuts, costs, reducedPoints, true);
+        runClusteringPipeline(dataset, config, initialCuts, costs, reducedPoints);
     }
 
     private void runClusteringPipeline(ScRNAseqDataset dataset,
                                        Config config,
                                        BitSet[] cuts,
                                        double[] costs,
-                                       double[][] reducedPoints,
-                                       boolean reuseInputs) {
+                                       double[][] reducedPoints) {
 
         //Build tree
         if (useOscarWerner) {
@@ -109,7 +106,9 @@ public class TangleClusterer {
 
         //Optional split pruning
         if (autoLimitSplitCosts) {
-            tangleSearchTree.limitSplitCosts(splitCosts, reducedPoints, reuseInputs);
+            boolean usePerformanceMetric = config.isTuneParameters() || (config.isUseSplitPruning() && config.getSplitPruneMethod().equals(GlobalConstants.SPLIT_PRUNE_PERFORMANCE_METRIC));
+            System.out.println("Use metric: " + usePerformanceMetric + " Metric: " + config.getPerformanceMetric());
+            tangleSearchTree.limitSplitCosts(splitCosts, reducedPoints, usePerformanceMetric, config.getPerformanceMetric());
             monitor.setSplitPrunedTree(tangleSearchTree.copy());
         } else {
             monitor.setSplitPrunedTree(null);

@@ -55,12 +55,14 @@ public class ParameterPanel extends JScrollPane {
     private JComboBox<String> lowLevelCutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
     private JComboBox<String> lowLevelCostFunctionDropdown;
-    private JCheckBox parameterTuningCheckBox;
 
     // Cluster section components
-    private JCheckBox splitPruningCheckBox;
     private JTextField aField;
     private JTextField psiField;
+    private JCheckBox splitPruningCheckBox;
+    private JCheckBox parameterTuningCheckBox;
+    private JComboBox<String> splitPruneMethodDropdown;
+    private JComboBox<String> performanceMetricDropdown;
     private JButton clusterButton;
     private JButton pythonClusterButton;
 
@@ -111,6 +113,10 @@ public class ParameterPanel extends JScrollPane {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         contentPanel.add(Box.createGlue(), gbc);
+
+        // Trigger action events
+        splitPruningCheckBox.setSelected(true);
+        splitPruningCheckBox.setSelected(false);
 
         // Make parameter panel scrollable
         setViewportView(contentPanel);
@@ -226,11 +232,19 @@ public class ParameterPanel extends JScrollPane {
         psiComponent.add(psiField, BorderLayout.CENTER);
         addFullWidth(psiComponent);
 
+        addFullWidth(Box.createVerticalStrut(5));   // Small filler
+
         splitPruningCheckBox = new JCheckBox("Split Pruning");
         splitPruningCheckBox.setSelected(false);
         parameterTuningCheckBox = new JCheckBox("Tune Parameters");
         parameterTuningCheckBox.setSelected(false);
         addRow(splitPruningCheckBox, parameterTuningCheckBox);
+
+        splitPruneMethodDropdown = new JComboBox<>(GlobalConstants.SPLIT_PRUNE_METHOD_NAMES);
+        addRow("<html>Split Prune Method</html>", splitPruneMethodDropdown);
+
+        performanceMetricDropdown = new JComboBox<>(GlobalConstants.PERFORMANCE_METRIC_NAMES);
+        addRow("<html>Performance Metric</html>", performanceMetricDropdown);
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster Tangles");
@@ -300,20 +314,23 @@ public class ParameterPanel extends JScrollPane {
         // ==================== Check Box Logic ==================== //
         splitPruningCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            if (isChecked) parameterTuningCheckBox.setSelected(false);
-            aField.setEditable(!isChecked);
-            aField.setEnabled(!isChecked);
-            psiField.setEditable(!isChecked);
-            psiField.setEnabled(!isChecked);
+            boolean enableFields = !parameterTuningCheckBox.isSelected() && !isChecked;
+            aField.setEditable(enableFields);
+            aField.setEnabled(enableFields);
+            psiField.setEditable(enableFields);
+            psiField.setEnabled(enableFields);
+
+            splitPruneMethodDropdown.setEditable(isChecked);
+            splitPruneMethodDropdown.setEnabled(isChecked);
         });
 
         parameterTuningCheckBox.addItemListener(e -> {
             boolean isChecked = (e.getStateChange() == ItemEvent.SELECTED);
-            if (isChecked) splitPruningCheckBox.setSelected(false);
-            aField.setEditable(!isChecked);
-            aField.setEnabled(!isChecked);
-            psiField.setEditable(!isChecked);
-            psiField.setEnabled(!isChecked);
+            boolean enableFields = !splitPruningCheckBox.isSelected() && !isChecked;
+            aField.setEditable(enableFields);
+            aField.setEnabled(enableFields);
+            psiField.setEditable(enableFields);
+            psiField.setEnabled(enableFields);
         });
 
         usePcaCostFunctionCheckbox.addItemListener(e -> {
@@ -518,6 +535,8 @@ public class ParameterPanel extends JScrollPane {
                 aFactor,
                 psi,
                 splitPruningCheckBox.isSelected(),
+                (String) splitPruneMethodDropdown.getSelectedItem(),
+                (String) performanceMetricDropdown.getSelectedItem(),
                 useParameterTuning,
                 removeRedundantCutsCheckbox.isSelected(),
                 removeRedundantCutsIterativelyCheckBox.isSelected(),
@@ -555,6 +574,8 @@ public class ParameterPanel extends JScrollPane {
         }
         psiField.setText(Double.toString(config.getPsi()));
         splitPruningCheckBox.setSelected(config.isUseSplitPruning());
+        selectDropdown(splitPruneMethodDropdown, config.getSplitPruneMethod());
+        selectDropdown(performanceMetricDropdown, config.getPerformanceMetric());
         parameterTuningCheckBox.setSelected(config.isTuneParameters());
         splitSizeCutGenerationField.setText(Integer.toString(config.getSplitSizeCutGeneration()));
         usePcaCutGenerationCheckbox.setSelected(config.isUsePcaCutGeneration());

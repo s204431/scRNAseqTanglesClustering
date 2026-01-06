@@ -74,6 +74,30 @@ public class GlobalConstants {
         LOW_LEVEL_COST_FUNCTION_NAMES[LOW_LEVEL_COST_FUNCTION.PAIRWISE_CLOSEST.ordinal()] = LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST;
     }
 
+    public enum SPLIT_PRUNING_METHODS {
+        MEAN_IN_WINDOW,
+        PERFORMANCE_METRIC
+    }
+    public static final String SPLIT_PRUNE_MEAN_IN_WINDOW = "Window Mean";
+    public static final String SPLIT_PRUNE_PERFORMANCE_METRIC = "Performance Metric";
+    public static final String[] SPLIT_PRUNE_METHOD_NAMES = new String[SPLIT_PRUNING_METHODS.values().length];
+    static {
+        SPLIT_PRUNE_METHOD_NAMES[SPLIT_PRUNING_METHODS.MEAN_IN_WINDOW.ordinal()] = SPLIT_PRUNE_MEAN_IN_WINDOW;
+        SPLIT_PRUNE_METHOD_NAMES[SPLIT_PRUNING_METHODS.PERFORMANCE_METRIC.ordinal()] = SPLIT_PRUNE_PERFORMANCE_METRIC;
+    }
+
+    public enum PERFORMANCE_METRICS {
+        SILHOUETTE_SCORE,
+        DAVIES_BOLDIN_INDEX
+    }
+    public static final String PERFORMANCE_METRIC_SIL = "Silhouette";
+    public static final String PERFORMANCE_METRIC_DAV = "Davies-Boldin";
+    public static final String[] PERFORMANCE_METRIC_NAMES = new String[PERFORMANCE_METRICS.values().length];
+    static {
+        PERFORMANCE_METRIC_NAMES[PERFORMANCE_METRICS.SILHOUETTE_SCORE.ordinal()] = PERFORMANCE_METRIC_SIL;
+        PERFORMANCE_METRIC_NAMES[PERFORMANCE_METRICS.DAVIES_BOLDIN_INDEX.ordinal()] = PERFORMANCE_METRIC_DAV;
+    }
+
     public static final Color COLOR_DARK_GRAY = new Color(150, 150, 150);
     public static final Color COLOR_GRAY = new Color(200, 200, 200);
     public static final Color COLOR_LIGHT_GRAY = new Color(220, 220, 220);

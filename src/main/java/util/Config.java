@@ -20,6 +20,8 @@ public final class Config {
     private double aFactor;
     private double psi;
     private boolean useSplitPruning;
+    private String splitPruneMethod;
+    private String performanceMetric;
     private boolean tuneParameters;
     private boolean removeRedundantCuts;
     private boolean removeRedundantCutsIteratively;
@@ -48,6 +50,8 @@ public final class Config {
         this.aFactor = 0.667;
         this.psi = 0;
         this.useSplitPruning = false;
+        this.splitPruneMethod = "Default";
+        this.performanceMetric = "Default";
         setTuneParameters(false);
         setRemoveRedundantCuts(true);
         setRemoveRedundantCutsIteratively(false);
@@ -68,6 +72,8 @@ public final class Config {
                   double aFactor,
                   double psi,
                   boolean useSplitPruning,
+                  String splitPruneMethod,
+                  String performanceMetric,
                   boolean tuneParameters,
                   boolean removeRedundantCuts,
                   boolean removeRedundantCutsIteratively,
@@ -94,6 +100,8 @@ public final class Config {
         this.aFactor = aFactor;
         this.psi = psi;
         this.useSplitPruning = useSplitPruning;
+        this.splitPruneMethod = splitPruneMethod;
+        this.performanceMetric = performanceMetric;
         this.tuneParameters = tuneParameters;
         this.removeRedundantCuts = removeRedundantCuts;
         this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
@@ -123,6 +131,8 @@ public final class Config {
         this.aFactor = config.aFactor;
         this.psi = config.psi;
         this.useSplitPruning = config.useSplitPruning;
+        this.splitPruneMethod = config.splitPruneMethod;
+        this.performanceMetric = config.performanceMetric;
         this.tuneParameters = config.tuneParameters;
         this.removeRedundantCuts = config.removeRedundantCuts;
         this.removeRedundantCutsIteratively = config.removeRedundantCutsIteratively;
@@ -181,6 +191,8 @@ public final class Config {
         PSI_INDEX,
         A_FACTOR_INDEX,
         SPLIT_PRUNING_INDEX,
+        SPLIT_PRUNE_METHOD_INDEX,
+        PERFORMANCE_METRIC_INDEX,
         TUNE_PARAMETERS,
         REMOVE_REDUNDANT_CUTS_INDEX,
         REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX,
@@ -211,6 +223,8 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.PSI_INDEX.ordinal()] = "psi";
         CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()] = "a_factor";
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()] = "use_split_pruning";
+        CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNE_METHOD_INDEX.ordinal()] = "split_prune_method";
+        CONFIG_DESCRIPTIONS[ConfigIndices.PERFORMANCE_METRIC_INDEX.ordinal()] = "performance_metric";
         CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] = "remove_redundant_cuts_iteratively";
@@ -263,6 +277,8 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.PSI_INDEX.ordinal()] + ":" + formatValue(psi));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()] + ":" + formatValue(aFactor));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()] + ":" + formatValue(useSplitPruning));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNE_METHOD_INDEX.ordinal()] + ":" + formatValue(splitPruneMethod));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.PERFORMANCE_METRIC_INDEX.ordinal()] + ":" + formatValue(performanceMetric));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundantCuts));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] + ":" + formatValue(removeRedundantCutsIteratively));
@@ -297,6 +313,8 @@ public final class Config {
         double aFactor = 0;
         double psi = 0;
         boolean useSplitPruning = false;
+        String splitPruneMethod = "Default";
+        String performanceMetric = "Default";
         boolean tuneParameters = false;
         boolean removeRedundantCuts = false;
         boolean removeRedundantCutsIteratively = false;
@@ -333,6 +351,8 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.PSI_INDEX.ordinal()])) psi = Double.parseDouble(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.A_FACTOR_INDEX.ordinal()])) aFactor = Double.parseDouble(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNING_INDEX.ordinal()])) useSplitPruning = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_PRUNE_METHOD_INDEX.ordinal()])) splitPruneMethod = value;
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.PERFORMANCE_METRIC_INDEX.ordinal()])) performanceMetric = value;
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundantCuts = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()])) removeRedundantCutsIteratively = Boolean.parseBoolean(value);
@@ -373,6 +393,8 @@ public final class Config {
         newConfig.aFactor = aFactor;
         newConfig.psi = psi;
         newConfig.useSplitPruning = useSplitPruning;
+        newConfig.splitPruneMethod = splitPruneMethod;
+        newConfig.performanceMetric = performanceMetric;
         newConfig.tuneParameters = tuneParameters;
         newConfig.removeRedundantCuts = removeRedundantCuts;
         newConfig.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
@@ -404,6 +426,8 @@ public final class Config {
                 "Parameter psi: " + psi + "\n" +
                 "Factor a: " + aFactor + "\n" +
                 "Split Pruning: " + useSplitPruning + "\n" +
+                "Split Prune Method: " + splitPruneMethod + "\n" +
+                "Performance Metric: " + performanceMetric + "\n" +
                 "Tune Parameters: " + tuneParameters + "\n" +
                 "Remove Redundant Cuts: " + removeRedundantCuts + "\n" +
                 "Remove Redundant Cuts Iteratively: " + removeRedundantCutsIteratively + "\n" +
@@ -521,6 +545,22 @@ public final class Config {
 
     public void setUseSplitPruning(boolean useSplitPruning) {
         this.useSplitPruning = useSplitPruning;
+    }
+
+    public String getSplitPruneMethod() {
+        return splitPruneMethod;
+    }
+
+    public void setSplitPruneMethod(String splitPruneMethod) {
+        this.splitPruneMethod = splitPruneMethod;
+    }
+
+    public String getPerformanceMetric() {
+        return performanceMetric;
+    }
+
+    public void setPerformanceMetric(String performanceMetric) {
+        this.performanceMetric = performanceMetric;
     }
 
     public boolean isTuneParameters() {

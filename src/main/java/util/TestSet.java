@@ -220,7 +220,8 @@ public class TestSet {
                     newConfig.setA(a);
 
                     boolean tuneParameters = config.isTuneParameters();
-                    int[] hardClustering = tuneParameters ? model.clusterAuto(dataset, newConfig) : model.cluster(dataset, newConfig);
+                    boolean usePerformanceMetric = config.isUseSplitPruning() && config.getSplitPruneMethod().equals(GlobalConstants.SPLIT_PRUNE_PERFORMANCE_METRIC);
+                    int[] hardClustering = (tuneParameters || usePerformanceMetric) ? model.clusterWithPerformanceMetric(dataset, newConfig) : model.cluster(dataset, newConfig);
                     double postTime = (preTime + (System.currentTimeMillis() - time1)) / 1000.0;
                     averageTimes[testIndex][configIndex] += postTime;
 

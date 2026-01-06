@@ -97,8 +97,12 @@ public class View {
 
     public void performClustering(Config config) {
         ScRNAseqDataset dataSet = model.getDataset();
-        if (config.isTuneParameters()) model.clusterAuto(dataSet, config);
-        else model.cluster(dataSet, config);
+        if (config.isTuneParameters() || (config.isUseSplitPruning() && config.getSplitPruneMethod().equals(GlobalConstants.SPLIT_PRUNE_PERFORMANCE_METRIC))) {
+            model.clusterWithPerformanceMetric(dataSet, config);
+        }
+        else {
+            model.cluster(dataSet, config);
+        }
         showClustering();
     }
 

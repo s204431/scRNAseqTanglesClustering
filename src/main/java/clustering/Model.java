@@ -333,7 +333,7 @@ public class Model {
         return hardClustering;
     }
 
-    public int[] clusterAuto(ScRNAseqDataset dataset, Config config) {
+    public int[] clusterWithPerformanceMetric(ScRNAseqDataset dataset, Config config) {
         monitor.setClusterStartTime(System.currentTimeMillis());
         monitor.setDimReductionTime(0);
 
@@ -395,16 +395,17 @@ public class Model {
             costs = redundancyRemoved.y;
         }
 
+        boolean useSilhouette = config.getPerformanceMetric().equals(GlobalConstants.PERFORMANCE_METRIC_SIL);
         double[][] bestSoftClustering = null;
         int[] bestHardClustering = null;
-        double bestSilhuetteScore = -1;
+        double bestScore = useSilhouette ? -1 : Integer.MAX_VALUE;
         int bestA = -1;
         double bestPsi = -1;
         TangleSearchTree[] bestTrees = null;
-        long silhouetteTime = 0;
+        long metricTime = 0;
 
         double maxPsi = config.isUseSplitPruning() ? 0.0 : 0.96;
-        int minClusters = config.isUseSplitPruning() ? maxClusters : 2;
+        int minClusters = (config.isTuneParameters()) ? 2 : maxClusters;
 
         int run = 1;
         for (int nClusters = minClusters; nClusters <= maxClusters; nClusters++) {
@@ -431,22 +432,38 @@ public class Model {
                 //System.out.println(NMIScore);
                 //System.out.println(randIndex);
                 long startTime = System.currentTimeMillis();
-                double silhouetteScore = silhouetteScore(reducedPoints, hardClustering);
-                silhouetteTime += (System.currentTimeMillis() - startTime);
 
-                if (silhouetteScore < 1.0 && silhouetteScore > bestSilhuetteScore) {
-                    bestSilhuetteScore = silhouetteScore;
-                    bestSoftClustering = softClustering;
-                    bestHardClustering = hardClustering;
-                    bestA = a2;
-                    bestPsi = psi;
-                    bestTrees = new TangleSearchTree[] { monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree() };
+                if (useSilhouette) {
+                    double silhouetteScore = silhouetteScore(reducedPoints, hardClustering);
+                    metricTime += (System.currentTimeMillis() - startTime);
+
+                    if (silhouetteScore < 1.0 && silhouetteScore > bestScore) {
+                        bestScore = silhouetteScore;
+                        bestSoftClustering = softClustering;
+                        bestHardClustering = hardClustering;
+                        bestA = a2;
+                        bestPsi = psi;
+                        bestTrees = new TangleSearchTree[]{monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree()};
+                    }
+                    System.out.println("Silhouette score: " + silhouetteScore);
+                } else {
+                    double dbi = daviesBouldinIndex(reducedPoints, hardClustering);
+                    metricTime += (System.currentTimeMillis() - startTime);
+
+                    if (Double.isFinite(dbi) && dbi > 0 && dbi < bestScore) {
+                        bestScore = dbi;
+                        bestSoftClustering = softClustering;
+                        bestHardClustering = hardClustering;
+                        bestA = a2;
+                        bestPsi = psi;
+                        bestTrees = new TangleSearchTree[]{monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree()};
+                    }
+                    System.out.println("Davies-Boldin Index: " + dbi);
                 }
-                //System.out.println(silhouetteScore);
             }
         }
 
-        monitor.setSilhouetteTime(silhouetteTime);
+        monitor.setSilhouetteTime(metricTime);
         monitor.setClusterEndTime(System.currentTimeMillis());
         monitor.setUncondensedTree(bestTrees[0]);
         monitor.setSplitPrunedTree(bestTrees[1]);
@@ -460,6 +477,7 @@ public class Model {
 
         System.out.println("Best a: " + bestA);
         System.out.println("Best psi: " + bestPsi);
+        System.out.println("Best score: " + bestScore);
         //System.out.println(NMIScore);
         //System.out.println(randIndex);
         System.out.println("Dimensionality reduction time: " + monitor.getDimReductionTime());

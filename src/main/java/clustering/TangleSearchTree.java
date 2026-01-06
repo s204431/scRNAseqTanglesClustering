@@ -1,6 +1,7 @@
 package clustering;
 
 import util.BitSet;
+import util.GlobalConstants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -322,7 +323,7 @@ public class TangleSearchTree {
         }
     }
 
-    protected void limitSplitCosts(List<Double> splitCostsList, double[][] reducedPoints, boolean tuningActivated) {
+    protected void limitSplitCosts(List<Double> splitCostsList, double[][] reducedPoints, boolean usePerformanceMetric, String performanceMetric) {
         //Remove all costs below the first cost.
         List<Double> newSplitCosts = new ArrayList<>();
         for (int i = 0; i < splitCostsList.size(); i++) {
@@ -342,8 +343,9 @@ public class TangleSearchTree {
 
         Arrays.sort(splitCosts);
 
-        if (tuningActivated) {
-            double bestScore = -1.0;
+        if (usePerformanceMetric) {
+            boolean silhouette = performanceMetric.equals(GlobalConstants.PERFORMANCE_METRIC_SIL);
+            double bestScore = silhouette ? -1 : Integer.MAX_VALUE;
             double bestSplitCost = 0.0;
             double scoreSum = 0.0;
             for (int i = 0; i < splitCosts.length; i++) {
@@ -358,14 +360,26 @@ public class TangleSearchTree {
                 } catch (NullPointerException e) {
                     tree.generateDefaultClustering();
                 }
-                double silhouetteScore = Model.silhouetteScore(reducedPoints, tree.hardClustering);
-                if (silhouetteScore >= 1.0) {
-                    silhouetteScore = 0.0;
-                }
-                if (silhouetteScore > bestScore) {
-                    bestScore = silhouetteScore;
-                    bestSplitCost = splitCost;
-                    scoreSum += silhouetteScore;
+
+                if (silhouette) {
+                    double silhouetteScore = Model.silhouetteScore(reducedPoints, tree.hardClustering);
+                    if (silhouetteScore >= 1.0) {
+                        silhouetteScore = 0.0;
+                    }
+                    if (silhouetteScore > bestScore) {
+                        bestScore = silhouetteScore;
+                        bestSplitCost = splitCost;
+                        scoreSum += silhouetteScore;
+                    }
+                } else {
+                    double dbi = Model.daviesBouldinIndex(reducedPoints, tree.hardClustering);
+                    if (!Double.isFinite(dbi)) {
+                        dbi = Double.MAX_VALUE;
+                    }
+                    if (dbi < bestScore) {
+                        bestScore = dbi;
+                        bestSplitCost = splitCost;
+                    }
                 }
             }
             System.out.println("Found max split cost: " + bestSplitCost);
