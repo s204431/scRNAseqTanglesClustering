@@ -254,7 +254,7 @@ public class ParameterPanel extends JScrollPane {
 
         maxClusterField = new JTextField(6);
         maxClusterField.setText("16");
-        addRow(new JLabel("<html>Choose max<br>clusters:</html>"), maxClusterField);
+        addRow(new JLabel("<html>Choose max<br>clusters (>1):</html>"), maxClusterField);
 
         if (dataPanel) {
             clusterButton = new JButton("Cluster Tangles");
@@ -523,6 +523,9 @@ public class ParameterPanel extends JScrollPane {
                 );
                 return null;
             }
+        } else {
+            maxClusters = Integer.parseInt(maxClusterField.getText());
+            if (maxClusters < 2) throw new NumberFormatException("Max clusters is less than 2.");
         }
 
         int splitSizeCutGeneration;
