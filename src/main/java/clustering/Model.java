@@ -390,7 +390,7 @@ public class Model {
 
 
         if (config.isRemoveRedundantCuts()) {
-            Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
+            Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, config.getRedundancyFactor()); //Set factor to 1 to turn it off.
             initialCuts = redundancyRemoved.x;
             costs = redundancyRemoved.y;
         }

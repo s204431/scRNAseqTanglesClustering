@@ -64,7 +64,7 @@ public class TangleTreePanel extends JPanel {
     public TangleTreePanel(View view) {
         this.view = view;
         //setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);
-        setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        //setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
 
         setLayout(new BorderLayout());
         add(topPanel, BorderLayout.NORTH);
@@ -150,9 +150,9 @@ public class TangleTreePanel extends JPanel {
         drawTrees(trees[0], trees[1], trees[2]);
     }
 
-    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, int clusterIndex, boolean removeRedundantCuts, int[] clustering) {
+    public void drawTrees(TangleSearchTree originalTree, TangleSearchTree splitPruned, TangleSearchTree condensed, int clusterIndex, boolean removeRedundantCuts, double redundancyFactor, int[] clustering) {
         hardClustering = clustering;
-        getCutsAndCosts(removeRedundantCuts);
+        getCutsAndCosts(removeRedundantCuts, redundancyFactor);
         sortCutsAndCosts();
 
         clusterIndexToTrees.put(clusterIndex, new TangleSearchTree[] { originalTree, splitPruned, condensed });
@@ -313,13 +313,13 @@ public class TangleTreePanel extends JPanel {
         addNode(tree, node.rightChild, uniqueId);
     }
 
-    private void getCutsAndCosts(boolean removeRedundantCuts) {
+    private void getCutsAndCosts(boolean removeRedundantCuts, double redundancyFactor) {
         branchCosts = view.getBranchCosts();
 
         cuts = view.getCuts().clone();
         cutCosts = view.getCutCosts().clone();
 
-        double factor = removeRedundantCuts ? 0.9 : 1.0;
+        double factor = removeRedundantCuts ? redundancyFactor : 1.0;
         Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, factor);
         cuts = result.x;
         cutCosts = result.y;

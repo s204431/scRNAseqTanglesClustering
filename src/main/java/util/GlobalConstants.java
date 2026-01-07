@@ -54,11 +54,11 @@ public class GlobalConstants {
     }
 
     public enum LOW_LEVEL_COST_FUNCTION {
+        KNN,
         DISTANCE_TO_MEAN,
         PAIRWISE,
         SHORTEST,
-        PAIRWISE_CLOSEST,
-        KNN
+        PAIRWISE_CLOSEST
     }
     public static final String LOW_LEVEL_COST_FUNCTION_DISTANCE_TO_MEAN = "Dist To Mean";
     public static final String LOW_LEVEL_COST_FUNCTION_PAIRWISE = "Pairwise";

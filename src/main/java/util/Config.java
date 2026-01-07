@@ -25,6 +25,7 @@ public final class Config {
     private int maxClusters;
     private boolean tuneParameters;
     private boolean removeRedundantCuts;
+    private double redundancyFactor;
     private boolean removeRedundantCutsIteratively;
     private int splitSizeCutGeneration;
     private boolean usePcaCutGeneration;
@@ -56,6 +57,7 @@ public final class Config {
         this.maxClusters = 16;
         setTuneParameters(false);
         setRemoveRedundantCuts(true);
+        this.redundancyFactor = 0.9;
         setRemoveRedundantCutsIteratively(false);
         setPreprocessingCutGeneration(1000, true, 10, true, 5);
         setPreprocessingCostFunction(1000, false, 10, true, 5);
@@ -79,6 +81,7 @@ public final class Config {
                   int maxClusters,
                   boolean tuneParameters,
                   boolean removeRedundantCuts,
+                  double redundancyFactor,
                   boolean removeRedundantCutsIteratively,
                   int splitSizeCutGeneration,
                   boolean usePcaCutGeneration,
@@ -108,6 +111,7 @@ public final class Config {
         this.maxClusters = maxClusters;
         this.tuneParameters = tuneParameters;
         this.removeRedundantCuts = removeRedundantCuts;
+        this.redundancyFactor = redundancyFactor;
         this.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
         this.splitSizeCutGeneration = splitSizeCutGeneration;
         this.usePcaCutGeneration = usePcaCutGeneration;
@@ -140,6 +144,7 @@ public final class Config {
         this.maxClusters = config.maxClusters;
         this.tuneParameters = config.tuneParameters;
         this.removeRedundantCuts = config.removeRedundantCuts;
+        this.redundancyFactor = config.redundancyFactor;
         this.removeRedundantCutsIteratively = config.removeRedundantCutsIteratively;
         this.splitSizeCutGeneration = config.splitSizeCutGeneration;
         this.usePcaCutGeneration = config.usePcaCutGeneration;
@@ -201,6 +206,7 @@ public final class Config {
         MAX_CLUSTERS_INDEX,
         TUNE_PARAMETERS,
         REMOVE_REDUNDANT_CUTS_INDEX,
+        REDUNDANCY_FACTOR_INDEX,
         REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX,
         SPLIT_SIZE_CUT_GENERATION_INDEX,
         USE_PCA_CUT_GENERATOR_INDEX,
@@ -234,6 +240,7 @@ public final class Config {
         CONFIG_DESCRIPTIONS[ConfigIndices.MAX_CLUSTERS_INDEX.ordinal()] = "max_clusters";
         CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] = "tune_parameters";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] = "remove_redundant_cuts";
+        CONFIG_DESCRIPTIONS[ConfigIndices.REDUNDANCY_FACTOR_INDEX.ordinal()] = "redundancy_factor";
         CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] = "remove_redundant_cuts_iteratively";
         CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_CUT_GENERATION_INDEX.ordinal()] = "split_size_cut_generation";
         CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_CUT_GENERATOR_INDEX.ordinal()] = "use_pca_cut_generator";
@@ -289,6 +296,7 @@ public final class Config {
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.MAX_CLUSTERS_INDEX.ordinal()] + ":" + formatValue(maxClusters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()] + ":" + formatValue(tuneParameters));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()] + ":" + formatValue(removeRedundantCuts));
+                writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REDUNDANCY_FACTOR_INDEX.ordinal()] + ":" + formatValue(redundancyFactor));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()] + ":" + formatValue(removeRedundantCutsIteratively));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_CUT_GENERATION_INDEX.ordinal()] + ":" + formatValue(splitSizeCutGeneration));
                 writer.println(CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_CUT_GENERATOR_INDEX.ordinal()] + ":" + formatValue(usePcaCutGeneration));
@@ -326,6 +334,7 @@ public final class Config {
         int maxClusters = 16;
         boolean tuneParameters = false;
         boolean removeRedundantCuts = false;
+        double redundancyFactor = 0.9;
         boolean removeRedundantCutsIteratively = false;
         int splitSizeCutGeneration = 1000;
         boolean usePcaCutGeneration = false;
@@ -365,6 +374,7 @@ public final class Config {
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.MAX_CLUSTERS_INDEX.ordinal()])) maxClusters = Integer.parseInt(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.TUNE_PARAMETERS.ordinal()])) tuneParameters = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_INDEX.ordinal()])) removeRedundantCuts = Boolean.parseBoolean(value);
+                else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REDUNDANCY_FACTOR_INDEX.ordinal()])) redundancyFactor = Double.parseDouble(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.REMOVE_REDUNDANT_CUTS_ITERATIVELY_INDEX.ordinal()])) removeRedundantCutsIteratively = Boolean.parseBoolean(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.SPLIT_SIZE_CUT_GENERATION_INDEX.ordinal()])) splitSizeCutGeneration = Integer.parseInt(value);
                 else if (description.equals(CONFIG_DESCRIPTIONS[ConfigIndices.USE_PCA_CUT_GENERATOR_INDEX.ordinal()])) usePcaCutGeneration = Boolean.parseBoolean(value);
@@ -408,6 +418,7 @@ public final class Config {
         newConfig.maxClusters = maxClusters;
         newConfig.tuneParameters = tuneParameters;
         newConfig.removeRedundantCuts = removeRedundantCuts;
+        newConfig.redundancyFactor = redundancyFactor;
         newConfig.removeRedundantCutsIteratively = removeRedundantCutsIteratively;
         newConfig.splitSizeCutGeneration = splitSizeCutGeneration;
         newConfig.usePcaCutGeneration = usePcaCutGeneration;
@@ -442,6 +453,7 @@ public final class Config {
                 "Max Clusters: " + maxClusters + "\n" +
                 "Tune Parameters: " + tuneParameters + "\n" +
                 "Remove Redundant Cuts: " + removeRedundantCuts + "\n" +
+                "Redundancy Factor: " + redundancyFactor + "\n" +
                 "Remove Redundant Cuts Iteratively: " + removeRedundantCutsIteratively + "\n" +
                 "Split Size Cut Generation: " + splitSizeCutGeneration + "\n" +
                 "Use PCA Cut Generation: " + usePcaCutGeneration + "\n" +
@@ -593,6 +605,14 @@ public final class Config {
 
     public void setRemoveRedundantCuts(boolean removeRedundantCuts) {
         this.removeRedundantCuts = removeRedundantCuts;
+    }
+
+    public double getRedundancyFactor() {
+        return redundancyFactor;
+    }
+
+    public void setRedundancyFactor(double redundancyFactor) {
+        this.redundancyFactor = redundancyFactor;
     }
 
     public boolean isRemoveRedundantCutsIteratively() {

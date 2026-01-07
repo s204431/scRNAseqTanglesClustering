@@ -48,9 +48,10 @@ public class ParameterPanel extends JScrollPane {
     private JCheckBox wernerModificationCheckbox;
     private JCheckBox useSplitFirstCheckbox;
     private JCheckBox disableEarlyStopCheckbox;
-    private JCheckBox useCacheCheckBox;
+    //private JCheckBox useCacheCheckBox;
     private JCheckBox removeRedundantCutsCheckbox;
     private JCheckBox removeRedundantCutsIterativelyCheckBox;
+    private JTextField redundancyFactorField;
     private JComboBox<String> highLevelCutGeneratorDropdown;
     private JComboBox<String> lowLevelCutGeneratorDropdown;
     private JComboBox<String> highLevelCostFunctionDropdown;
@@ -123,7 +124,7 @@ public class ParameterPanel extends JScrollPane {
         setViewportView(contentPanel);
         setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);
         setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
-        //setBorder(BorderFactory.createEmptyBorder());
+        setBorder(BorderFactory.createEmptyBorder());
         contentPanel.setOpaque(true);
     }
 
@@ -141,7 +142,7 @@ public class ParameterPanel extends JScrollPane {
         addRow(usePcaCutGenerationCheckbox, pcaComponentsCutGenerationField);
 
         useTsneCutGenerationCheckbox = new JCheckBox("<html>Use t-SNE<br> Cut Generation</html>");
-        useTsneCutGenerationCheckbox.setSelected(true);
+        useTsneCutGenerationCheckbox.setSelected(false);
         tsneComponentsCutGenerationField = new JTextField(5);
         tsneComponentsCutGenerationField.setText("3");
         addRow(useTsneCutGenerationCheckbox, tsneComponentsCutGenerationField);
@@ -153,7 +154,7 @@ public class ParameterPanel extends JScrollPane {
         addRow("<html>Split Size<br> Cost Function", splitSizeCostFunctionField);
 
         usePcaCostFunctionCheckbox = new JCheckBox("<html>Use PCA<br> Cost Function</html>");
-        usePcaCostFunctionCheckbox.setSelected(false);
+        usePcaCostFunctionCheckbox.setSelected(true);
         pcaComponentsCostFunctionField = new JTextField(5);
         pcaComponentsCostFunctionField.setText("10");
         pcaComponentsCostFunctionField.setEnabled(false);
@@ -161,9 +162,9 @@ public class ParameterPanel extends JScrollPane {
         addRow(usePcaCostFunctionCheckbox, pcaComponentsCostFunctionField);
 
         useTsneCostFunctionCheckbox = new JCheckBox("<html>Use t-SNE<br> Cost Function</html>");
-        useTsneCostFunctionCheckbox.setSelected(true);
+        useTsneCostFunctionCheckbox.setSelected(false);
         tsneComponentsCostFunctionField = new JTextField(5);
-        tsneComponentsCostFunctionField.setText("5");
+        tsneComponentsCostFunctionField.setText("3");
         addRow(useTsneCostFunctionCheckbox, tsneComponentsCostFunctionField);
 
         endSection();
@@ -195,6 +196,10 @@ public class ParameterPanel extends JScrollPane {
         removeRedundantCutsIterativelyCheckBox = new JCheckBox("<html>Remove Cuts<br>Iteratively</html>");
         removeRedundantCutsIterativelyCheckBox.setSelected(false);
         addRow(removeRedundantCutsCheckbox, removeRedundantCutsIterativelyCheckBox);
+
+        redundancyFactorField = new JTextField(6);
+        redundancyFactorField.setText("0.9");
+        addRow(new JLabel("<html>Redundancy<br>Factor (0-1):</html>"), redundancyFactorField);
 
         highLevelCutGeneratorDropdown = new JComboBox<>(GlobalConstants.HIGH_LEVEL_CUT_GENERATOR_NAMES);
         addRow("<html>Cut Generator<br>Batching</html>", highLevelCutGeneratorDropdown);
@@ -325,8 +330,9 @@ public class ParameterPanel extends JScrollPane {
             psiField.setEditable(enableFields);
             psiField.setEnabled(enableFields);
 
-            splitPruneMethodDropdown.setEditable(isChecked);
             splitPruneMethodDropdown.setEnabled(isChecked);
+            updatePerformanceMetricComponents();
+
         });
 
         parameterTuningCheckBox.addItemListener(e -> {
@@ -336,6 +342,7 @@ public class ParameterPanel extends JScrollPane {
             aField.setEnabled(enableFields);
             psiField.setEditable(enableFields);
             psiField.setEnabled(enableFields);
+            updatePerformanceMetricComponents();
         });
 
         usePcaCostFunctionCheckbox.addItemListener(e -> {
@@ -365,6 +372,21 @@ public class ParameterPanel extends JScrollPane {
                 readAndShowCut();
             });
         }
+
+        // ==================== Dropdown Logic ==================== //
+        splitPruneMethodDropdown.addActionListener(e -> {
+            updatePerformanceMetricComponents();
+        });
+    }
+
+    private void updatePerformanceMetricComponents() {
+        boolean enablePerformanceMetrics = parameterTuningCheckBox.isSelected() ||
+                (splitPruningCheckBox.isSelected() && splitPruneMethodDropdown.getSelectedItem().equals(GlobalConstants.SPLIT_PRUNE_PERFORMANCE_METRIC));
+        performanceMetricDropdown.setEnabled(enablePerformanceMetrics);
+
+        boolean enableMaxClusterField = splitPruningCheckBox.isSelected() || parameterTuningCheckBox.isSelected();
+        maxClusterField.setEditable(enableMaxClusterField);
+        maxClusterField.setEnabled(enableMaxClusterField);
     }
 
     private void readAndShowCut() {
@@ -420,8 +442,8 @@ public class ParameterPanel extends JScrollPane {
         }
 
         view.performClustering(config);
-        view.drawTangleSearchTree(config.isRemoveRedundantCuts());
-        getAndSortCutsAndCosts(config.isRemoveRedundantCuts());
+        view.drawTangleSearchTree(config.isRemoveRedundantCuts(), config.getRedundancyFactor());
+        getAndSortCutsAndCosts(config.isRemoveRedundantCuts(), config.getRedundancyFactor());
         cutNumberField.setText("0");
     }
 
@@ -459,12 +481,14 @@ public class ParameterPanel extends JScrollPane {
         boolean useParameterTuning = parameterTuningCheckBox.isSelected();
 
         int a = 0;
+        int maxClusters = 16;
         double aFactor = 0.0;
         double psi = 0;
         if (!testing && !useParameterTuning) {
             try {
+                maxClusters = Integer.parseInt(maxClusterField.getText());
                 if (splitPruningCheckBox.isSelected()) {
-                    a = (int) ((view.points.length / 16.0) * 0.55);
+                    a = (int) (((double) view.points.length / maxClusters) * 0.55);
                 } else {
                     a = Integer.parseInt(aField.getText());
                     if (a <= 0) throw new NumberFormatException("Parameter a is 0");
@@ -473,7 +497,8 @@ public class ParameterPanel extends JScrollPane {
             } catch (NumberFormatException ignore) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Parameter a must be an integer greater than 0 and ψ must be a double",
+                        "Parameter a must be an integer greater than 0 and ψ must be a double.\n" +
+                                "If split pruning or parameter tuning is turned on, max clusters must be an integer.",
                         "Invalid parameters",
                         JOptionPane.WARNING_MESSAGE
                 );
@@ -507,8 +532,6 @@ public class ParameterPanel extends JScrollPane {
         int pcaComponentsCostFunction;
         boolean useTsneCostFunction = useTsneCostFunctionCheckbox.isSelected();
         int tsneComponentsCostFunction;
-
-        int maxClusters;
         try {
             splitSizeCutGeneration = Integer.parseInt(splitSizeCutGenerationField.getText());
             pcaComponentsCutGeneration = Integer.parseInt(pcaComponentsCutGenerationField.getText());
@@ -518,12 +541,24 @@ public class ParameterPanel extends JScrollPane {
             pcaComponentsCostFunction = Integer.parseInt(pcaComponentsCostFunctionField.getText());
             tsneComponentsCostFunction = Integer.parseInt(tsneComponentsCostFunctionField.getText());
 
-            maxClusters = Integer.parseInt(maxClusterField.getText());
-
         } catch (NumberFormatException ignore) {
             JOptionPane.showMessageDialog(
                     this,
                     "Split sizes, component values and max clusters must be integers.",
+                    "Invalid parameters",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return null;
+        }
+
+        double redundancyFactor;
+        try {
+            redundancyFactor = Double.parseDouble(redundancyFactorField.getText());
+
+        } catch (NumberFormatException ignore) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Redundancy Factor must be a double between 0 and 1.",
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -549,6 +584,7 @@ public class ParameterPanel extends JScrollPane {
                 maxClusters,
                 useParameterTuning,
                 removeRedundantCutsCheckbox.isSelected(),
+                redundancyFactor,
                 removeRedundantCutsIterativelyCheckBox.isSelected(),
                 splitSizeCutGeneration,
                 usePcaCutGeneration,
@@ -570,6 +606,7 @@ public class ParameterPanel extends JScrollPane {
         disableEarlyStopCheckbox.setSelected(!config.isUseEarlyStop());
         //useCacheCheckBox.setSelected(config.isUseCache());
         removeRedundantCutsCheckbox.setSelected(config.isRemoveRedundantCuts());
+        redundancyFactorField.setText(Double.toString(config.getRedundancyFactor()));
         removeRedundantCutsIterativelyCheckBox.setSelected(config.isRemoveRedundantCutsIteratively());
 
         selectDropdown(highLevelCutGeneratorDropdown, config.getHighLevelCutGeneratorName());
@@ -648,12 +685,12 @@ public class ParameterPanel extends JScrollPane {
         System.out.println("Cut: " + cutIndex + " Cost: " + sortedCutCosts[cutIndex]);
     }
 
-    private void getAndSortCutsAndCosts(boolean removeRedundantCuts) {
+    private void getAndSortCutsAndCosts(boolean removeRedundantCuts, double redundancyFactor) {
         BitSet[] cuts = view.getCuts();
         double[] cutCosts = view.getCutCosts();
 
         if (removeRedundantCuts) {
-            Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, 0.9);
+            Tuple<BitSet[], double[]> result = TangleClusterer.removeRedundantCuts(cuts, cutCosts, redundancyFactor);
             cuts = result.x;
             cutCosts = result.y;
         }

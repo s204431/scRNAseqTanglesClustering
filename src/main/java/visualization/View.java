@@ -285,8 +285,8 @@ public class View {
         return model.getCutCosts();
     }
 
-    public void drawTangleSearchTree(boolean removeRedundantCuts) {
-        window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree(), removeRedundantCuts, model.getHardClustering());
+    public void drawTangleSearchTree(boolean removeRedundantCuts, double redundancyFactor) {
+        window.drawTangleSearchTree(monitor.getUncondensedTree(), monitor.getSplitPrunedTree(), monitor.getCondensedTree(), removeRedundantCuts, redundancyFactor, model.getHardClustering());
     }
 
     public void showTestSet(List<File> selectedDirs) {

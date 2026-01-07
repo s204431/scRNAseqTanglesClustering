@@ -57,6 +57,7 @@ public class ScatterPlotPanel extends JTabbedPane {
     public ScatterPlotPanel(View view) {
         this.view = view;
         setBackground(GlobalConstants.COLOR_VERY_LIGHT_GRAY);    // Should differ only a little from white
+        //setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         addSaveActions();
         addSelectionChangeListener();

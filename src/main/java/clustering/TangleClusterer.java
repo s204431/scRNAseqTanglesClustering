@@ -65,7 +65,7 @@ public class TangleClusterer {
                 config.getTsneComponentsCostFunction());
 
         if (removeRedundantCuts) {
-            Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, 0.9); //Set factor to 1 to turn it off.
+            Tuple<BitSet[], double[]> redundancyRemoved = removeRedundantCuts(initialCuts, costs, config.getRedundancyFactor()); //Set factor to 1 to turn it off.
             initialCuts = redundancyRemoved.x;
             costs = redundancyRemoved.y;
         }
@@ -362,7 +362,7 @@ public class TangleClusterer {
                                     reorderedCuts[k] = newCuts[newIndices[k]];
                                 }
 
-                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), 0.95);
+                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), config.getRedundancyFactor());
                                 int[] ints = Arrays.stream(redundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
 
                                 HashSet<Integer> cuts = new HashSet<>();
@@ -575,7 +575,7 @@ public class TangleClusterer {
                                     reorderedCuts[k] = newCuts[newIndices[k]];
                                 }
 
-                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), 0.95);
+                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), config.getRedundancyFactor());
                                 int[] ints = Arrays.stream(redundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
 
                                 HashSet<Integer> cuts = new HashSet<>();
@@ -963,7 +963,7 @@ public class TangleClusterer {
                                     reorderedCuts[k] = newCuts[newIndices[k]];
                                 }
 
-                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), 0.95);
+                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), config.getRedundancyFactor());
                                 int[] ints = Arrays.stream(redundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
 
                                 HashSet<Integer> cuts = new HashSet<>();
