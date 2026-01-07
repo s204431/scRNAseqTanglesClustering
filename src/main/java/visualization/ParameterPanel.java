@@ -487,6 +487,7 @@ public class ParameterPanel extends JScrollPane {
         if (!testing && !useParameterTuning) {
             try {
                 maxClusters = Integer.parseInt(maxClusterField.getText());
+                if (maxClusters < 2) throw new NumberFormatException("Max clusters is less than 2.");
                 if (splitPruningCheckBox.isSelected()) {
                     a = (int) (((double) view.points.length / maxClusters) * 0.55);
                 } else {
@@ -498,7 +499,7 @@ public class ParameterPanel extends JScrollPane {
                 JOptionPane.showMessageDialog(
                         this,
                         "Parameter a must be an integer greater than 0 and ψ must be a double.\n" +
-                                "If split pruning or parameter tuning is turned on, max clusters must be an integer.",
+                                "If split pruning or parameter tuning is turned on, max clusters must be an integer bigger than 1.",
                         "Invalid parameters",
                         JOptionPane.WARNING_MESSAGE
                 );
@@ -507,13 +508,16 @@ public class ParameterPanel extends JScrollPane {
 
         } else if (testing && !useParameterTuning) {
             try {
+                maxClusters = Integer.parseInt(maxClusterField.getText());
+                if (maxClusters < 2) throw new NumberFormatException("Max clusters is less than 2.");
                 aFactor = Double.parseDouble(aField.getText());
-                if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("a should be a factor between 0 and 1");
+                if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("a should be a factor between 0 and 1.");
                 psi = Double.parseDouble(psiField.getText());
             } catch (NumberFormatException ignore) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Parameter a must be a double between 0 and 1, and ψ must be a double",
+                        "Parameter a must be a double between 0 and 1, and ψ must be a double.\n" +
+                                "If split pruning or parameter tuning is turned on, max clusters must be an integer bigger than 1.",
                         "Invalid parameters",
                         JOptionPane.WARNING_MESSAGE
                 );
