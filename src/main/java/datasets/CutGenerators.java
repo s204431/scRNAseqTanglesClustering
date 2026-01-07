@@ -205,7 +205,7 @@ public class CutGenerators {
                 pcaTime = System.currentTimeMillis() - startTime;
 
                 bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, 1));
-                for (int n : new int[]{5, 4, 3, 2}) {
+                for (int n : new int[]{8, 6, 4, 2}) {
                     reducedPoints = getFirstDimensions(reducedPoints, n);
                     bitsets.add(runLowLevelCutGenerator(reducedPoints, cutGeneratorName, a, 1));
                 }

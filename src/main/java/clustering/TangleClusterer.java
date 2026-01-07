@@ -198,23 +198,23 @@ public class TangleClusterer {
                 }
                 else if (node.leftChild != null) {
                     node.leftChild.cost = costsOrdered[i];
-                    if (autoLimitSplitCosts) {
-                        int newA = (int) (node.intersection.count() * 0.667);
+                    /*if (autoLimitSplitCosts) {
+                        int newA = (int) (node.intersection.count() * 0.55);
                         tree.a = newA;
                         node.leftChild = null;
                         consistent = tree.addOrientation(node, indices[i], true, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
-                    }
+                    }*/
                 }
                 else if (node.rightChild != null) {
                     node.rightChild.cost = costsOrdered[i];
-                    if (autoLimitSplitCosts) {
-                        int newA = (int) (node.intersection.count() * 0.667);
+                    /*if (autoLimitSplitCosts) {
+                        int newA = (int) (node.intersection.count() * 0.55);
                         tree.a = newA;
                         node.rightChild = null;
                         consistent = tree.addOrientation(node, indices[i], false, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
-                    }
+                    }*/
                 }
             }
             if (earlyStop && !consistent) { //Stop if no nodes were added to the tree.
