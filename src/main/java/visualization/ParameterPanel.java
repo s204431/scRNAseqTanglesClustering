@@ -220,9 +220,10 @@ public class ParameterPanel extends JScrollPane {
         beginSection("Clustering Parameters");
 
         aField = new JTextField(6);
+        //aField.setText("100");
         String aFieldText = " a ";
         if (!dataPanel) {
-            aField.setText("0.667");
+            aField.setText("0.55");
             //aFieldText += "(0-1) ";
         }
 
@@ -232,7 +233,7 @@ public class ParameterPanel extends JScrollPane {
         addFullWidth(aComponent);
 
         psiField = new JTextField(6);
-        psiField.setText("0");
+        psiField.setText("0.0");
         JPanel psiComponent = new JPanel(new BorderLayout());
         psiComponent.add(new JLabel(" ψ "), BorderLayout.WEST);
         psiComponent.add(psiField, BorderLayout.CENTER);
@@ -417,15 +418,13 @@ public class ParameterPanel extends JScrollPane {
     private void removeUncertaintyAction(ActionEvent e) {
         double certaintyThreshold;
         try {
-            certaintyThreshold = Double.parseDouble(uncertaintyTextField.getText());
+            certaintyThreshold = tryParseAndValidate("Uncertainty Threshold", uncertaintyTextField.getText(), 0.0, 1.0);
             System.out.println("Certainty threshold: " + certaintyThreshold);
-            if (certaintyThreshold < 0.0 || certaintyThreshold > 1.0)
-                throw new NumberFormatException("Certainty threshold out of bounds");
 
-        } catch (NumberFormatException ignore) {
+        } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Certainty Threshold must be a double between 0.0 and 1.0.",
+                    ex.getMessage(),
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -455,11 +454,11 @@ public class ParameterPanel extends JScrollPane {
 
         int runs;
         try {
-            runs = Integer.parseInt(runNumberField.getText());
-        } catch (NumberFormatException ignore) {
+            runs = tryParseAndValidate("Test Runs", runNumberField.getText(), 1, Integer.MAX_VALUE);
+        } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Number of runs must be an integer.",
+                    ex.getMessage(),
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -479,93 +478,52 @@ public class ParameterPanel extends JScrollPane {
 
     public Config getConfig(boolean testing) {
         boolean useParameterTuning = parameterTuningCheckBox.isSelected();
-
-        int a = 0;
-        int maxClusters = 16;
-        double aFactor = 0.0;
-        double psi = 0;
-        if (!testing && !useParameterTuning) {
-            try {
-                maxClusters = Integer.parseInt(maxClusterField.getText());
-                if (maxClusters < 2) throw new NumberFormatException("Max clusters is less than 2.");
-                if (splitPruningCheckBox.isSelected()) {
-                    a = (int) (((double) view.points.length / maxClusters) * 0.55);
-                } else {
-                    a = Integer.parseInt(aField.getText());
-                    if (a <= 0) throw new NumberFormatException("Parameter a is 0");
-                }
-                psi = Double.parseDouble(psiField.getText());
-            } catch (NumberFormatException ignore) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Parameter a must be an integer greater than 0 and ψ must be a double.\n" +
-                                "If split pruning or parameter tuning is turned on, max clusters must be an integer bigger than 1.",
-                        "Invalid parameters",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return null;
-            }
-
-        } else if (testing && !useParameterTuning) {
-            try {
-                maxClusters = Integer.parseInt(maxClusterField.getText());
-                if (maxClusters < 2) throw new NumberFormatException("Max clusters is less than 2.");
-                aFactor = Double.parseDouble(aField.getText());
-                if (aFactor < 0 || aFactor > 1) throw new NumberFormatException("a should be a factor between 0 and 1.");
-                psi = Double.parseDouble(psiField.getText());
-            } catch (NumberFormatException ignore) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Parameter a must be a double between 0 and 1, and ψ must be a double.\n" +
-                                "If split pruning or parameter tuning is turned on, max clusters must be an integer bigger than 1.",
-                        "Invalid parameters",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return null;
-            }
-        } else {
-            maxClusters = Integer.parseInt(maxClusterField.getText());
-            if (maxClusters < 2) throw new NumberFormatException("Max clusters is less than 2.");
-        }
-
-        int splitSizeCutGeneration;
         boolean usePcaCutGeneration = usePcaCutGenerationCheckbox.isSelected();
-        int pcaComponentsCutGeneration;
         boolean useTsneCutGeneration = useTsneCutGenerationCheckbox.isSelected();
-        int tsneComponentsCutGeneration;
-
-        int splitSizeCostFunction;
         boolean usePcaCostFunction = usePcaCostFunctionCheckbox.isSelected();
-        int pcaComponentsCostFunction;
         boolean useTsneCostFunction = useTsneCostFunctionCheckbox.isSelected();
-        int tsneComponentsCostFunction;
+
+        int a = -1;
+        int maxClusters = -1;
+        double aFactor = 0.0;
+        double psi = -1;
+        int splitSizeCutGeneration = -1;
+        int pcaComponentsCutGeneration = -1;
+        int tsneComponentsCutGeneration = -1;
+        int splitSizeCostFunction = -1;
+        int pcaComponentsCostFunction = -1;
+        int tsneComponentsCostFunction = -1;
+        double redundancyFactor = -1;
+
         try {
-            splitSizeCutGeneration = Integer.parseInt(splitSizeCutGenerationField.getText());
-            pcaComponentsCutGeneration = Integer.parseInt(pcaComponentsCutGenerationField.getText());
-            tsneComponentsCutGeneration = Integer.parseInt(tsneComponentsCutGenerationField.getText());
+            maxClusters = tryParseAndValidate("max clusters", maxClusterField.getText(), 2, 50);
+            psi = tryParseAndValidate("psi", psiField.getText(), 0.0, 1.0);
 
-            splitSizeCostFunction = Integer.parseInt(splitSizeCostFunctionField.getText());
-            pcaComponentsCostFunction = Integer.parseInt(pcaComponentsCostFunctionField.getText());
-            tsneComponentsCostFunction = Integer.parseInt(tsneComponentsCostFunctionField.getText());
+            // Check if we should set a parameter, a-factor parameter or none of them
+            if (testing) aFactor = tryParseAndValidate("a-factor", aField.getText(), 0.0, 1.0);
+            else {
+                if (splitPruningCheckBox.isSelected()) {
+                    int value = (int) (((double) view.points.length / maxClusters) * 0.55);
+                    a = tryParseAndValidate("a", Integer.toString(value), 1, Integer.MAX_VALUE);
+                } else {
+                    a = tryParseAndValidate("a", aField.getText(), 1, Integer.MAX_VALUE);
+                }
+            }
 
-        } catch (NumberFormatException ignore) {
+            splitSizeCutGeneration = tryParseAndValidate("Cut Generation Split Size", splitSizeCutGenerationField.getText(), 1, Integer.MAX_VALUE);
+            pcaComponentsCutGeneration = tryParseAndValidate("Cut Generation PCA Components", pcaComponentsCutGenerationField.getText(), 10, 100);
+            tsneComponentsCutGeneration = tryParseAndValidate("Cut Generation t-SNE Components", tsneComponentsCutGenerationField.getText(), 1, 100);
+
+            splitSizeCostFunction = tryParseAndValidate("Cost Function Split Size", splitSizeCostFunctionField.getText(), 1, Integer.MAX_VALUE);
+            pcaComponentsCostFunction = tryParseAndValidate("Cost Function PCA Components", pcaComponentsCostFunctionField.getText(), 10, 100);
+            tsneComponentsCostFunction = tryParseAndValidate("Cost Function t-SNE Components", tsneComponentsCostFunctionField.getText(), 1, 100);
+
+            redundancyFactor = tryParseAndValidate("Redundancy Factor", redundancyFactorField.getText(), 0.0, 1.0);
+
+        } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Split sizes, component values and max clusters must be integers.",
-                    "Invalid parameters",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return null;
-        }
-
-        double redundancyFactor;
-        try {
-            redundancyFactor = Double.parseDouble(redundancyFactorField.getText());
-
-        } catch (NumberFormatException ignore) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Redundancy Factor must be a double between 0 and 1.",
+                    e.getMessage(),
                     "Invalid parameters",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -604,6 +562,28 @@ public class ParameterPanel extends JScrollPane {
                 useTsneCostFunction,
                 tsneComponentsCostFunction
         );
+    }
+
+    private int tryParseAndValidate(String parameter, String valueText, int min, int max) throws IllegalArgumentException {
+        int value;
+        try {
+            value = Integer.parseInt(valueText);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Parameter " + parameter + " must be an integer.");
+        }
+        if (value < min || value > max) throw new IllegalArgumentException("Parameter " + parameter + " must be between " + min + " and " + max + ".");
+        return value;
+    }
+
+    private double tryParseAndValidate(String parameter, String valueText, double min, double max) throws IllegalArgumentException {
+        double value;
+        try {
+            value = Double.parseDouble(valueText);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Parameter " + parameter + " must be an integer.");
+        }
+        if (value < min || value > max) throw new IllegalArgumentException("Parameter " + parameter + " must be between " + min + " and " + max + ".");
+        return value;
     }
 
     public void setConfig(Config config) {
