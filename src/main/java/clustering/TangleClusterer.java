@@ -375,7 +375,7 @@ public class TangleClusterer {
 
                         break;
                     }
-                    else if (autoLimitSplitCosts && node.leftChild != null) {
+                    /*else if (autoLimitSplitCosts && node.leftChild != null) {
                         int newA = (int) (node.intersection.count()*0.667);
                         tree.a = newA;
                         node.leftChild = null;
@@ -388,7 +388,7 @@ public class TangleClusterer {
                         node.rightChild = null;
                         consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
                         tree.a = a;
-                    }
+                    }*/
 
                     branchPointer++;
 
@@ -630,11 +630,11 @@ public class TangleClusterer {
                     node.rightChild = null;
 
                     // Try to add vote cut
-                    if (autoLimitSplitCosts) tree.a = (int) (node.intersection.count()*0.667);
+                    //if (autoLimitSplitCosts) tree.a = (int) (node.intersection.count()*0.667);
                     boolean consistent = false;
                     consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
                     consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
-                    tree.a = a;
+                    //tree.a = a;
 
                     if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
                         node.leftChild = null;
@@ -856,11 +856,11 @@ public class TangleClusterer {
                         }
 
                         // Try to add vote cut
-                        if (autoLimitSplitCosts) tree.a = (int) (node.intersection.count()*0.667);
+                        //if (autoLimitSplitCosts) tree.a = (int) (node.intersection.count()*0.667);
                         boolean consistent = false;
                         consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
                         consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
-                        tree.a = a;
+                        //tree.a = a;
 
                         if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
                             continue;
