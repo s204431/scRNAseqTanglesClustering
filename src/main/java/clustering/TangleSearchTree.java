@@ -10,8 +10,6 @@ import java.util.List;
 
 public class TangleSearchTree {
 
-    //NOTE: This file is from the bachelor project.
-
     //This class represents a tangle search tree.
 
     private static final boolean USE_HASHING = false; //Determines if hashing of intersections is used.
@@ -53,7 +51,7 @@ public class TangleSearchTree {
         else {
             node.rightChild = newNode;
         }
-        boolean consistent = alternateConsistencyCheck ? isConsistentOscarWerner(newNode) : isConsistent(newNode);
+        boolean consistent = alternateConsistencyCheck ? isConsistentLocal(newNode) : isConsistent(newNode);
         if (!consistent) {
             newNode.parent = null;
             if (left) {
@@ -139,7 +137,7 @@ public class TangleSearchTree {
         return true;
     }
 
-    protected boolean isConsistentOscarWerner(Node newNode) {
+    protected boolean isConsistentLocal(Node newNode) {
         int depth = getDepth(newNode);
 
         if (depth < 2) {

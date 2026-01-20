@@ -4,8 +4,6 @@ import java.util.Arrays;
 
 public class BitSet {
 
-    //NOTE: This file is from the bachelor project.
-
     //This class contains a custom BitSet implementation with fast operations.
 
     protected long[] set;

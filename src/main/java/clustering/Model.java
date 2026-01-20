@@ -19,8 +19,6 @@ import io.jhdf.api.Dataset;
 import io.jhdf.api.Group;
 import main.Main;
 import util.*;
-import smile.feature.extraction.PCA;
-import smile.manifold.UMAP;
 import smile.math.matrix.Matrix;
 
 import java.io.BufferedReader;
@@ -30,18 +28,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static clustering.TangleClusterer.removeRedundantCuts;
-
-
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.layers.variational.VariationalAutoencoder;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
 import util.BitSet;
 import visualization.test.TestProgressManager;
 
@@ -64,9 +50,9 @@ public class Model {
     public Model(Monitor monitor) {
         this.monitor = monitor;
         tangleClusterer = new TangleClusterer(monitor);
-        //loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv");
     }
 
+    //Loads a data set from a file.
     public void loadDataset(String observedFilePath, int hvg, boolean normalizeData) {
         monitor.setFilePath(observedFilePath);
 
@@ -86,27 +72,9 @@ public class Model {
         hvg = (hvg <= 0 || hvg >= maxGenes) ? maxGenes : hvg;
         hvgData = highlyVariableGenes(originalData, hvg);
         System.out.println("Finished loading data");
-        /*double[][] newHvgData = new double[hvgData.length][2];
-        for (int i = 0; i < hvgData.length; i++) {
-            newHvgData[i][0] = hvgData[i][4];
-            newHvgData[i][1] = hvgData[i][5];
-        }
-        hvgData = newHvgData;*/
-
-
-        //projectedData = tsne(hvgData, 2);
 
         dataset = new ScRNAseqDataset(hvgData, monitor);
         dataset.setSparsity(computeSparsity(originalData));
-        //cluster(dataset, 70, 0, "Range", "Distance To Mean");
-
-
-        /*Tuple<int[], Integer> pythonResult = runPython(observedFilePath);
-        double NMIPython = NormalizedMutualInformation.joint(pythonResult.x, groundTruth);
-        double randIndex = AdjustedRandIndex.of(groundTruth, pythonResult.x);
-        System.out.println("NMI python: " + NMIPython);
-        System.out.println("Rand index python: " + randIndex);*/
-
     }
 
     // Fisher-Yayes shuffle to limit space usage
@@ -317,6 +285,7 @@ public class Model {
         return dbi;
     }
 
+    //Runs a clustering using a config file.
     public int[] cluster(ScRNAseqDataset dataset, Config config) {
         monitor.setDataset(dataset);
         monitor.setDimReductionTime(0);
@@ -333,6 +302,7 @@ public class Model {
         return hardClustering;
     }
 
+    //Runs using a config file when a performance metric is used (grid search, split pruning).
     public int[] clusterWithPerformanceMetric(ScRNAseqDataset dataset, Config config) {
         monitor.setClusterStartTime(System.currentTimeMillis());
         monitor.setDimReductionTime(0);
@@ -485,15 +455,12 @@ public class Model {
         return hardClustering;
     }
 
-    public static double[][] pca(double[][] data, int nComponents) {
-        PCA pca = PCA.cor(data);
-        return pca.getProjection(nComponents).apply(data);
-    }
-
+    //PCA dimensionality reduction with SVD.
     public static Tuple<double[][], double[]> svd(double[][] data, int nComponents) {
         int n = data.length;
         int d = data[0].length;
 
+        //Center data
         double[] mean = new double[d];
         for (int j = 0; j < d; j++) {
             double sum = 0.0;
@@ -506,13 +473,14 @@ public class Model {
             for (int j = 0; j < d; j++)
                 centered[i][j] = data[i][j] - mean[j];
 
+        //SVD
         Matrix X = Matrix.of(centered);
         Matrix.SVD svd = X.svd();
 
         double[] singularValues = svd.s;
         int k = Math.min(nComponents, singularValues.length);
 
-        // Take first k columns of V
+        //Take first k columns of V
         Matrix V = svd.V;
         double[][] V_k_array = new double[X.ncol()][k];
         for (int i = 0; i < X.ncol(); i++) {
@@ -523,11 +491,10 @@ public class Model {
         Matrix V_k = Matrix.of(V_k_array);
         Matrix projectedData = X.mm(V_k);
 
-        // Compute variance explained
+        //Compute variance explained
         double[] eigenvalues = new double[singularValues.length];
         double totalVariance = 0.0;
         for (int i = 0; i < singularValues.length; i++) {
-            // Covariance eigenvalues: \lambda_i = \sigma_i^2 / (n - 1)
             double lambda = (singularValues[i] * singularValues[i]) / (n - 1);
             eigenvalues[i] = lambda;
             totalVariance += lambda;
@@ -545,7 +512,7 @@ public class Model {
         int n = evr.length;
         if (n < 3) return n;
 
-        // Line from first to last point
+        //Line from first to last point
         double x1 = 0, y1 = evr[0];
         double x2 = n - 1, y2 = evr[n - 1];
 
@@ -556,7 +523,7 @@ public class Model {
             double x0 = i;
             double y0 = evr[i];
 
-            // Distance from point to line
+            //Distance from point to line
             double num = Math.abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2*y1 - y2*x1);
             double den = Math.sqrt((y2 - y1)*(y2 - y1) + (x2 - x1)*(x2 - x1));
             double dist = num / den;
@@ -570,6 +537,7 @@ public class Model {
         return elbowIndex + 1;
     }
 
+    //Reduces using PCA with knee detection.
     public static double[][] svdWithElbow(double[][] data) {
         Tuple<double[][], double[]> pcaResult = Model.svd(data, GlobalConstants.MAX_PCS_COMPONENTS);
         double[][] projectedData = pcaResult.x;
@@ -583,21 +551,15 @@ public class Model {
         return reducedPoints;
     }
 
+    //t-SNE dimensionality reduction.
     public static double[][] tsne(double[][] data, int nComponents) {
         long time = System.currentTimeMillis();
 
         int initialDims = data[0].length;
         double perplexity = 20.0;
         int maxIterations = 100;
-        /*BarnesHutTSne tsne = new BHTSne();
-        TSneConfiguration config = TSneUtils.buildConfig(data, nComponents, initialDims, perplexity, maxIterations);
 
-        double[][] output = tsne.tsne(config);
-        System.out.println("TSNE time: " + (System.currentTimeMillis() - time));
-        return output;*/
-
-
-        // Wrap raw data into ELKI database
+        //Wrap raw data into ELKI database
         Database db = new StaticArrayDatabase(new ArrayAdapterDatabaseConnection(data), null);
         db.initialize();
         Relation<DoubleVector> rel = db.getRelation(TypeUtil.DOUBLE_VECTOR_FIELD);
@@ -616,10 +578,10 @@ public class Model {
                 0.5
         );
 
-        // Run algorithm
+        //Run algorithm
         Relation<DoubleVector> projected = tsne.run(db, rel);
 
-        // Collect results using DBIDIter
+        //Collect results
         List<double[]> resultList = new ArrayList<>();
         for (DBIDIter iter = projected.getDBIDs().iter(); iter.valid(); iter.advance()) {
             DoubleVector vec = projected.get(iter);
@@ -630,7 +592,6 @@ public class Model {
             resultList.add(coords);
         }
 
-        // Convert list to array
         double[][] output = new double[resultList.size()][nComponents];
         for (int i = 0; i < output.length; i++) {
             output[i] = resultList.get(i);
@@ -641,45 +602,7 @@ public class Model {
         return output;
     }
 
-    public static double[][] umap(double[][] data, int nComponents) {
-        return UMAP.fit(data, new UMAP.Options(2, nComponents, 200, 1, 0.1, 1.0, 5, 1.0, 2));
-    }
-
-    public static double[][] vae(double[][] data, int nComponents) {
-
-        INDArray input = Nd4j.create(data);
-
-        MultiLayerNetwork model = new MultiLayerNetwork(new NeuralNetConfiguration.Builder()
-                .seed(123)
-                .list()
-
-                .layer(0, new VariationalAutoencoder.Builder()
-                        .nIn(data[0].length)
-                        .nOut(100)
-                        .activation(Activation.RELU)
-                        .build())
-
-                .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                        .nIn(100)
-                        .nOut(data[0].length)
-                        .activation(Activation.SIGMOID)
-                        .build())
-                .build());
-
-        model.init();
-        model.setListeners(new ScoreIterationListener(10));
-
-        DataSet ds = new DataSet(input, input);
-
-        for (int i = 0; i < 1000; i++) {
-            model.fit(ds);
-        }
-
-        INDArray encoded = model.feedForwardToLayer(0, input, false).get(1);
-
-        return tsne(encoded.toDoubleMatrix(), nComponents);
-    }
-
+    //Loads data from a file path.
     public Tuple<float[][], int[]> loadData(String observedFilePath) {
         String labelFilePath = "";
         if (observedFilePath.contains("observed_counts")) labelFilePath = observedFilePath.replace("observed_counts", "labels");
@@ -695,6 +618,7 @@ public class Model {
         return null;
     }
 
+    //Loads ground truth from a CSV file.
     public int[] loadGroundTruthCSV(String filePath) {
         float[][] temp = readCSV(filePath);
         if (temp == null) {
@@ -707,49 +631,7 @@ public class Model {
         return gt;
     }
 
-    public double[][] highlyVariableGenes2(float[][] data, int nTopGenes) {
-        int nGenes = data[0].length;
-        int nCells = data.length;
-
-        double[] dispersions = new double[nGenes];
-
-        for (int g = 0; g < nGenes; g++) {
-            double sum = 0.0;
-            for (int c = 0; c < nCells; c++) {
-                sum += data[c][g];
-            }
-            double mean = sum / nCells;
-
-            double sqDiff = 0.0;
-            for (int c = 0; c < nCells; c++) {
-                sqDiff += Math.pow(data[c][g] - mean, 2);
-            }
-            double variance = sqDiff / (nCells - 1);
-
-            dispersions[g] = mean > 0 ? -variance / mean : 0.0;
-        }
-
-        // Get indices sorted by dispersion (descending)
-        Integer[] indices = new Integer[nGenes];
-        for (int i = 0; i < nGenes; i++) indices[i] = i;
-        Arrays.sort(indices, Comparator.comparingDouble(a -> dispersions[a]));
-
-        // Take top nTopGenes
-        int[] indc =  Arrays.stream(indices)
-                .limit(nTopGenes)
-                .mapToInt(Integer::intValue)
-                .toArray();
-
-        double[][] newData = new double[nCells][nTopGenes];
-        for (int i = 0; i < nTopGenes; i++) {
-            for (int j = 0; j < nCells; j++) {
-                newData[j][i] = data[j][indc[i]];
-            }
-        }
-        //System.out.println("Dimension after HVG: " + newData.length + " " + newData[0].length);
-        return newData;
-    }
-
+    //Filter genes by only keeping a number of highly variable genes.
     public double[][] highlyVariableGenes(float[][] data, int nTopGenes) {
         double[] dispersions = new double[data[0].length];
         double[] means = new double[data[0].length];
@@ -817,6 +699,7 @@ public class Model {
         return newData;
     }
 
+    //Log normalizes the data (modifies the input).
     public float[][] logNormalize(float[][] data) {
         int nZeros = 0;
         for (int i = 0; i < data.length; i++) {
@@ -832,6 +715,7 @@ public class Model {
         return data;
     }
 
+    //Reads a CSV file.
     public float[][] readCSV(String filePath) {
         ArrayList<float[]> rows = new ArrayList<>();
 
@@ -876,6 +760,7 @@ public class Model {
         return data;
     }
 
+    //Loads from an h5ad file.
     public Tuple<float[][], int[]> readH5AD(String filePath) {
         File file = new File(filePath);
         try (HdfFile hdfFile = new HdfFile(file)) {
@@ -963,6 +848,7 @@ public class Model {
         return softClustering;
     }
 
+    //Compute sparsity (percent zeros) in the data.
     public double computeSparsity(float[][] originalData) {
         int nZeros = 0;
         for (int i = 0; i < originalData.length; i++) {

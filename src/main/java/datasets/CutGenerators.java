@@ -2,7 +2,6 @@ package datasets;
 
 import clustering.Model;
 import main.Main;
-import org.bytedeco.javacv.JavaCvErrorCallback;
 import util.*;
 import util.BitSet;
 
@@ -13,8 +12,6 @@ public class CutGenerators {
     //NOTE: The content in this file is from the bachelor project.
 
     private static final double precision = 1.0; //Determines the number of cuts generated.
-
-    public double[] cutCosts; //For local means only
 
     private Monitor monitor;
 

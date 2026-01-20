@@ -1,6 +1,5 @@
 package datasets;
 
-import clustering.Model;
 import util.BitSet;
 
 import java.util.*;

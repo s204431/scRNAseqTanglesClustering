@@ -1,15 +1,11 @@
 package datasets;
 
-import org.datavec.api.writable.Text;
-import smile.classification.KNN;
 import smile.neighbor.KDTree;
 import smile.neighbor.Neighbor;
-import smile.math.distance.EuclideanDistance;
 
 import java.util.*;
 
 import util.BitSet;
-import util.Distance;
 
 public class KNNGraph {
 

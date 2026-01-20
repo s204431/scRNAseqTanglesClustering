@@ -1,12 +1,8 @@
 package datasets;
 
-import clustering.Model;
-import smile.base.mlp.Cost;
 import util.BitSet;
 import util.GlobalConstants;
 import util.Monitor;
-
-import java.util.Arrays;
 
 public class ScRNAseqDataset {
     public double[][] data;

@@ -1,9 +1,7 @@
 package datasets;
 
 import clustering.Model;
-import elki.math.statistics.distribution.GeneralizedLogisticAlternateDistribution;
 import main.Main;
-import smile.classification.KNN;
 import util.*;
 
 import java.util.ArrayList;
@@ -30,6 +28,7 @@ public class CostFunctions {
         this.mask = mask;
     }
 
+    //Computes average costs in batched dimensions.
     public double[] averageCostFunction(double[][] dataPoints,
                                         BitSet[] initialCuts,
                                         String lowLevelCostFunctionName,
@@ -154,6 +153,7 @@ public class CostFunctions {
         return costs;
     }
 
+    //Computes minimum cost in batched dimensions.
     public double[] bestFirstCostFunction(double[][] dataPoints,
                                           BitSet[] initialCuts,
                                           String lowLevelCostFunctionName,
@@ -258,6 +258,7 @@ public class CostFunctions {
         return costs;
     }
 
+    //Runs batches concurrently.
     public class AverageParallelRunner implements Runnable {
 
         public double[] result;
@@ -292,7 +293,7 @@ public class CostFunctions {
         }
     }
 
-    //This cost function reduces points and runs a single other cost function.
+    //This cost function reduces points and runs a single cost function (no batching).
     public double[] singleCostFunction(double[][] dataPoints,
                                        BitSet[] initialCuts,
                                        String lowLevelCostFunctionName,
@@ -328,11 +329,12 @@ public class CostFunctions {
         return runLowLevelCostFunction(dataPoints, initialCuts, lowLevelCostFunctionName, knnGraph);
     }
 
+    //Runs a cost function.
     public double[] runLowLevelCostFunction(double[][] dataPoints, BitSet[] initialCuts, String costFunctionName, KNNGraph knnGraph) {
         return switch (costFunctionName) {
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE -> pairwiseDistanceCostFunction(dataPoints, initialCuts);
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_SHORTEST -> shortestDistanceCostFunction(dataPoints, initialCuts);
-            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST -> pairwiseClosestCostFunction(dataPoints, initialCuts);
+            case GlobalConstants.LOW_LEVEL_COST_FUNCTION_PAIRWISE_CLOSEST -> shortestPerPointCostFunction(dataPoints, initialCuts);
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_KNN -> knnCostFunction(dataPoints, initialCuts, knnGraph);
             case GlobalConstants.LOW_LEVEL_COST_FUNCTION_DISTANCE_TO_MEAN -> distanceToMeanCostFunction(dataPoints, initialCuts);
             default -> knnCostFunction(dataPoints, initialCuts, knnGraph);
@@ -444,8 +446,8 @@ public class CostFunctions {
         return costs;
     }
 
-    //Pairwise distance cost function, which uses the sum of the pairwise distances of every pair on different sides of the cut.
-    public double[] pairwiseClosestCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
+    //Shortest distance per point cost function.
+    public double[] shortestPerPointCostFunction(double[][] dataPoints, BitSet[] initialCuts) {
 
         //double threshold = 1.0;
 

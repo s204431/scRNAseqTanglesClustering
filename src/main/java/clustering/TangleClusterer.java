@@ -10,8 +10,6 @@ import java.util.*;
 
 public class TangleClusterer {
 
-    //NOTE: This file is from the bachelor project.
-
     //This class is used to generate a clustering with tangles.
 
     protected static boolean earlyStop = false;
@@ -31,7 +29,6 @@ public class TangleClusterer {
 
     private List<Double> splitCosts; //The cost for each splitting cut in the tree.
 
-    //Ensure that it can only be created within this package.
     public TangleClusterer(Monitor monitor) {
         this.monitor = monitor;
     }
@@ -224,7 +221,7 @@ public class TangleClusterer {
         return tree;
     }
 
-    private TangleSearchTree oscarWerner(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
+    private TangleSearchTree localCosts(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
         int n = costs.length;
         int a = config.getA();
         double psi = config.getPsi();
@@ -662,8 +659,8 @@ public class TangleClusterer {
                             leftChild.parent = node.leftChild;
                             rightChild.parent = node.leftChild;
 
-                            consistent = useAlternateConsistencyCheck ? tree.isConsistentOscarWerner(leftChild) : tree.isConsistent(leftChild);
-                            consistent = (useAlternateConsistencyCheck ? tree.isConsistentOscarWerner(rightChild) : tree.isConsistent(rightChild)) && consistent;
+                            consistent = useAlternateConsistencyCheck ? tree.isConsistentLocal(leftChild) : tree.isConsistent(leftChild);
+                            consistent = (useAlternateConsistencyCheck ? tree.isConsistentLocal(rightChild) : tree.isConsistent(rightChild)) && consistent;
                             if (!consistent) {
                                 node.leftChild = leftChild;
                                 node.rightChild = rightChild;
@@ -685,8 +682,8 @@ public class TangleClusterer {
                             leftChild.parent = node.rightChild;
                             rightChild.parent = node.rightChild;
 
-                            consistent = useAlternateConsistencyCheck ? tree.isConsistentOscarWerner(leftChild) : tree.isConsistent(leftChild);
-                            consistent = (useAlternateConsistencyCheck ? tree.isConsistentOscarWerner(rightChild) : tree.isConsistent(rightChild)) && consistent;
+                            consistent = useAlternateConsistencyCheck ? tree.isConsistentLocal(leftChild) : tree.isConsistent(leftChild);
+                            consistent = (useAlternateConsistencyCheck ? tree.isConsistentLocal(rightChild) : tree.isConsistent(rightChild)) && consistent;
                             if (!consistent) {
                                 node.leftChild = leftChild;
                                 node.rightChild = rightChild;
@@ -1007,37 +1004,6 @@ public class TangleClusterer {
         }
 
         return new Tuple<>(newData, newCuts);
-    }
-
-    //Removes redundant cuts that agree on factor% of their elements.
-    public static Tuple<BitSet[], double[]> removeRedundantCuts2(BitSet[] initialCuts, double[] costs, double factor) {
-        boolean[] toBeRemoved = new boolean[initialCuts.length]; //true indicates that the corresponding cut should be removed.
-        for (int i = 0; i < initialCuts.length; i++) {
-            for (int j = 0; j < initialCuts.length; j++) {
-                if (i != j && !toBeRemoved[i] && !toBeRemoved[j] && (BitSet.XNor(initialCuts[i], initialCuts[j]) > initialCuts[i].size()*factor || BitSet.XOR(initialCuts[i], initialCuts[j]) > initialCuts[i].size()*factor)) {
-                    //Remove cut with the largest cost.
-                    int largest = costs[i] > costs[j] ? i : j;
-                    toBeRemoved[largest] = true;
-                }
-            }
-        }
-        int count = 0;
-        for (boolean b : toBeRemoved) {
-            if (!b) {
-                count++;
-            }
-        }
-        double[] newCosts = new double[count];
-        BitSet[] newInitialCuts = new BitSet[count];
-        int index = 0;
-        for (int i = 0; i < initialCuts.length; i++) {
-            if (!toBeRemoved[i]) {
-                newCosts[index] = costs[i];
-                newInitialCuts[index] = initialCuts[i];
-                index++;
-            }
-        }
-        return new Tuple<>(newInitialCuts, newCosts);
     }
 
     public static Tuple<BitSet[], double[]> removeRedundantCuts(BitSet[] initialCuts, double[] costs, double factor) {
