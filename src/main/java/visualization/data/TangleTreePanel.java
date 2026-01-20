@@ -237,8 +237,8 @@ public class TangleTreePanel extends JPanel {
                 } else if (clusteringCheckBox.isSelected()) {
                     cut = findClusteringCut(tst, idToNode.get(uniqueId), hardClustering, false);
                 } else {
-                    cut = findClusteringCut(tst, idToNode.get(uniqueId), groundTruth, true);
-                    //cut = idToCut.get(uniqueId);
+                    //cut = findClusteringCut(tst, idToNode.get(uniqueId), groundTruth, true);
+                    cut = idToCut.get(uniqueId);
                 }
                 int cutIndex = idToCutIndex.get(uniqueId);
                 view.showCut(cut, cutIndex);
@@ -354,7 +354,7 @@ public class TangleTreePanel extends JPanel {
         BitSet out = new BitSet(hardClustering.length);
         for (int i = 0; i < hardClustering.length; i++) {
             int cluster = hardClustering[i];
-            if (gt) cluster = map.get(cluster - 1);
+            //if (gt) cluster = map.get(cluster - 1);
             if (node.leafIndices.contains(cluster)) {
                 out.setValue(i, true);
             }

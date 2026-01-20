@@ -52,8 +52,8 @@ public final class Config {
         this.aFactor = 0.667;
         this.psi = 0;
         this.useSplitPruning = false;
-        this.splitPruneMethod = "Default";
-        this.performanceMetric = "Default";
+        this.splitPruneMethod = GlobalConstants.SPLIT_PRUNE_MEAN_IN_WINDOW;
+        this.performanceMetric = GlobalConstants.PERFORMANCE_METRIC_SIL;
         this.maxClusters = 16;
         setTuneParameters(false);
         setRemoveRedundantCuts(true);

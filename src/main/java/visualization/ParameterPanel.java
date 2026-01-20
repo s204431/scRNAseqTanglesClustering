@@ -286,7 +286,7 @@ public class ParameterPanel extends JScrollPane {
         addFullWidth(Box.createVerticalStrut(10));
 
         uncertaintyTextField = new JTextField("1.0", 3);
-        addRow(new JLabel("Uncertainty Factor"), uncertaintyTextField);
+        addRow(new JLabel("Certainty Threshold"), uncertaintyTextField);
 
         removeUncertaintyButton = new JButton("<html>Remove Uncertainty</html>");
         addFullWidth(removeUncertaintyButton);
@@ -497,16 +497,18 @@ public class ParameterPanel extends JScrollPane {
 
         try {
             maxClusters = tryParseAndValidate("max clusters", maxClusterField.getText(), 2, 50);
-            psi = tryParseAndValidate("psi", psiField.getText(), 0.0, 1.0);
+            psi = tryParseAndValidate("ψ", psiField.getText(), 0.0, 1.0);
 
             // Check if we should set a parameter, a-factor parameter or none of them
-            if (testing) aFactor = tryParseAndValidate("a-factor", aField.getText(), 0.0, 1.0);
-            else {
-                if (splitPruningCheckBox.isSelected()) {
-                    int value = (int) (((double) view.points.length / maxClusters) * 0.55);
-                    a = tryParseAndValidate("a", Integer.toString(value), 1, Integer.MAX_VALUE);
-                } else {
-                    a = tryParseAndValidate("a", aField.getText(), 1, Integer.MAX_VALUE);
+            if (!useParameterTuning) {
+                if (testing) aFactor = tryParseAndValidate("a-factor", aField.getText(), 0.0, 1.0);
+                else {
+                    if (splitPruningCheckBox.isSelected()) {
+                        int value = (int) (((double) view.points.length / maxClusters) * 0.55);
+                        a = tryParseAndValidate("a", Integer.toString(value), 1, Integer.MAX_VALUE);
+                    } else {
+                        a = tryParseAndValidate("a", aField.getText(), 1, Integer.MAX_VALUE);
+                    }
                 }
             }
 
@@ -587,6 +589,8 @@ public class ParameterPanel extends JScrollPane {
     }
 
     public void setConfig(Config config) {
+        if (config == null) return;
+
         consistencyCheckbox.setSelected(config.isUseAlternateConsistencyCheck());
         wernerModificationCheckbox.setSelected(config.isUseWernerModification());
         useSplitFirstCheckbox.setSelected(config.isUseSplitFirst());
