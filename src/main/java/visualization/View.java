@@ -12,6 +12,7 @@ import java.awt.*;
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import visualization.test.TestProgressManager;
@@ -52,7 +53,12 @@ public class View {
 
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
-            loadDataset("data/symsim_observed_counts_5000genes_1000cells_complex.csv", 0, true);
+            if (new File("data/default_observed_counts.csv").exists()) {
+                loadDataset("data/default_observed_counts.csv", 0, true);
+            }
+            else {
+                loadDataset("default_observed_counts.csv", 0, true);
+            }
         });
     }
 
