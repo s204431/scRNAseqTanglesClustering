@@ -37,13 +37,6 @@
             <version>3.9.1-1.5.12</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.github.lejon.T-SNE-Java/tsne -->
-        <dependency>
-            <groupId>com.github.lejon.T-SNE-Java</groupId>
-            <artifactId>tsne</artifactId>
-            <version>v2.6.3</version>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -77,13 +70,6 @@
             <groupId>io.github.elki-project</groupId>
             <artifactId>elki</artifactId>
             <version>0.8.0</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.deeplearning4j/deeplearning4j-core -->
-        <dependency>
-            <groupId>org.deeplearning4j</groupId>
-            <artifactId>deeplearning4j-core</artifactId>
-            <version>1.0.0-M2.1</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.nd4j/nd4j-native-platform -->
