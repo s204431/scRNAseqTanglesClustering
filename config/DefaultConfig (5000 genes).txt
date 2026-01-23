@@ -1,0 +1,30 @@
+use_alternate_consistency_check:true
+use_werner_modification:true
+use_split_first:true
+use_early_stop:false
+use_cache:true
+high_level_cut_generator:Batching
+low_level_cut_generator:KNN
+high_level_cost_function:Average batch
+low_level_cost_function:KNN
+a:-1
+psi:0.0
+a_factor:0.0
+use_split_pruning:false
+split_prune_method:Window Mean
+performance_metric:Silhouette
+max_clusters:16
+tune_parameters:true
+remove_redundant_cuts:true
+redundancy_factor:0.9
+remove_redundant_cuts_iteratively:false
+split_size_cut_generation:2500
+use_pca_cut_generator:true
+pca_components_cut_generator:10
+use_tsne_cut_generator:false
+tsne_components_cut_generator:3
+split_size_cost_function:2500
+use_pca_cost_function:true
+pca_components_cost_function:10
+use_tsne_cost_function:false
+tsne_components_cost_function:3
