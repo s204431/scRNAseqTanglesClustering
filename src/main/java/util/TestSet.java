@@ -13,7 +13,7 @@ import java.util.Random;
 
 public class TestSet {
 
-    private static final boolean SAVE_CLUSTERINGS = true;
+    private static final boolean SAVE_CLUSTERINGS = false;
 
     private String dirPath;
     public String[] observedPaths;
