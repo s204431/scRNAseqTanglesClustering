@@ -15,7 +15,7 @@ public class TangleClusterer {
     protected static boolean earlyStop = false;
     protected boolean removeRedundantCuts = true;
     protected boolean useAlternateConsistencyCheck = false;
-    protected boolean useOscarWerner = false;
+    protected boolean useLocalCosts = false;
     protected boolean useSplitFirst = false;
     protected boolean removeRedundantCutsIteratively = false;
     protected boolean autoLimitSplitCosts = false;
@@ -91,10 +91,10 @@ public class TangleClusterer {
                                        double[][] reducedPoints) {
 
         //Build tree
-        if (useOscarWerner) {
+        if (useLocalCosts) {
             tangleSearchTree = useSplitFirst
                     ? splitFirst(cuts, costs, dataset.data, config)
-                    : splitLast(cuts, costs, dataset.data, config);
+                    : localCosts(cuts, costs, dataset.data, config);
         } else {
             tangleSearchTree = generateTangleSearchTree(cuts, costs, config.getA(), config.getPsi());
         }
@@ -152,7 +152,7 @@ public class TangleClusterer {
     private void updateClusteringParameters(Config config) {
         earlyStop = config.isUseEarlyStop();
         useAlternateConsistencyCheck = config.isUseAlternateConsistencyCheck();
-        useOscarWerner = config.isUseWernerModification();
+        useLocalCosts = config.isUseWernerModification();
         useSplitFirst = config.isUseSplitFirst();
         autoLimitSplitCosts = config.isUseSplitPruning();
         removeRedundantCuts = config.isRemoveRedundantCuts();
@@ -229,6 +229,11 @@ public class TangleClusterer {
         String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
         boolean useCache = config.isUseCache();
 
+        //Hashset containing every cut that was added to the tree
+        List<HashSet<Integer>> branchUsedCuts = new ArrayList<>();
+        HashSet<Integer> initialUsedCuts = new HashSet<>();
+        branchUsedCuts.add(initialUsedCuts);
+
         //Costs for each branch ID (in order of initial cuts).
         List<double[]> branchCosts = new ArrayList<>();
         double[] initialCosts = new double[n];
@@ -255,8 +260,6 @@ public class TangleClusterer {
         }
         branchCutSets.add(initialBranchCuts);
 
-        for (int i = 0; i < n; i++) indicesOrdered.getFirst()[i] = i;
-        System.arraycopy(costs, 0, branchCosts.getFirst(), 0, n);
         quicksort(initialCosts, indicesOrdered.getFirst(), 0, n - 1);
 
         int[] debugIndices = new int[n];
@@ -274,132 +277,195 @@ public class TangleClusterer {
             List<Node> newLowestBranchNodes = new ArrayList<>();
 
             for (Node node : lowestBranchNodes) {
-                int[] branchIndicesOrdered = indicesOrdered.get(node.branchId);
-                int branchPointer = branchPointers.get(node.branchId);
+                boolean usePsi = psi > 0;
+
+                HashSet<Integer> usedCuts = branchUsedCuts.get(node.branchId);
+                HashSet<Integer> leftUsedCuts = new HashSet<>(usedCuts);
+                HashSet<Integer> rightUsedCuts = new HashSet<>(usedCuts);
+
                 HashSet<Integer> branchCuts = null;
                 if (removeRedundantCutsIteratively) branchCuts = branchCutSets.get(node.branchId);
 
-                for (int i = branchPointer; i < initialCuts.length; i++) {
-                    int cutIndex = branchIndicesOrdered[i];
-                    double cutCost = branchCosts.get(node.branchId)[cutIndex];
+                double[] localCosts = branchCosts.get(node.branchId);
+                int[] branchIndicesOrdered = indicesOrdered.get(node.branchId);
+                int branchPointer = branchPointers.get(node.branchId);
 
-                    boolean consistent = false;
+                boolean nodeHasParent = node.parent != null;
+                double[] parentCosts = nodeHasParent ? branchCosts.get(node.parent.branchId) : null;
+                int votePointer = 0;
 
-                    if (psi != 0 && cutCost > psi) {
-                        break;
-                    }
+                double[] parentCostsOrdered = null;
+                int[] parentIndices = null;
+                if (nodeHasParent) {
+                    parentCostsOrdered = parentCosts.clone();
+                    parentIndices = new int[parentCostsOrdered.length];
+                    for (int i = 0; i < parentIndices.length; i++) parentIndices[i] = i;
+                    quicksort(parentCostsOrdered, parentIndices, 0, parentCostsOrdered.length - 1);
+                }
 
-                    if (removeRedundantCutsIteratively && !branchCuts.contains(cutIndex)) {
-                        //System.out.println("Node " + debugIndices[node.originalOrientation]  + (node.side ? "L" : "R") + " in branch: " + node.branchId + " has skipped cut: " + debugIndices[branchIndicesOrdered[i]]);
-                        branchPointer++;
-                        continue;
-                    }
+                while (true) {
 
-                    consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
-                    consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
-                    if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
-                        node.leftChild = null;
-                    }
-                    if (node.rightChild != null && node.rightChild.intersection.count() == 0) {
-                        node.rightChild = null;
-                    }
+                    // VOTE CUT
+                    if (nodeHasParent && votePointer < parentCostsOrdered.length && (branchPointer >= localCosts.length || parentCostsOrdered[parentIndices[votePointer]] < localCosts[branchIndicesOrdered[branchPointer]])) {
+                        int cutIndex = parentIndices[votePointer];
+                        double cutCost = parentCostsOrdered[votePointer];
 
-                    if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
-
-                        splitCosts.add(branchCosts.get(node.branchId)[cutIndex]);
-
-                        for (int j = 0; j < 2; j++) {
-
-                            Node childNode = j == 0 ? node.leftChild : node.rightChild;
-                            childNode.cost = cutCost;
-
-                            branchId++;
-                            childNode.branchId = branchId;
-                            branchPointers.add(i + 1);
-                            newLowestBranchNodes.add(childNode);
-
-                            //Remove points that are not included in the intersection for that branch
-                            Tuple<double[][], BitSet[]> redundantPointsRemoved = removeRedundantPoints(data, initialCuts, childNode.intersection);
-                            double[][] newData = redundantPointsRemoved.x;
-                            BitSet[] newCuts = redundantPointsRemoved.y;
-                            ScRNAseqDataset newDataset = new ScRNAseqDataset(newData, monitor);
-                            newDataset.setCostFunctions(costFunctions);
-                            costFunctions.setMask(childNode.intersection);
-                            newDataset.setInitialCuts(newCuts);
-                            double[] newCosts = newDataset.getCutCosts(
-                                    highLevelCostFunctionName,
-                                    lowLevelCostFunctionName,
-                                    useCache,
-                                    config.getSplitSizeCostFunction(),
-                                    config.isUsePcaCostFunction(),
-                                    config.getPcaComponentsCostFunction(),
-                                    config.isUseTSNECostFunction(),
-                                    config.getTsneComponentsCostFunction());
-                            branchCosts.add(newCosts);
-
-                            //Reorder cuts and costs based on the cost order for the parent branch
-                            int[] newIndices = branchIndicesOrdered.clone();
-                            double[] reorderedCosts = new double[newCosts.length];
-                            for (int k = 0; k < reorderedCosts.length; k++) {
-                                reorderedCosts[k] = newCosts[newIndices[k]];
-                            }
-
-                            // Order costs and indices
-                            quicksort(reorderedCosts, newIndices, i + 1, reorderedCosts.length - 1);
-                            indicesOrdered.add(newIndices);
-
-                            int[] originalIndices = new int[newIndices.length];
-                            if (removeRedundantCutsIteratively) {
-                                for (int k = 0; k < newIndices.length; k++) {
-                                    originalIndices[k] = k;
-                                }
-
-                                BitSet[] reorderedCuts = new BitSet[newCosts.length];
-                                for (int k = 0; k < reorderedCosts.length; k++) {
-                                    reorderedCuts[k] = newCuts[newIndices[k]];
-                                }
-
-                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), config.getRedundancyFactor());
-                                int[] ints = Arrays.stream(redundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
-
-                                HashSet<Integer> cuts = new HashSet<>();
-                                for (int k = 0; k < ints.length; k++) {
-                                    cuts.add(newIndices[ints[k]]);
-                                }
-                                branchCutSets.add(cuts);
-                            }
+                        if (usePsi && cutCost >= psi) {
+                            break;
                         }
 
-                        break;
-                    }
-                    /*else if (autoLimitSplitCosts && node.leftChild != null) {
-                        int newA = (int) (node.intersection.count()*0.667);
-                        tree.a = newA;
-                        node.leftChild = null;
+                        votePointer++;
+
+                        if (leftUsedCuts.contains(cutIndex)) {
+                            continue;
+                        }
+
+                        if (removeRedundantCutsIteratively && !branchCuts.contains(cutIndex)) {
+                            //System.out.println("Skipped vote cut: " + cutIndex);
+                            continue;
+                        }
+
+                        // Try to add vote cut
+                        boolean consistent = false;
                         consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
-                        tree.a = a;
-                    }
-                    else if (autoLimitSplitCosts && node.rightChild != null) {
-                        int newA = (int) (node.intersection.count()*0.667);
-                        tree.a = newA;
-                        node.rightChild = null;
                         consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
-                        tree.a = a;
-                    }*/
 
-                    branchPointer++;
+                        if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
+                            continue;
+                        } else if (node.leftChild == null && node.rightChild == null || !consistent) {     // No child was added
+                            if (earlyStop) {
+                                //System.out.println("Stopping on branch: " + node.branchId);
+                                break;
+                            }
+                            continue;
+                        }
 
-                    if (consistent) {
-                        //A single child was added to the branch
-                        branchPointers.set(node.branchId, branchPointer);
+                        // Single vote cut was added
                         if (node.leftChild != null) {
                             node.leftChild.cost = cutCost;
-                            node = node.leftChild;
+                            if (consistent) {
+                                leftUsedCuts.add(cutIndex);
+                                rightUsedCuts.add(cutIndex);
+                                node = node.leftChild;
+                            }
                         } else if (node.rightChild != null) {
                             node.rightChild.cost = cutCost;
-                            node = node.rightChild;
+                            if (consistent) {
+                                leftUsedCuts.add(cutIndex);
+                                rightUsedCuts.add(cutIndex);
+                                node = node.rightChild;
+                            }
                         }
-                    } else if (earlyStop) break;    // Early stop if cut was not consistent
+                    }
+
+                    // SPLIT CUT
+                    else if (branchPointer < localCosts.length) {
+                        int cutIndex = branchIndicesOrdered[branchPointer];
+
+                        if (usePsi && localCosts[cutIndex] >= psi) {
+                            break;
+                        }
+
+                        if (usedCuts.contains(cutIndex)) {
+                            branchPointer++;
+                            continue;
+                        }
+
+                        if (removeRedundantCutsIteratively && !branchCuts.contains(cutIndex)) {
+                            //System.out.println("Skipped cut: " + cutIndex);
+                            branchPointer++;
+                            continue;
+                        }
+
+                        // Try to add split cut
+                        boolean consistent = false;
+                        consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
+                        consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
+                        if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
+                            node.leftChild = null;
+                        }
+                        if (node.rightChild != null && node.rightChild.intersection.count() == 0) {
+                            node.rightChild = null;
+                        }
+
+                        if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
+                            splitCosts.add(branchCosts.get(node.branchId)[cutIndex]);
+                            leftUsedCuts.add(cutIndex);
+                            rightUsedCuts.add(cutIndex);
+
+                            for (int j = 0; j < 2; j++) {
+
+                                boolean left = j == 0;
+                                Node childNode = left ? node.leftChild : node.rightChild;
+                                childNode.cost = localCosts[cutIndex];
+
+                                branchId++;
+                                childNode.branchId = branchId;
+                                branchPointers.add(branchPointer + 1);
+                                branchUsedCuts.add(left ? leftUsedCuts : rightUsedCuts);
+                                newLowestBranchNodes.add(childNode);
+
+                                //Remove points that are not included in the intersection for that branch
+                                Tuple<double[][], BitSet[]> redundantPointsRemoved = removeRedundantPoints(data, initialCuts, childNode.intersection);
+                                double[][] newData = redundantPointsRemoved.x;
+                                BitSet[] newCuts = redundantPointsRemoved.y;
+                                ScRNAseqDataset newDataset = new ScRNAseqDataset(newData, monitor);
+                                newDataset.setCostFunctions(costFunctions);
+                                costFunctions.setMask(childNode.intersection);
+                                newDataset.setInitialCuts(newCuts);
+                                double[] newCosts = newDataset.getCutCosts(
+                                        highLevelCostFunctionName,
+                                        lowLevelCostFunctionName,
+                                        useCache,
+                                        config.getSplitSizeCostFunction(),
+                                        config.isUsePcaCostFunction(),
+                                        config.getPcaComponentsCostFunction(),
+                                        config.isUseTSNECostFunction(),
+                                        config.getTsneComponentsCostFunction());
+                                branchCosts.add(newCosts);
+
+                                //Reorder cuts and costs based on the cost order for the parent branch
+                                int[] newIndices = branchIndicesOrdered.clone();
+                                double[] reorderedCosts = new double[newCosts.length];
+                                for (int k = 0; k < reorderedCosts.length; k++) {
+                                    reorderedCosts[k] = newCosts[newIndices[k]];
+                                }
+
+                                // Order costs and indices
+                                quicksort(reorderedCosts, newIndices, branchPointer + 1, reorderedCosts.length - 1);
+                                indicesOrdered.add(newIndices);
+
+                                int[] originalIndices = new int[newIndices.length];
+                                if (removeRedundantCutsIteratively) {
+                                    for (int k = 0; k < newIndices.length; k++) {
+                                        originalIndices[k] = k;
+                                    }
+
+                                    BitSet[] reorderedCuts = new BitSet[newCosts.length];
+                                    for (int k = 0; k < reorderedCosts.length; k++) {
+                                        reorderedCuts[k] = newCuts[newIndices[k]];
+                                    }
+
+                                    Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), config.getRedundancyFactor());
+                                    int[] ints = Arrays.stream(redundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
+
+                                    HashSet<Integer> cuts = new HashSet<>();
+                                    for (int k = 0; k < ints.length; k++) {
+                                        cuts.add(newIndices[ints[k]]);
+                                    }
+                                    branchCutSets.add(cuts);
+                                }
+                            }
+                            break;
+                        }
+
+                        // Split node was not added
+                        branchPointer++;
+                        node.leftChild = null;
+                        node.rightChild = null;
+                    }
+
+                    else break; // Can neither add vote cuts are split cuts
                 }
             }
             lowestBranchNodes = newLowestBranchNodes;
@@ -695,280 +761,6 @@ public class TangleClusterer {
                             leftUsedCuts.add(cutIndex);
                             rightUsedCuts.add(cutIndex);
                             node = node.rightChild;
-                        }
-                    }
-                }
-            }
-            lowestBranchNodes = newLowestBranchNodes;
-        }
-        tree.branchCosts = branchCosts;
-        monitor.setBranchCosts(branchCosts);
-        return tree;
-    }
-
-    private TangleSearchTree splitLast(BitSet[] initialCuts, double[] costs, double[][] data, Config config) {
-        int n = costs.length;
-        int a = config.getA();
-        double psi = config.getPsi();
-        String highLevelCostFunctionName = config.getHighLevelCostFunctionName();
-        String lowLevelCostFunctionName = config.getLowLevelCostFunctionName();
-        boolean useCache = config.isUseCache();
-
-        //Hashset containing every cut that was added to the tree
-        List<HashSet<Integer>> branchUsedCuts = new ArrayList<>();
-        HashSet<Integer> initialUsedCuts = new HashSet<>();
-        branchUsedCuts.add(initialUsedCuts);
-
-        //Costs for each branch ID (in order of initial cuts).
-        List<double[]> branchCosts = new ArrayList<>();
-        double[] initialCosts = new double[n];
-        System.arraycopy(costs, 0, initialCosts, 0, n);
-        branchCosts.add(initialCosts.clone());
-
-        //Indices for ordered cost for each branch ID.
-        List<int[]> indicesOrdered = new ArrayList<>();
-        int[] initialIndices = new int[n];
-        for (int i = 0; i < n; i++) {
-            initialIndices[i] = i;
-        }
-        indicesOrdered.add(initialIndices);
-
-        //Pointers for unused cuts for each branch
-        List<Integer> branchPointers = new ArrayList<>();
-        branchPointers.add(0);
-
-        //Sets of cuts that we want to consider for each branch (cuts that are not redundant).
-        List<HashSet<Integer>> branchCutSets = new ArrayList<>();
-        HashSet<Integer> initialBranchCuts = new HashSet<>();
-        for (int i = 0; i < initialCuts.length; i++) {
-            initialBranchCuts.add(i);
-        }
-        branchCutSets.add(initialBranchCuts);
-
-        quicksort(initialCosts, indicesOrdered.getFirst(), 0, n - 1);
-
-        int[] debugIndices = new int[n];
-        for (int i = 0; i < n; i++) {
-            debugIndices[initialIndices[i]] = i;
-        }
-
-        TangleSearchTree tree = new TangleSearchTree(a, initialCuts, costs);
-
-        int branchId = 0;
-
-        List<Node> lowestBranchNodes = new ArrayList<>();
-        lowestBranchNodes.add(tree.root);
-        while (!lowestBranchNodes.isEmpty()) {
-            List<Node> newLowestBranchNodes = new ArrayList<>();
-
-            for (Node node : lowestBranchNodes) {
-                boolean usePsi = psi > 0;
-
-                HashSet<Integer> usedCuts = branchUsedCuts.get(node.branchId);
-                HashSet<Integer> branchCuts = null;
-                if (removeRedundantCutsIteratively) branchCuts = branchCutSets.get(node.branchId);
-
-                double[] localCosts = branchCosts.get(node.branchId);
-                int[] branchIndicesOrdered = indicesOrdered.get(node.branchId);
-                int branchPointer = branchPointers.get(node.branchId);
-
-                boolean hasParent = node.parent != null;
-                double[] parentCosts = hasParent ? branchCosts.get(node.parent.branchId) : null;
-                int votePointer = 0;
-
-                // ========== SPLIT CUTS ==========
-                HashSet<Integer> leftUsedCuts = new HashSet<>(usedCuts);
-                HashSet<Integer> rightUsedCuts = new HashSet<>(usedCuts);
-                boolean splitCutFound = false;
-                int splitCut = -1;
-                while (branchPointer < localCosts.length) {
-                    int cutIndex = branchIndicesOrdered[branchPointer];
-
-                    if (usePsi && localCosts[cutIndex] >= psi) {
-                        break;
-                    }
-
-                    if (usedCuts.contains(cutIndex)) {
-                        branchPointer++;
-                        continue;
-                    }
-
-                    if (removeRedundantCutsIteratively && !branchCuts.contains(cutIndex)) {
-                        //System.out.println("Skipped split cut: " + cutIndex);
-                        branchPointer++;
-                        continue;
-                    }
-
-                    // Try to find next split cut
-                    boolean consistent = false;
-                    consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
-                    consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
-                    if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
-                        node.leftChild = null;
-                    }
-                    if (node.rightChild != null && node.rightChild.intersection.count() == 0) {
-                        node.rightChild = null;
-                    }
-
-                    if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
-                        splitCutFound = true;
-                        splitCut = cutIndex;
-                        node.leftChild = null;
-                        node.rightChild = null;
-                        break;
-                    }
-
-                    // Split node was not added
-                    branchPointer++;
-                    node.leftChild = null;
-                    node.rightChild = null;
-                }
-
-                // ========== VOTE CUTS ==========
-                boolean addSplitCut = splitCutFound;
-                if (parentCosts != null) {
-                    double splitCost = splitCutFound ? localCosts[branchIndicesOrdered[branchPointer]] : Double.MAX_VALUE;
-                    double[] parentCostsOrdered = parentCosts.clone();
-                    int[] parentIndices = new int[parentCostsOrdered.length];
-                    for (int i = 0; i < parentIndices.length; i++) parentIndices[i] = i;
-                    quicksort(parentCostsOrdered, parentIndices, 0, parentCostsOrdered.length - 1);
-
-                    while (hasParent && votePointer < parentCosts.length) {
-                        int cutIndex = parentIndices[votePointer];
-                        double cutCost = parentCostsOrdered[votePointer];
-
-                        if (cutCost >= splitCost || (usePsi && cutCost >= psi)) {
-                            break;
-                        }
-
-                        votePointer++;
-
-                        if (leftUsedCuts.contains(cutIndex)) {
-                            continue;
-                        }
-
-                        if (removeRedundantCutsIteratively && !branchCuts.contains(cutIndex)) {
-                            //System.out.println("Skipped vote cut: " + cutIndex);
-                            continue;
-                        }
-
-                        // Try to add vote cut
-                        //if (autoLimitSplitCosts) tree.a = (int) (node.intersection.count()*0.667);
-                        boolean consistent = false;
-                        consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
-                        consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
-                        //tree.a = a;
-
-                        if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
-                            continue;
-                        } else if (node.leftChild == null && node.rightChild == null || !consistent) {     // No child was added
-                            if (earlyStop) {
-                                //System.out.println("Stopping on branch: " + node.branchId);
-                                addSplitCut = false;
-                                break;
-                            }
-                            continue;
-                        }
-
-                        // Single vote cut was added
-                        if (node.leftChild != null) {
-                            node.leftChild.cost = cutCost;
-                            if (consistent) {
-                                leftUsedCuts.add(cutIndex);
-                                rightUsedCuts.add(cutIndex);
-                                node = node.leftChild;
-                            }
-                        } else if (node.rightChild != null) {
-                            node.rightChild.cost = cutCost;
-                            if (consistent) {
-                                leftUsedCuts.add(cutIndex);
-                                rightUsedCuts.add(cutIndex);
-                                node = node.rightChild;
-                            }
-                        }
-                    }
-                }
-
-                // Try to add split cut
-                if (addSplitCut) {
-                    int cutIndex = splitCut;
-                    boolean consistent = false;
-                    consistent = tree.addOrientation(node, cutIndex, true, useAlternateConsistencyCheck) || consistent;
-                    consistent = tree.addOrientation(node, cutIndex, false, useAlternateConsistencyCheck) || consistent;
-                    if (node.leftChild != null && node.leftChild.intersection.count() == 0) {
-                        node.leftChild = null;
-                    }
-                    if (node.rightChild != null && node.rightChild.intersection.count() == 0) {
-                        node.rightChild = null;
-                    }
-
-                    if (node.leftChild != null && node.rightChild != null) {    // Node is splitting
-                        splitCosts.add(branchCosts.get(node.branchId)[cutIndex]);
-                        leftUsedCuts.add(cutIndex);
-                        rightUsedCuts.add(cutIndex);
-
-                        for (int j = 0; j < 2; j++) {
-
-                            boolean left = j == 0;
-                            Node childNode = left ? node.leftChild : node.rightChild;
-                            childNode.cost = localCosts[cutIndex];
-
-                            branchId++;
-                            childNode.branchId = branchId;
-                            branchPointers.add(branchPointer + 1);
-                            branchUsedCuts.add(left ? leftUsedCuts : rightUsedCuts);
-                            newLowestBranchNodes.add(childNode);
-
-                            //Remove points that are not included in the intersection for that branch
-                            Tuple<double[][], BitSet[]> redundantPointsRemoved = removeRedundantPoints(data, initialCuts, childNode.intersection);
-                            double[][] newData = redundantPointsRemoved.x;
-                            BitSet[] newCuts = redundantPointsRemoved.y;
-                            ScRNAseqDataset newDataset = new ScRNAseqDataset(newData, monitor);
-                            newDataset.setCostFunctions(costFunctions);
-                            costFunctions.setMask(childNode.intersection);
-                            newDataset.setInitialCuts(newCuts);
-                            double[] newCosts = newDataset.getCutCosts(
-                                    highLevelCostFunctionName,
-                                    lowLevelCostFunctionName,
-                                    useCache,
-                                    config.getSplitSizeCostFunction(),
-                                    config.isUsePcaCostFunction(),
-                                    config.getPcaComponentsCostFunction(),
-                                    config.isUseTSNECostFunction(),
-                                    config.getTsneComponentsCostFunction());
-                            branchCosts.add(newCosts);
-
-                            //Reorder cuts and costs based on the cost order for the parent branch
-                            int[] newIndices = branchIndicesOrdered.clone();
-                            double[] reorderedCosts = new double[newCosts.length];
-                            for (int k = 0; k < reorderedCosts.length; k++) {
-                                reorderedCosts[k] = newCosts[newIndices[k]];
-                            }
-
-                            // Order costs and indices
-                            quicksort(reorderedCosts, newIndices, branchPointer + 1, reorderedCosts.length - 1);
-                            indicesOrdered.add(newIndices);
-
-                            int[] originalIndices = new int[newIndices.length];
-                            if (removeRedundantCutsIteratively) {
-                                for (int k = 0; k < newIndices.length; k++) {
-                                    originalIndices[k] = k;
-                                }
-
-                                BitSet[] reorderedCuts = new BitSet[newCosts.length];
-                                for (int k = 0; k < reorderedCosts.length; k++) {
-                                    reorderedCuts[k] = newCuts[newIndices[k]];
-                                }
-
-                                Tuple<BitSet[], double[]> redundantCutsRemoved = removeRedundantCuts(reorderedCuts, Arrays.stream(originalIndices).mapToDouble(k -> (double) k).toArray(), config.getRedundancyFactor());
-                                int[] ints = Arrays.stream(redundantCutsRemoved.y).mapToInt(k -> (int) Math.round(k)).toArray();
-
-                                HashSet<Integer> cuts = new HashSet<>();
-                                for (int k = 0; k < ints.length; k++) {
-                                    cuts.add(newIndices[ints[k]]);
-                                }
-                                branchCutSets.add(cuts);
-                            }
                         }
                     }
                 }
