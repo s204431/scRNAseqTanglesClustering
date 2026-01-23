@@ -23,6 +23,18 @@ The GUI is intended as a testing and exploration environment rather than a produ
 - A Python script is included to support certain features (e.g., integration with Scanpy).  
   Installing Python is required only if these features are used.
 
+## Python Dependencies (Optional)
+To enable all features related to the Python-based Scanpy pipeline, the following Python libraries are required:
+
+- `scanpy`
+- `anndata`
+- `pandas`
+- `numpy`
+- `scikit-learn`
+- `kneed`
+
+These dependencies are only required when using the Python integration and are not needed to run the main Java application.
+
 ## Usage
 - The application provides a graphical user interface with multiple views for clustering, visualization, and testing.
 - Users can load a single data set and experiment with different configurations of the Tangles clustering pipeline.
