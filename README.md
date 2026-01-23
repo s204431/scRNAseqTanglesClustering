@@ -21,7 +21,7 @@ The GUI is intended as a testing and exploration environment rather than a produ
 - Running the application requires **Java** and **Maven**.
 - The program was tested using **Java 21** and **IntelliJ IDEA**.
 - A Python script is included to support certain features (e.g., integration with Scanpy).  
-  Installing Python is required only if these features are used; it is not required to run the main application.
+  Installing Python is required only if these features are used.
 
 ## Usage
 - The application provides a graphical user interface with multiple views for clustering, visualization, and testing.
