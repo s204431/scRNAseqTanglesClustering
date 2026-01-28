@@ -402,6 +402,12 @@ public class CostFunctions {
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
+            int cutCount = initialCuts[i].count();
+            if (cutCount == 0 || cutCount == initialCuts[i].size()) {
+                costs[i] = 0;
+                continue;
+            }
+
             double cost = Double.MAX_VALUE;
             for (int j = 0; j < dataPoints.length; j++) {
                 if (initialCuts[i].get(j)) {
@@ -427,6 +433,12 @@ public class CostFunctions {
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
+            int cutCount = initialCuts[i].count();
+            if (cutCount == 0 || cutCount == initialCuts[i].size()) {
+                costs[i] = 0;
+                continue;
+            }
+
             double cost = 0;
             for (int j = 0; j < dataPoints.length; j++) {
                 if (initialCuts[i].get(j)) {
@@ -454,6 +466,12 @@ public class CostFunctions {
         double[] costs = new double[initialCuts.length];
         double maxRange = getMaxRange(dataPoints);
         for (int i = 0; i < initialCuts.length; i++) {
+            int cutCount = initialCuts[i].count();
+            if (cutCount == 0 || cutCount == initialCuts[i].size()) {
+                costs[i] = 0;
+                continue;
+            }
+
             double cost = 0;
             int size1 = initialCuts[i].count();
             for (int j = 0; j < dataPoints.length; j++) {
@@ -485,7 +503,7 @@ public class CostFunctions {
         for (int i = 0; i < initialCuts.length; i++) {
             int cutCount = initialCuts[i].count();
             if (cutCount == 0 || cutCount == initialCuts[i].size()) {
-                costs[i] = 1;
+                costs[i] = 0;
                 continue;
             }
             double[] mean1 = new double[dataPoints[0].length];

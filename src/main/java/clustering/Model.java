@@ -524,9 +524,9 @@ public class Model {
             double y0 = evr[i];
 
             //Distance from point to line
-            double num = Math.abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2*y1 - y2*x1);
+            double num = Math.abs((y2 - y1)*x0 - (x2 - x1)*y0 + x2*y1 - y2*x1);
             double den = Math.sqrt((y2 - y1)*(y2 - y1) + (x2 - x1)*(x2 - x1));
-            double dist = num / den;
+            double dist = num/den;
 
             if (dist > maxDist) {
                 maxDist = dist;
