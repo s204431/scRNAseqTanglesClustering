@@ -54,10 +54,10 @@ public class View {
         SwingUtilities.invokeLater(() -> {
             window = new MainWindow(this);
             if (new File("data/default_observed_counts.csv").exists()) {
-                loadDataset("data/default_observed_counts.csv", 0, true);
+                loadDataset("data/default_observed_counts.csv", 2000, true);
             }
             else {
-                loadDataset("default_observed_counts.csv", 0, true);
+                loadDataset("default_observed_counts.csv", 2000, true);
             }
         });
     }
